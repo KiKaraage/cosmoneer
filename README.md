@@ -1,10 +1,13 @@
 # cosmoneer
 
-A proof-of-concept to bring COSMIC + Niri + Bluefin goodies together into a scroller desktop OS. Built on [Universal Blue Bluefin](https://projectbluefin.io) with System76's COSMIC desktop environment, the Niri scrollable-tiling compositor, and curated developer tools.
+A proof-of-concept to bring COSMIC + Niri + Bluefin goodies together into a scroller desktop OS. Sane defaults from Universal Blue with System76's COSMIC desktop environment, the Niri scrollable tiling compositor, and Docker group access.
 
-> Be the one who moves, not the one who is moved.
+Try it:
+- Install a Fedora Atomic variant, like [Bluefin](https://projectbluefin.io)
+- Run `sudo bootc switch ghcr.io/kikaraage/cosmoneer`
+- **COSMIC + Niri Integration:** After your first login, run `ujust configure-niri-cosmic` to configure COSMIC apps and keybindings inside Niri. Use `ujust show-niri-config` to review the configuration or `ujust reset-niri-config` to roll back to defaults.
 
-## What Makes this Different?
+## About This Image
 
 This image is based on **Bluefin stable** and includes these customizations:
 
@@ -23,7 +26,7 @@ This image is based on **Bluefin stable** and includes these customizations:
 
 ### Developer Tools
 - **Docker CE** - Latest Docker Engine with docker-compose plugin
-- **Additional Fonts** - JetBrains Mono, Fira Code, Noto fonts, and more
+- **Additional Fonts** - JetBrains Mono, Fira Code and more
 - SSH agent enabled globally
 - Docker group pre-configured
 
@@ -39,9 +42,7 @@ This image is based on **Bluefin stable** and includes these customizations:
 
 *Last updated: 2024-11-03*
 
-**COSMIC + Niri Integration:** After your first login, run `ujust configure-niri-cosmic` to configure COSMIC apps and keybindings inside Niri. Use `ujust show-niri-config` to review the configuration or `ujust reset-niri-config` to roll back to defaults.
-
-## What's Included
+## For admin: What's Included
 
 ### Build System
 - Automated builds via GitHub Actions on every commit
@@ -85,7 +86,7 @@ This image is based on **Bluefin stable** and includes these customizations:
 - Helper functions for safe COPR usage
 - See [build/README.md](build/README.md) for details
 
-## Quick Start
+## For Admin: Quick Start
 
 ### 1. Create Your Repository
 
@@ -147,7 +148,7 @@ sudo bootc switch ghcr.io/your-username/your-repo-name:stable
 sudo systemctl reboot
 ```
 
-## Optional: Enable Image Signing
+## For Admin: Enable Image Signing
 
 Image signing is disabled by default to let you start building immediately. However, signing is strongly recommended for production use.
 
@@ -193,7 +194,7 @@ This creates two files:
 
 Important: Never commit `cosign.key` to the repository. It's already in `.gitignore`.
 
-## Love Your Image? Let's Go to Production
+## For Admin: Love It? Let's Go to Production
 
 Ready to take your custom OS to production? Enable these features for enhanced security, reliability, and performance:
 
@@ -242,14 +243,14 @@ Users can verify your images with:
 cosign verify --key cosign.pub ghcr.io/your-username/your-repo-name:stable
 ```
 
-## Detailed Guides
+## For contributors: Detailed Guides
 
 - [Homebrew/Brewfiles](custom/brew/README.md) - Runtime package management
 - [Flatpak Preinstall](custom/flatpaks/README.md) - GUI application setup
 - [ujust Commands](custom/ujust/README.md) - User convenience commands
 - [Build Scripts](build/README.md) - Build-time customization
 
-## Local Testing
+## For contributors: Local Testing
 
 Test your changes before pushing:
 
@@ -264,6 +265,7 @@ just run-vm-qcow2       # Test in browser-based VM
 - [Universal Blue Forums](https://universal-blue.discourse.group/)
 - [Universal Blue Discord](https://discord.gg/WEu6BdFEtp)
 - [bootc Discussion](https://github.com/bootc-dev/bootc/discussions)
+- I personally hang out on [Origami Linux Discord server](https://discord.com/channels/1434166231274885313/1434166233816764529), a fellow COSMIC-based image. [Check Origami Linux repository](https://github.com/john-holt4/Origami-Linux) too!
 
 ## Learn More
 
@@ -279,7 +281,7 @@ This template provides security features for production use:
 - Automated security updates via Renovate
 - Build provenance tracking
 
-These security features are disabled by default to allow immediate testing. When you're ready for production, see the "Love Your Image? Let's Go to Production" section above to enable them.
+These security features are disabled by default to allow immediate testing. When you're ready for production, see the "Let's Go to Production" section above to enable them.
 
 ---
 
