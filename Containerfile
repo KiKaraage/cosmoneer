@@ -6,22 +6,11 @@ COPY custom /custom
 ###############################################################################
 # PROJECT NAME CONFIGURATION
 ###############################################################################
-# Name: finpilot
-#
-# IMPORTANT: Change "finpilot" above to your desired project name.
-# This name should be used consistently throughout the repository in:
-#   - Justfile: export image_name := env("IMAGE_NAME", "your-name-here")
-#   - README.md: # your-name-here (title)
-#   - artifacthub-repo.yml: repositoryID: your-name-here
-#   - custom/ujust/README.md: localhost/your-name-here:stable (in bootc switch example)
-#
-# The project name defined here is the single source of truth for your
-# custom image's identity. When changing it, update all references above
-# to maintain consistency.
+# Name: cosmoneer
 ###############################################################################
 
 # Base Image
-FROM ghcr.io/ublue-os/bluefin:stable@sha256:c9411d9909708d57d8e87c160a308a4a8c795764fb4beff344340755412b9178
+FROM ghcr.io/ublue-os/bluefin:stable
 
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest
@@ -52,7 +41,11 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/build/10-build.sh
+    /ctx/build/10-build.sh && \
+    /ctx/build/30-cosmic-desktop.sh && \
+    /ctx/build/35-cosmic-niri-ext.sh && \
+    /ctx/build/40-fonts.sh && \
+    /ctx/build/50-extras.sh
     
 ### LINTING
 ## Verify final image and contents are correct.

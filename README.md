@@ -1,20 +1,45 @@
-# finpilot
+# cosmoneer
 
-A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstraped by GitHub Copilot. After set up you'll have your own custom Linux. 
+A proof-of-concept to bring COSMIC + Niri + Bluefin goodies together into a scroller desktop OS. Built on [Universal Blue Bluefin](https://projectbluefin.io) with System76's COSMIC desktop environment, the Niri scrollable-tiling compositor, and curated developer tools.
 
 > Be the one who moves, not the one who is moved.
 
-## Guided Copilot Mode
+## What Makes this Different?
 
-Here are the steps to guide copilot to make your own repo, or just use it like a regular image template.
+This image is based on **Bluefin stable** and includes these customizations:
 
-1. Click the green "Use this as a template" button and create a new repository
-2. Select your owner, pick a repo name for your OS, and a description
-3. In the "Jumpstart your project with Copilot (optional)" add this, modify to your liking:
+### Desktop Environment
+- **COSMIC Desktop** - System76's next-generation desktop environment built in Rust ([ryanabx/cosmic-epoch](https://copr.fedorainfracloud.org/coprs/ryanabx/cosmic-epoch/))
+- **Niri Window Manager** - Scrollable-tiling Wayland compositor ([yalter/niri-git](https://copr.fedorainfracloud.org/coprs/yalter/niri-git/))
+- **COSMIC-Niri Integration** - Run COSMIC apps in Niri via cosmic-ext-alternative-startup
+- GNOME has been removed to reduce image size
 
-```
-Use @castrojo/finpilot as a template, name the OS the repository name. Ensure the entire operating system is bootstrapped. Ensure all github actions are enabled and running.  Ensure the README has the github setup instructions for cosign and the other steps required to finish the task.
-```
+### Multimedia Support
+- FFmpeg with full codec support
+- GStreamer plugins (good, base, bad-free)
+- Video thumbnail support for file managers
+- LAME audio codecs
+- Modern image format support (libjxl)
+
+### Developer Tools
+- **Docker CE** - Latest Docker Engine with docker-compose plugin
+- **Additional Fonts** - JetBrains Mono, Fira Code, Noto fonts, and more
+- SSH agent enabled globally
+- Docker group pre-configured
+
+### Added Applications
+- **GPU Screen Recorder** - Efficient screen recording with hardware acceleration
+- COSMIC Terminal (cosmic-term) included with COSMIC desktop
+
+### ujust Commands
+- `ujust configure-niri-cosmic` - Configure Niri for COSMIC integration
+- `ujust show-niri-config` - Display current Niri configuration
+- `ujust reset-niri-config` - Reset Niri to defaults
+- `ujust configure-dev-groups` - Add user to docker and libvirt groups
+
+*Last updated: 2024-11-03*
+
+**COSMIC + Niri Integration:** After your first login, run `ujust configure-niri-cosmic` to configure COSMIC apps and keybindings inside Niri. Use `ujust show-niri-config` to review the configuration or `ujust reset-niri-config` to roll back to defaults.
 
 ## What's Included
 
@@ -68,7 +93,7 @@ Click "Use this template" to create a new repository from this template.
 
 ### 2. Rename the Project
 
-Important: Change `finpilot` to your repository name in these 5 files:
+Important: Change `cosmoneer` to your repository name in these 5 files:
 
 1. `Containerfile` (line 9): `# Name: your-repo-name`
 2. `Justfile` (line 1): `export image_name := "your-repo-name"`

@@ -1,4 +1,4 @@
-export image_name := env("IMAGE_NAME", "finpilot")
+export image_name := env("IMAGE_NAME", "cosmoneer")
 export default_tag := env("DEFAULT_TAG", "stable")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest@sha256:903c01d110b8533f8891f07c69c0ba2377f8d4bc7e963311082b7028c04d529d")
 
@@ -15,22 +15,22 @@ default:
 check:
     #!/usr/bin/bash
     find . -type f -name "*.just" | while read -r file; do
-    	echo "Checking syntax: $file"
-    	just --unstable --fmt --check -f $file
+        echo "Checking syntax: $file"
+        just --unstable --fmt --check --justfile "$file"
     done
     echo "Checking syntax: Justfile"
-    just --unstable --fmt --check -f Justfile
+    just --unstable --fmt --check
 
 # Fix Just Syntax
 [group('Just')]
 fix:
     #!/usr/bin/bash
     find . -type f -name "*.just" | while read -r file; do
-    	echo "Checking syntax: $file"
-    	just --unstable --fmt -f $file
+        echo "Checking syntax: $file"
+        just --unstable --fmt --justfile "$file"
     done
     echo "Checking syntax: Justfile"
-    just --unstable --fmt -f Justfile || { exit 1; }
+    just --unstable --fmt || { exit 1; }
 
 # Clean Repo
 [group('Utility')]
