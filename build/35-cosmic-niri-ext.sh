@@ -54,6 +54,9 @@ cd cosmic-ext-extra-sessions/niri
 # Install start-cosmic-ext-niri script
 install -Dm755 start-cosmic-ext-niri /usr/bin/start-cosmic-ext-niri
 
+# Update session file to use installed path
+sed -i 's|/usr/local/bin/start-cosmic-ext-niri|/usr/bin/start-cosmic-ext-niri|' cosmic-ext-niri.desktop
+
 # Install cosmic-ext-niri.desktop session file
 install -Dm644 cosmic-ext-niri.desktop /usr/share/wayland-sessions/cosmic-ext-niri.desktop
 

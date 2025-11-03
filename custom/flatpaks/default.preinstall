@@ -49,3 +49,9 @@ Branch=stable
 # Screen Recording
 [Flatpak Preinstall com.dec05eba.gpu_screen_recorder]
 Branch=stable
+
+# COSMIC Applets
+[Flatpak Preinstall io.github.cosmic_utils.cosmic-ext-applet-clipboard-manager]
+Title=Clipboard Manager Applet
+Remote=cosmic
+Branch=stable
