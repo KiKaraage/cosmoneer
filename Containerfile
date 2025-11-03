@@ -7,17 +7,6 @@ COPY custom /custom
 # PROJECT NAME CONFIGURATION
 ###############################################################################
 # Name: cosmoneer
-#
-# IMPORTANT: Change "cosmoneer" above to your desired project name.
-# This name should be used consistently throughout the repository in:
-#   - Justfile: export image_name := env("IMAGE_NAME", "your-name-here")
-#   - README.md: # your-name-here (title)
-#   - artifacthub-repo.yml: repositoryID: your-name-here
-#   - custom/ujust/README.md: localhost/your-name-here:stable (in bootc switch example)
-#
-# The project name defined here is the single source of truth for your
-# custom image's identity. When changing it, update all references above
-# to maintain consistency.
 ###############################################################################
 
 # Base Image

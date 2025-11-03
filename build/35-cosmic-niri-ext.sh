@@ -33,6 +33,9 @@ git clone --depth 1 https://github.com/Drakulix/cosmic-ext-alternative-startup.g
 cd cosmic-ext-alternative-startup
 
 # Build the project
+export CARGO_HOME="/tmp/cargo"
+export CARGO_TARGET_DIR="/tmp/cargo-target"
+mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
 cargo build --release
 
 # Install the binary

@@ -39,17 +39,7 @@ This image is based on **Bluefin stable** and includes these customizations:
 
 *Last updated: 2024-11-03*
 
-## Guided Copilot Mode
-
-Here are the steps to guide copilot to make your own repo, or just use it like a regular image template.
-
-1. Click the green "Use this as a template" button and create a new repository
-2. Select your owner, pick a repo name for your OS, and a description
-3. In the "Jumpstart your project with Copilot (optional)" add this, modify to your liking:
-
-```
-Use @castrojo/cosmoneer as a template, name the OS the repository name. Ensure the entire operating system is bootstrapped. Ensure all github actions are enabled and running. Ensure the README has the GitHub setup instructions for cosign and the other steps required to finish the task.
-```
+**COSMIC + Niri Integration:** After your first login, run `ujust configure-niri-cosmic` to configure COSMIC apps and keybindings inside Niri. Use `ujust show-niri-config` to review the configuration or `ujust reset-niri-config` to roll back to defaults.
 
 ## What's Included
 
@@ -136,8 +126,6 @@ Customize your apps:
 - Add Brewfiles in `custom/brew/` ([guide](custom/brew/README.md))
 - Add Flatpaks in `custom/flatpaks/` ([guide](custom/flatpaks/README.md))
 - Add ujust commands in `custom/ujust/` ([guide](custom/ujust/README.md))
-
-**COSMIC + Niri Integration:** After your first login, run `ujust configure-niri-cosmic` to configure COSMIC apps and keybindings inside Niri. Use `ujust show-niri-config` to review the configuration or `ujust reset-niri-config` to roll back to defaults.
 
 ### 5. Development Workflow
 
