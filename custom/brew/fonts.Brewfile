@@ -1,13 +1,24 @@
-# Brewfile for fonts
 # Nerd Fonts with icons and glyphs for terminals and editors
-
-# Popular coding fonts
+cask "font-adwaita-mono-nerd-font"
+cask "font-atkynson-mono-nerd-font"
+cask "font-caskaydia-cove-nerd-font"
 cask "font-fira-code-nerd-font"
+cask "font-geist-mono-nerd-font"
 cask "font-jetbrains-mono-nerd-font"
-cask "font-meslo-lg-nerd-font"
-cask "font-hack-nerd-font"
+cask "font-ubuntu-sans-nerd-font"
 
-# Additional font options (uncomment to install)
-# cask "font-ubuntu-nerd-font"
-# cask "font-source-code-pro"
-# cask "font-cascadia-code-nerd-font"
+# Sans, serif, mono fonts
+cask "font-atkinson-hyperlegible-next"
+cask "font-cormorant-garamond"
+cask "font-dm-sans"
+cask "font-fraunces"
+cask "font-geist"
+cask "font-instrument-sans"
+cask "font-ibm-plex-sans"
+cask "font-jost"
+cask "font-merriweather"
+cask "font-outfit"
+cask "font-parkinsans"
+cask "font-suse"
+cask "font-work-sans"
+cask "font-suse-mono"
