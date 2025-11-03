@@ -6,9 +6,9 @@ COPY custom /custom
 ###############################################################################
 # PROJECT NAME CONFIGURATION
 ###############################################################################
-# Name: finpilot
+# Name: cosmoneer
 #
-# IMPORTANT: Change "finpilot" above to your desired project name.
+# IMPORTANT: Change "cosmoneer" above to your desired project name.
 # This name should be used consistently throughout the repository in:
 #   - Justfile: export image_name := env("IMAGE_NAME", "your-name-here")
 #   - README.md: # your-name-here (title)
@@ -55,8 +55,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build/10-build.sh && \
     /ctx/build/30-cosmic-desktop.sh && \
     /ctx/build/35-cosmic-niri-ext.sh && \
-    /ctx/build/36-fonts.sh && \
-    /ctx/build/40-extras.sh
+    /ctx/build/40-fonts.sh && \
+    /ctx/build/50-extras.sh
     
 ### LINTING
 ## Verify final image and contents are correct.

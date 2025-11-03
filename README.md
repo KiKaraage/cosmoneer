@@ -1,6 +1,6 @@
-# finpilot
+# cosmoneer
 
-A custom bootc operating system image based on [Universal Blue Bluefin](https://projectbluefin.io) with the COSMIC desktop environment, Niri window manager, and developer tools pre-configured.
+A proof-of-concept to bring COSMIC + Niri + Bluefin goodies together into a scroller desktop OS. Built on [Universal Blue Bluefin](https://projectbluefin.io) with System76's COSMIC desktop environment, the Niri scrollable-tiling compositor, and curated developer tools.
 
 > Be the one who moves, not the one who is moved.
 
@@ -29,7 +29,7 @@ This image is based on **Bluefin stable** and includes these customizations:
 
 ### Added Applications
 - **GPU Screen Recorder** - Efficient screen recording with hardware acceleration
-- **Kitty** - Modern GPU-accelerated terminal emulator
+- COSMIC Terminal (cosmic-term) included with COSMIC desktop
 
 ### ujust Commands
 - `ujust configure-niri-cosmic` - Configure Niri for COSMIC integration
@@ -48,7 +48,7 @@ Here are the steps to guide copilot to make your own repo, or just use it like a
 3. In the "Jumpstart your project with Copilot (optional)" add this, modify to your liking:
 
 ```
-Use @castrojo/finpilot as a template, name the OS the repository name. Ensure the entire operating system is bootstrapped. Ensure all github actions are enabled and running.  Ensure the README has the github setup instructions for cosign and the other steps required to finish the task.
+Use @castrojo/cosmoneer as a template, name the OS the repository name. Ensure the entire operating system is bootstrapped. Ensure all github actions are enabled and running. Ensure the README has the GitHub setup instructions for cosign and the other steps required to finish the task.
 ```
 
 ## What's Included
@@ -103,7 +103,7 @@ Click "Use this template" to create a new repository from this template.
 
 ### 2. Rename the Project
 
-Important: Change `finpilot` to your repository name in these 5 files:
+Important: Change `cosmoneer` to your repository name in these 5 files:
 
 1. `Containerfile` (line 9): `# Name: your-repo-name`
 2. `Justfile` (line 1): `export image_name := "your-repo-name"`

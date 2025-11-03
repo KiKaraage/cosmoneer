@@ -123,7 +123,6 @@ echo "::group:: Install Additional Utilities"
 
 # Install additional utilities that work well with COSMIC
 dnf5 install -y \
-    kitty \
     flatpak
 
 echo "Additional utilities installed"
