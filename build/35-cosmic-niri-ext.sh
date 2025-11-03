@@ -52,6 +52,7 @@ git clone --depth 1 https://github.com/Drakulix/cosmic-ext-extra-sessions.git
 cd cosmic-ext-extra-sessions/niri
 
 # Install start-cosmic-ext-niri script
+install -d /usr/local/bin
 install -Dm755 start-cosmic-ext-niri /usr/local/bin/start-cosmic-ext-niri
 
 # Install cosmic-ext-niri.desktop session file
