@@ -39,7 +39,7 @@ mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
 cargo build --release
 
 # Install the binary
-install -Dm755 target/release/cosmic-ext-alternative-startup /usr/bin/cosmic-ext-alternative-startup
+install -Dm755 "$CARGO_TARGET_DIR/release/cosmic-ext-alternative-startup" /usr/bin/cosmic-ext-alternative-startup
 
 echo "cosmic-ext-alternative-startup built and installed"
 echo "::endgroup::"
