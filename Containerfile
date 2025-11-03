@@ -52,7 +52,11 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
-    /ctx/build/10-build.sh
+    /ctx/build/10-build.sh && \
+    /ctx/build/30-cosmic-desktop.sh && \
+    /ctx/build/35-cosmic-niri-ext.sh && \
+    /ctx/build/36-fonts.sh && \
+    /ctx/build/40-extras.sh
     
 ### LINTING
 ## Verify final image and contents are correct.

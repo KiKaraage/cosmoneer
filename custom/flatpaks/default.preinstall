@@ -104,6 +104,10 @@ Branch=stable
 [Flatpak Preinstall page.tesk.Refine]
 Branch=stable
 
+# Screen Recording
+[Flatpak Preinstall com.dec05eba.gpu_screen_recorder]
+Branch=stable
+
 # GTK Themes (runtimes)
 [Flatpak Preinstall org.gtk.Gtk3theme.adw-gtk3]
 Branch=stable

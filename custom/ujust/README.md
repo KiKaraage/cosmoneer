@@ -18,13 +18,15 @@ Create `.just` files in this directory with your custom commands:
 
 ```
 custom/ujust/
-├── README.md          # This file
-├── custom-apps.just   # Application installation commands
-└── custom-system.just # System configuration commands
+├── README.md           # This file
+├── custom-apps.just    # Application installation commands
+├── custom-niri.just    # Niri and COSMIC integration helpers
+└── custom-system.just  # System configuration commands
 ```
 
 **Example Files in this directory:**
 - [`custom-apps.just`](custom-apps.just) - Application installation commands (Brewfiles, Flatpaks, JetBrains Toolbox)
+- [`custom-niri.just`](custom-niri.just) - Niri and COSMIC integration helpers (configure keybindings, spawn-at-startup)
 - [`custom-system.just`](custom-system.just) - System configuration commands (benchmarks, dev groups, maintenance)
 
 ## Example Commands

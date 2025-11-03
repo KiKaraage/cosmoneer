@@ -1,8 +1,43 @@
 # finpilot
 
-A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstraped by GitHub Copilot. After set up you'll have your own custom Linux. 
+A custom bootc operating system image based on [Universal Blue Bluefin](https://projectbluefin.io) with the COSMIC desktop environment, Niri window manager, and developer tools pre-configured.
 
 > Be the one who moves, not the one who is moved.
+
+## What Makes this Different?
+
+This image is based on **Bluefin stable** and includes these customizations:
+
+### Desktop Environment
+- **COSMIC Desktop** - System76's next-generation desktop environment built in Rust ([ryanabx/cosmic-epoch](https://copr.fedorainfracloud.org/coprs/ryanabx/cosmic-epoch/))
+- **Niri Window Manager** - Scrollable-tiling Wayland compositor ([yalter/niri-git](https://copr.fedorainfracloud.org/coprs/yalter/niri-git/))
+- **COSMIC-Niri Integration** - Run COSMIC apps in Niri via cosmic-ext-alternative-startup
+- GNOME has been removed to reduce image size
+
+### Multimedia Support
+- FFmpeg with full codec support
+- GStreamer plugins (good, base, bad-free)
+- Video thumbnail support for file managers
+- LAME audio codecs
+- Modern image format support (libjxl)
+
+### Developer Tools
+- **Docker CE** - Latest Docker Engine with docker-compose plugin
+- **Additional Fonts** - JetBrains Mono, Fira Code, Noto fonts, and more
+- SSH agent enabled globally
+- Docker group pre-configured
+
+### Added Applications
+- **GPU Screen Recorder** - Efficient screen recording with hardware acceleration
+- **Kitty** - Modern GPU-accelerated terminal emulator
+
+### ujust Commands
+- `ujust configure-niri-cosmic` - Configure Niri for COSMIC integration
+- `ujust show-niri-config` - Display current Niri configuration
+- `ujust reset-niri-config` - Reset Niri to defaults
+- `ujust configure-dev-groups` - Add user to docker and libvirt groups
+
+*Last updated: 2024-11-03*
 
 ## Guided Copilot Mode
 
@@ -101,6 +136,8 @@ Customize your apps:
 - Add Brewfiles in `custom/brew/` ([guide](custom/brew/README.md))
 - Add Flatpaks in `custom/flatpaks/` ([guide](custom/flatpaks/README.md))
 - Add ujust commands in `custom/ujust/` ([guide](custom/ujust/README.md))
+
+**COSMIC + Niri Integration:** After your first login, run `ujust configure-niri-cosmic` to configure COSMIC apps and keybindings inside Niri. Use `ujust show-niri-config` to review the configuration or `ujust reset-niri-config` to roll back to defaults.
 
 ### 5. Development Workflow
 
