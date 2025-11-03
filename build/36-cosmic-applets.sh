@@ -57,12 +57,12 @@ build_and_install_applet() {
     pushd "${repo_dir}" >/dev/null
 
     if just --list 2>/dev/null | grep -q "build-release"; then
-        just build-release
+        CARGO_TARGET_DIR="" just build-release
     else
-        cargo build --release
+        CARGO_TARGET_DIR="" cargo build --release
     fi
 
-    just install
+    CARGO_TARGET_DIR="" just install
 
     popd >/dev/null
 }
