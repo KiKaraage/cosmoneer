@@ -20,7 +20,8 @@ set -eoux pipefail
 echo "::group:: Install Build Dependencies"
 
 # Install all build dependencies needed for COSMIC applets
-dnf5 install -y \
+# Many of these may already be installed from previous build steps
+dnf5 install -y --skip-unavailable \
     just \
     cargo \
     rust \
@@ -29,7 +30,7 @@ dnf5 install -y \
     gcc-c++ \
     make \
     libxkbcommon-devel \
-    pipewire0.3-devel \
+    pipewire-devel \
     dbus-devel \
     openssl-devel \
     pkgconf-pkg-config \
