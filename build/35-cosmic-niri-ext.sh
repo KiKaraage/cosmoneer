@@ -52,7 +52,7 @@ git clone --depth 1 https://github.com/Drakulix/cosmic-ext-extra-sessions.git
 cd cosmic-ext-extra-sessions/niri
 
 # Install start-cosmic-ext-niri script
-install -Dm755 start-cosmic-ext-niri /usr/bin/start-cosmic-ext-niri
+install -Dm755 start-cosmic-ext-niri /usr/local/bin/start-cosmic-ext-niri
 
 # Install cosmic-ext-niri.desktop session file
 install -Dm644 cosmic-ext-niri.desktop /usr/share/wayland-sessions/cosmic-ext-niri.desktop

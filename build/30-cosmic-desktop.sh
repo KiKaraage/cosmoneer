@@ -118,5 +118,24 @@ dnf5 install -y \
 echo "Additional utilities installed"
 echo "::endgroup::"
 
+echo "::group:: Add COSMIC Flatpak Remote"
+
+# Add COSMIC Flatpak remote
+flatpak remote-add --if-not-exists --system cosmic https://apt.pop-os.org/cosmic/cosmic.flatpakrepo
+
+echo "COSMIC Flatpak remote configured"
+echo "::endgroup::"
+
+echo "::group:: Enable COSMIC Data Control Protocol"
+
+# Enable data control protocol for clipboard manager applet
+# This allows privileged clients to access the clipboard
+mkdir -p /etc/profile.d
+echo 'export COSMIC_DATA_CONTROL_ENABLED=1' > /etc/profile.d/data_control_cosmic.sh
+chmod 644 /etc/profile.d/data_control_cosmic.sh
+
+echo "COSMIC data control protocol enabled"
+echo "::endgroup::"
+
 echo "COSMIC desktop installation complete!"
 echo "After booting, select 'COSMIC' session at the login screen"
