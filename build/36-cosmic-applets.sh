@@ -54,48 +54,71 @@ build_and_install_applet() {
     rm -rf "${repo_dir}"
     git clone --depth 1 "${repo_url}" "${repo_dir}"
 
-    pushd "${repo_dir}" >/dev/null
+    # Run the build and install in a subshell to isolate failures
+    (
+        set -e # Exit subshell on first error
+        pushd "${repo_dir}" >/dev/null
 
-    # Unset CARGO_TARGET_DIR so cargo uses default ./target directory
-    if just --list 2>/dev/null | grep -q "build-release"; then
-        env -u CARGO_TARGET_DIR just build-release
-    else
-        env -u CARGO_TARGET_DIR cargo build --release
-    fi
+        # Unset CARGO_TARGET_DIR so cargo uses default ./target directory
+        if just --list 2>/dev/null | grep -q "build-release"; then
+            env -u CARGO_TARGET_DIR just build-release
+        else
+            env -u CARGO_TARGET_DIR cargo build --release
+        fi
 
-    env -u CARGO_TARGET_DIR just install
+        env -u CARGO_TARGET_DIR just install
 
-    popd >/dev/null
+        popd >/dev/null
+    )
+    return $?
 }
 
 echo "::group:: Build cosmic-ext-applet-emoji-selector"
-build_and_install_applet "cosmic-ext-applet-emoji-selector" "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"
-echo "cosmic-ext-applet-emoji-selector installed"
+if build_and_install_applet "cosmic-ext-applet-emoji-selector" "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"; then
+    echo "cosmic-ext-applet-emoji-selector installed"
+else
+    echo "::warning:: cosmic-ext-applet-emoji-selector failed to build, skipping"
+fi
 echo "::endgroup::"
 
 echo "::group:: Build cosmic-ext-applet-privacy-indicator"
-build_and_install_applet "cosmic-ext-applet-privacy-indicator" "https://github.com/D-Brox/cosmic-ext-applet-privacy-indicator"
-echo "cosmic-ext-applet-privacy-indicator installed"
+if build_and_install_applet "cosmic-ext-applet-privacy-indicator" "https://github.com/D-Brox/cosmic-ext-applet-privacy-indicator"; then
+    echo "cosmic-ext-applet-privacy-indicator installed"
+else
+    echo "::warning:: cosmic-ext-applet-privacy-indicator failed to build, skipping"
+fi
 echo "::endgroup::"
 
 echo "::group:: Build cosmic-ext-applet-vitals"
-build_and_install_applet "cosmic-ext-applet-vitals" "https://github.com/Coinio/cosmic-ext-applet-vitals.git"
-echo "cosmic-ext-applet-vitals installed"
+if build_and_install_applet "cosmic-ext-applet-vitals" "https://github.com/Coinio/cosmic-ext-applet-vitals.git"; then
+    echo "cosmic-ext-applet-vitals installed"
+else
+    echo "::warning:: cosmic-ext-applet-vitals failed to build, skipping"
+fi
 echo "::endgroup::"
 
 echo "::group:: Build cosmic-applet-music-player"
-build_and_install_applet "cosmic-applet-music-player" "https://github.com/Ebbo/cosmic-applet-music-player.git"
-echo "cosmic-applet-music-player installed"
+if build_and_install_applet "cosmic-applet-music-player" "https://github.com/Ebbo/cosmic-applet-music-player.git"; then
+    echo "cosmic-applet-music-player installed"
+else
+    echo "::warning:: cosmic-applet-music-player failed to build, skipping"
+fi
 echo "::endgroup::"
 
 echo "::group:: Build cosmic-ext-applet-caffeine"
-build_and_install_applet "cosmic-ext-applet-caffeine" "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"
-echo "cosmic-ext-applet-caffeine installed"
+if build_and_install_applet "cosmic-ext-applet-caffeine" "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"; then
+    echo "cosmic-ext-applet-caffeine installed"
+else
+    echo "::warning:: cosmic-ext-applet-caffeine failed to build, skipping"
+fi
 echo "::endgroup::"
 
 echo "::group:: Build cosmic-connect-applet"
-build_and_install_applet "cosmic-connect-applet" "https://github.com/cosmic-utils/cosmic-connect-applet.git"
-echo "cosmic-connect-applet installed"
+if build_and_install_applet "cosmic-connect-applet" "https://github.com/cosmic-utils/cosmic-connect-applet.git"; then
+    echo "cosmic-connect-applet installed"
+else
+    echo "::warning:: cosmic-connect-applet failed to build, skipping"
+fi
 echo "::endgroup::"
 
 echo "::group:: Cleanup"
