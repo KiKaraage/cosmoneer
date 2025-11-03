@@ -1,8 +1,3 @@
-# Default Brewfile for bluepilot
-# Add your favorite brew packages here
-# 
-# Examples:
-
 # Modern CLI tools
 brew "bat"        # cat with syntax highlighting
 brew "eza"        # Modern replacement for ls
@@ -18,5 +13,9 @@ brew "starship"   # Cross-shell prompt
 brew "zoxide"     # Smarter cd command
 
 # Utilities
-brew "htop"       # Interactive process viewer
+brew "btop"       # Interactive process viewer
 brew "tmux"       # Terminal multiplexer
+
+# Bold Brew - TUI for Homebrew
+tap "valkyrie00/bbrew"         
+brew "valkyrie00/bbrew/bbrew"
