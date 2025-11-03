@@ -125,7 +125,11 @@ echo "::group:: Install Additional Utilities"
 
 # Install additional utilities that work well with COSMIC
 dnf5 install -y \
-    flatpak
+    flatpak \
+    google-noto-emoji-fonts \
+    fontawesome-fonts \
+    fontawesome-fonts-web \
+    curl 
 
 echo "Additional utilities installed"
 echo "::endgroup::"
