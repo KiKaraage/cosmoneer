@@ -59,14 +59,14 @@ build_and_install_applet() {
         set -e # Exit subshell on first error
         pushd "${repo_dir}" >/dev/null
 
-        # Unset CARGO_TARGET_DIR so cargo uses default ./target directory
+        # Use a shared CARGO_TARGET_DIR to cache dependencies
         if just --list 2>/dev/null | grep -q "build-release"; then
-            env -u CARGO_TARGET_DIR just build-release
+            just build-release
         else
-            env -u CARGO_TARGET_DIR cargo build --release
+            cargo build --release
         fi
 
-        env -u CARGO_TARGET_DIR just install
+        just install
 
         popd >/dev/null
     )
