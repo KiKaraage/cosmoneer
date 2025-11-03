@@ -90,3 +90,17 @@ update-and-reboot:
     else
         echo "Reboot later to apply updates."
     fi
+
+# Install Windows fonts via Homebrew
+[group('Fonts')]
+windows-fonts:
+    #!/usr/bin/env bash
+    echo "Installing Windows fonts via Homebrew..."
+    brew tap colindean/fonts-nonfree && brew install --cask font-microsoft-office font-microsoft-aptos font-arial font-arial-black font-courier-new font-times-new-roman font-georgia`
+
+# Install more nerd fonts via Homebrew
+[group('Fonts')]
+nerd-fonts:
+    #!/usr/bin/env bash
+    echo "Installing more nerd fonts via Homebrew..."
+    brew install --cask font-blex-mono-nerd-font font-comic-shanns-mono-nerd-font font-fantasque-sans-mono-nerd-font font-maple-mono-nf font-monaspice-nerd-font font-mononoki-nerd-font font-space-mono-nerd-font 
