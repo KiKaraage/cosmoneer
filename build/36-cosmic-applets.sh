@@ -56,13 +56,14 @@ build_and_install_applet() {
 
     pushd "${repo_dir}" >/dev/null
 
+    # Unset CARGO_TARGET_DIR so cargo uses default ./target directory
     if just --list 2>/dev/null | grep -q "build-release"; then
-        CARGO_TARGET_DIR="" just build-release
+        env -u CARGO_TARGET_DIR just build-release
     else
-        CARGO_TARGET_DIR="" cargo build --release
+        env -u CARGO_TARGET_DIR cargo build --release
     fi
 
-    CARGO_TARGET_DIR="" just install
+    env -u CARGO_TARGET_DIR just install
 
     popd >/dev/null
 }
