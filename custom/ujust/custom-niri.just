@@ -9,15 +9,15 @@
 configure-niri-cosmic:
     #!/usr/bin/bash
     source /usr/lib/ujust/ujust.sh
-    
+
     CONFIG_DIR="$HOME/.config/niri"
     CONFIG_FILE="$CONFIG_DIR/config.kdl"
-    
+
     echo "Configuring Niri for COSMIC integration..."
-    
+
     # Create config directory if it doesn't exist
     mkdir -p "$CONFIG_DIR"
-    
+
     # Run niri once to generate default config if it doesn't exist
     if [ ! -f "$CONFIG_FILE" ]; then
         echo "Generating default Niri configuration..."
@@ -25,11 +25,11 @@ configure-niri-cosmic:
         echo "Please run 'niri' once to generate a default config, then run this command again."
         exit 1
     fi
-    
+
     # Backup existing config
     cp "$CONFIG_FILE" "$CONFIG_FILE.backup-$(date +%Y%m%d-%H%M%S)"
     echo "Backed up existing config"
-    
+
     # Check if spawn-at-startup is already configured
     if grep -q "spawn-at-startup.*cosmic-ext-alternative-startup" "$CONFIG_FILE"; then
         echo "COSMIC spawn-at-startup already configured"
@@ -39,25 +39,25 @@ configure-niri-cosmic:
         echo '' >> "$CONFIG_FILE"
         echo 'spawn-at-startup "cosmic-ext-alternative-startup"' >> "$CONFIG_FILE"
     fi
-    
+
     # Check if COSMIC keybindings are already configured
     if grep -q "cosmic-term" "$CONFIG_FILE"; then
         echo "COSMIC keybindings already configured"
     else
         echo "Adding COSMIC keybindings to Niri config..."
         # Add COSMIC keybindings
-        cat >> "$CONFIG_FILE" << 'EOF'
-
-// COSMIC Integration Keybindings
-binds {
-    Mod+T { spawn "cosmic-term"; }
-    Mod+D { spawn "cosmic-launcher"; }
-    Mod+Shift+D { spawn "cosmic-app-library"; }
-    Mod+Alt+L { spawn "cosmic-greeter"; }
-}
-EOF
+        {
+            echo ''
+            echo '// COSMIC Integration Keybindings'
+            echo 'binds {'
+            echo '    Mod+T { spawn "cosmic-term"; }'
+            echo '    Mod+D { spawn "cosmic-launcher"; }'
+            echo '    Mod+Shift+D { spawn "cosmic-app-library"; }'
+            echo '    Mod+Alt+L { spawn "cosmic-greeter"; }'
+            echo '}'
+        } >> "$CONFIG_FILE"
     fi
-    
+
     echo "Niri configuration for COSMIC complete!"
     echo "Log out and log back into the COSMIC-Niri session for changes to take effect."
 
@@ -79,12 +79,12 @@ reset-niri-config:
     source /usr/lib/ujust/ujust.sh
     CONFIG_DIR="$HOME/.config/niri"
     CONFIG_FILE="$CONFIG_DIR/config.kdl"
-    
+
     if [ ! -f "$CONFIG_FILE" ]; then
         echo "No Niri config found to reset."
         exit 0
     fi
-    
+
     if gum confirm "Reset Niri config to defaults? (A backup will be created)"; then
         # Backup current config
         cp "$CONFIG_FILE" "$CONFIG_FILE.backup-$(date +%Y%m%d-%H%M%S)"

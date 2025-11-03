@@ -101,7 +101,9 @@ echo "::endgroup::"
 echo "::group:: Install Multimedia Codecs"
 
 # Codecs for video thumbnails on nautilus
-dnf5 config-manager addrepo --from-repofile=https://negativo17.org/repos/fedora-multimedia.repo
+if ! dnf5 config-manager addrepo --from-repofile=https://negativo17.org/repos/fedora-multimedia.repo; then
+    echo "fedora-multimedia repository already configured"
+fi
 dnf5 config-manager setopt fedora-multimedia.enabled=0
 dnf5 -y install --enablerepo=fedora-multimedia \
     ffmpeg libavcodec @multimedia gstreamer1-plugins-{bad-free,bad-free-libs,good,base} lame{,-libs} libjxl ffmpegthumbnailer

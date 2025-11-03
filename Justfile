@@ -16,10 +16,10 @@ check:
     #!/usr/bin/bash
     find . -type f -name "*.just" | while read -r file; do
         echo "Checking syntax: $file"
-        just --unstable --fmt --check -f $file
+        just --unstable --fmt --check --justfile "$file"
     done
     echo "Checking syntax: Justfile"
-    just --unstable --fmt --check -f Justfile
+    just --unstable --fmt --check
 
 # Fix Just Syntax
 [group('Just')]
@@ -27,10 +27,10 @@ fix:
     #!/usr/bin/bash
     find . -type f -name "*.just" | while read -r file; do
         echo "Checking syntax: $file"
-        just --unstable --fmt -f $file
+        just --unstable --fmt --justfile "$file"
     done
     echo "Checking syntax: Justfile"
-    just --unstable --fmt -f Justfile || { exit 1; }
+    just --unstable --fmt || { exit 1; }
 
 # Clean Repo
 [group('Utility')]
