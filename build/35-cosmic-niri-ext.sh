@@ -11,16 +11,14 @@ set -eoux pipefail
 # Based on: https://github.com/Drakulix/cosmic-ext-extra-sessions/tree/main/niri
 ###############################################################################
 
-echo "::group:: Install Build Dependencies"
+echo "::group:: Install cosmic-ext-alternative-startup Dependencies"
 
 # Install Rust and cargo if not already present
 dnf5 install -y \
     cargo \
     rust \
-    git \
     libxkbcommon-devel \
-    wayland-devel \
-    pkgconf-pkg-config
+    wayland-devel
 
 echo "Build dependencies installed"
 echo "::endgroup::"

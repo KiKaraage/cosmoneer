@@ -31,3 +31,11 @@ g docker -
 EOF
 
 echo "Docker installation and configuration complete!"
+
+###############################################################################
+# Install Additional Utilities & Nautilus extensions
+###############################################################################
+
+dnf5 install -y nautilus-gsconnect nautilus-python sfwbar msedit brightnessctl
+
+echo "Additional utilities and Nautilus extensions installed!"

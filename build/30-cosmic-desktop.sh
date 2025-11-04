@@ -28,7 +28,6 @@ if ! dnf5 remove -y \
     gnome-terminal \
     gnome-software \
     gnome-control-center \
-    nautilus \
     gdm; then
     echo "Some GNOME components were not present; continuing"
 fi

@@ -32,6 +32,10 @@ FROM ghcr.io/ublue-os/bluefin:stable
 
 # RUN rm /opt && mkdir /opt
 
+### APPLET INSTALLATION
+# Copy pre-built applets from the build-applets workflow artifact
+COPY _applets/ /
+
 ### MODIFICATIONS
 ## make modifications desired in your image and install packages by modifying the build scripts
 ## the following RUN directive does all the things required to run scripts as recommended.

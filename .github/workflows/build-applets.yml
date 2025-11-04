@@ -1,0 +1,109 @@
+---
+name: Build and Update Applets
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Weekly on Sunday
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Check for Applet Updates and Build
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: sudo dnf install -y git jq
+
+      - name: Define Applets
+        id: applets
+        run: |
+          APPLET_JSON=$(jq -n '[
+            {name: "cosmic-ext-applet-emoji-selector", url: "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"},
+            {name: "cosmic-ext-applet-privacy-indicator", url: "https://github.com/D-Brox/cosmic-ext-applet-privacy-indicator"},
+            {name: "cosmic-ext-applet-vitals", url: "https://github.com/Coinio/cosmic-ext-applet-vitals.git"},
+            {name: "cosmic-applet-music-player", url: "https://github.com/Ebbo/cosmic-applet-music-player.git"},
+            {name: "cosmic-ext-applet-caffeine", url: "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
+            {name: "cosmic-connect-applet", url: "https://github.com/cosmic-utils/cosmic-connect-applet.git"}
+          ]')
+          echo "matrix=${APPLET_JSON}" >> $GITHUB_OUTPUT
+
+      - name: Build Applets
+        id: build_applets
+        run: |
+          set -eoux pipefail
+          CHANGES_MADE=false
+          APPLET_LIST='${{ steps.applets.outputs.matrix }}'
+
+          mkdir -p /tmp/artifacts
+
+          for row in $(echo "${APPLET_LIST}" | jq -r '.[] | @base64'); do
+            _jq() {
+              echo ${row} | base64 --decode | jq -r ${1}
+            }
+            APPLET_NAME=$(_jq '.name')
+            APPLET_URL=$(_jq '.url')
+
+            echo "::group:: Checking ${APPLET_NAME}"
+            LATEST_COMMIT=$(git ls-remote "${APPLET_URL}" HEAD | awk '{print $1}')
+            CURRENT_COMMIT=$(jq -r ".[\"${APPLET_NAME}\"] // \"\"" build/applet-versions.json)
+
+            if [ "${LATEST_COMMIT}" == "${CURRENT_COMMIT}" ]; then
+              echo "${APPLET_NAME} is up to date. Skipping build."
+              echo "::endgroup::"
+              continue
+            fi
+
+            echo "New version detected for ${APPLET_NAME}. Building..."
+            CHANGES_MADE=true
+
+            sudo dnf5 install -y --skip-unavailable \
+              just cargo rust git gcc gcc-c++ make libxkbcommon-devel \
+              pipewire-devel dbus-devel openssl-devel pkgconf-pkg-config wayland-devel
+
+            REPO_DIR="/tmp/${APPLET_NAME}"
+            rm -rf "${REPO_DIR}"
+            git clone --depth 1 "${APPLET_URL}" "${REPO_DIR}"
+
+            export CARGO_HOME="/tmp/cargo"
+            export CARGO_TARGET_DIR="/tmp/cargo-target"
+            export JUST_COLOR=never
+            mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
+
+            (
+              set -e
+              pushd "${REPO_DIR}" >/dev/null
+              if just --list 2>/dev/null | grep -q "build-release"; then
+                  just build-release
+              else
+                  cargo build --release
+              fi
+              # Install to the staging directory
+              just install DESTDIR=/tmp/artifacts
+              popd >/dev/null
+            )
+
+            jq ".[\"${APPLET_NAME}\"] = \"${LATEST_COMMIT}\"" build/applet-versions.json > applet-versions.tmp && mv applet-versions.tmp build/applet-versions.json
+            echo "::endgroup::"
+          done
+
+          echo "changes_made=${CHANGES_MADE}" >> $GITHUB_OUTPUT
+
+      - name: Upload Applet Artifacts
+        if: steps.build_applets.outputs.changes_made == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: applet-artifacts
+          path: /tmp/artifacts/
+
+      - name: Commit Updated Versions
+        if: steps.build_applets.outputs.changes_made == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci(applets): Update applet versions"
+          file_pattern: "build/applet-versions.json"
