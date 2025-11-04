@@ -20,7 +20,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git jq
+          sudo apt-get install -y --no-install-recommends git jq ca-certificates
 
       - name: Define Applets
         id: applets
@@ -33,7 +33,9 @@ jobs:
             {name: "cosmic-ext-applet-caffeine", url: "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
             {name: "cosmic-connect-applet", url: "https://github.com/cosmic-utils/cosmic-connect-applet.git"}
           ]')
-          echo "matrix=${APPLET_JSON}" >> $GITHUB_OUTPUT
+          echo "matrix<<EOF" >> $GITHUB_OUTPUT
+          printf '%s\n' "$APPLET_JSON" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Build Applets
         id: build_applets
@@ -64,8 +66,22 @@ jobs:
             echo "New version detected for ${APPLET_NAME}. Building..."
             CHANGES_MADE=true
 
-            sudo apt-get install -y just cargo rustc git gcc g++ make libxkbcommon-dev \
-              libpipewire-0.3-dev libdbus-1-dev libssl-dev pkg-config libwayland-dev
+            # Install build dependencies for Ubuntu
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends \
+              cargo build-essential git gcc g++ make \
+              libxkbcommon-dev libpipewire-0.3-dev libdbus-1-dev \
+              libssl-dev pkg-config libwayland-dev ca-certificates
+
+            # Ensure 'just' is available; if not, install via cargo
+            if ! command -v just >/dev/null 2>&1; then
+              echo "Installing 'just' via cargo"
+              export CARGO_HOME="/tmp/cargo"
+              mkdir -p "$CARGO_HOME"
+              # Ensure cargo is in PATH for this shell
+              export PATH="$CARGO_HOME/bin:$PATH"
+              cargo install --locked just
+            fi
 
             REPO_DIR="/tmp/${APPLET_NAME}"
             rm -rf "${REPO_DIR}"
@@ -79,6 +95,7 @@ jobs:
             (
               set -e
               pushd "${REPO_DIR}" >/dev/null
+              # Prefer 'just build-release' if present, otherwise cargo build --release
               if just --list 2>/dev/null | grep -q "build-release"; then
                   just build-release
               else
