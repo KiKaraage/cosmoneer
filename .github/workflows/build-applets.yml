@@ -101,12 +101,8 @@ jobs:
               else
                   cargo build --release
               fi
-              # Install to the staging directory if Make/just provides install target
-              if just --list 2>/dev/null | grep -q "install"; then
-                just install DESTDIR=/tmp/artifacts || true
-              elif [ -f "Makefile" ]; then
-                make install DESTDIR=/tmp/artifacts || true
-              fi
+              # Install to the staging directory
+              DESTDIR=/tmp/artifacts just install
               popd >/dev/null
             )
 
