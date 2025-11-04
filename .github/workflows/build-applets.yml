@@ -18,7 +18,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Dependencies
-        run: sudo dnf install -y git jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends git jq ca-certificates
 
       - name: Define Applets
         id: applets
@@ -62,9 +64,22 @@ jobs:
             echo "New version detected for ${APPLET_NAME}. Building..."
             CHANGES_MADE=true
 
-            sudo dnf5 install -y --skip-unavailable \
-              just cargo rust git gcc gcc-c++ make libxkbcommon-devel \
-              pipewire-devel dbus-devel openssl-devel pkgconf-pkg-config wayland-devel
+            # Install build dependencies for Ubuntu
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends \
+              cargo build-essential git gcc g++ make \
+              libxkbcommon-dev libpipewire-0.3-dev libdbus-1-dev \
+              libssl-dev pkg-config libwayland-dev ca-certificates
+
+            # Ensure 'just' is available; if not, install via cargo
+            if ! command -v just >/dev/null 2>&1; then
+              echo "Installing 'just' via cargo"
+              export CARGO_HOME="/tmp/cargo"
+              mkdir -p "$CARGO_HOME"
+              # Ensure cargo is in PATH for this shell
+              export PATH="$CARGO_HOME/bin:$PATH"
+              cargo install --locked just
+            fi
 
             REPO_DIR="/tmp/${APPLET_NAME}"
             rm -rf "${REPO_DIR}"
@@ -78,13 +93,18 @@ jobs:
             (
               set -e
               pushd "${REPO_DIR}" >/dev/null
+              # Prefer 'just build-release' if present, otherwise cargo build --release
               if just --list 2>/dev/null | grep -q "build-release"; then
                   just build-release
               else
                   cargo build --release
               fi
-              # Install to the staging directory
-              just install DESTDIR=/tmp/artifacts
+              # Install to the staging directory if Make/just provides install target
+              if just --list 2>/dev/null | grep -q "install"; then
+                just install DESTDIR=/tmp/artifacts || true
+              elif [ -f "Makefile" ]; then
+                make install DESTDIR=/tmp/artifacts || true
+              fi
               popd >/dev/null
             )
 
