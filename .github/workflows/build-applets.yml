@@ -18,7 +18,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Dependencies
-        run: sudo dnf install -y git jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git jq
 
       - name: Define Applets
         id: applets
@@ -62,9 +64,8 @@ jobs:
             echo "New version detected for ${APPLET_NAME}. Building..."
             CHANGES_MADE=true
 
-            sudo dnf5 install -y --skip-unavailable \
-              just cargo rust git gcc gcc-c++ make libxkbcommon-devel \
-              pipewire-devel dbus-devel openssl-devel pkgconf-pkg-config wayland-devel
+            sudo apt-get install -y just cargo rustc git gcc g++ make libxkbcommon-dev \
+              libpipewire-0.3-dev libdbus-1-dev libssl-dev pkg-config libwayland-dev
 
             REPO_DIR="/tmp/${APPLET_NAME}"
             rm -rf "${REPO_DIR}"
@@ -84,7 +85,7 @@ jobs:
                   cargo build --release
               fi
               # Install to the staging directory
-              just install DESTDIR=/tmp/artifacts
+              DESTDIR=/tmp/artifacts just install
               popd >/dev/null
             )
 
