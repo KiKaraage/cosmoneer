@@ -9,9 +9,9 @@ Scripts are named with a number prefix (e.g., `10-build.sh`, `20-onepassword.sh`
 ## Included Scripts
 
 - **`10-build.sh`** - Main build script for base system modifications, package installation, and service configuration
+- (`20-nvidia.sh` reserved, if there are enough demand for it) 
 - **`30-cosmic-desktop.sh`** - Replaces GNOME with COSMIC desktop and installs Niri window manager
 - **`35-cosmic-niri-ext.sh`** - Builds and installs cosmic-ext-alternative-startup for COSMIC-Niri integration
-- **`40-fonts.sh`** - Installs additional fonts and provides helpers for Google/Custom fonts
 - **`50-extras.sh`** - Installs Docker CE and configures development environment
 
 ## Example Scripts

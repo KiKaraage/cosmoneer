@@ -44,7 +44,6 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build/10-build.sh && \
     /ctx/build/30-cosmic-desktop.sh && \
     /ctx/build/35-cosmic-niri-ext.sh && \
-    /ctx/build/36-cosmic-applets.sh && \
     /ctx/build/50-extras.sh
     
 ### LINTING
