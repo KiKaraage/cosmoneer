@@ -146,20 +146,20 @@ jobs:
 
                # Function to check if file is likely a binary (not source/config)
                is_binary() {
-                 local file="$1"
-                 # Must be executable, regular file, and larger than 1MB
-                 [[ -x "$file" ]] && [[ -f "$file" ]] && [[ $(stat -c%s "$file" 2>/dev/null || echo 0) -gt 1048576 ]]
+               local file="$1"
+               # Must be executable, regular file, and larger than 100KB
+               [[ -x "$file" ]] && [[ -f "$file" ]] && [[ $(stat -c%s "$file" 2>/dev/null || echo 0) -gt 102400 ]]
                }
 
                # Search in the target/release directory
                echo "Searching in $MAIN_TARGET_DIR/release..."
                while IFS= read -r -d '' file; do
-               if is_binary "$file"; then
-               BINARY_NAME="$file"
-               echo "Found binary: $BINARY_NAME"
-               break
-               fi
-               done < <(find "$MAIN_TARGET_DIR/release" -name "cosmic*" -type f -executable ! -name "*.ftl" ! -name "*.json" ! -name "*.xml" ! -name "*.toml" 2>/dev/null)
+                 if is_binary "$file"; then
+                   BINARY_NAME="$file"
+                   echo "Found binary: $BINARY_NAME"
+                   break
+                 fi
+               done < <(find "$MAIN_TARGET_DIR/release" -name "cosmic*" -type f -executable ! -name "*.ftl" ! -name "*.json" ! -name "*.xml" ! -name "*.toml" -print0 2>/dev/null)
 
                # Validate we found a binary
                if [[ -z "$BINARY_NAME" || ! -f "$BINARY_NAME" ]]; then
