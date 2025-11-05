@@ -25,10 +25,8 @@ echo "::group:: Remove GNOME Desktop"
 if ! dnf5 remove -y \
     gnome-shell \
     gnome-shell-extension* \
-    gnome-terminal \
-    gnome-software \
+    gnome-tweaks \
     gnome-control-center \
-    nautilus \
     gdm; then
     echo "Some GNOME components were not present; continuing"
 fi
@@ -110,8 +108,10 @@ echo "::endgroup::"
 
 echo "::group:: Install Additional Utilities"
 
-# Install additional utilities that work well with COSMIC
 dnf5 install -y \
+    sfwbar \
+    msedit \
+    brightnessctl \
     fontawesome-fonts \
     fontawesome-fonts-web
 
@@ -138,4 +138,3 @@ echo "COSMIC data control protocol enabled"
 echo "::endgroup::"
 
 echo "COSMIC desktop installation complete!"
-echo "After booting, select 'COSMIC' session at the login screen"
