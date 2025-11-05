@@ -101,43 +101,90 @@ jobs:
             (
               set -e
               pushd "${REPO_DIR}" >/dev/null
+              
+              # Check if we have a justfile and what build targets are available
+              echo "Available just targets:"
+              just --list 2>/dev/null || echo "No justfile found"
+              
               # Prefer 'just build-release' if present, otherwise cargo build --release
               if just --list 2>/dev/null | grep -q "build-release"; then
+                  echo "Using just build-release..."
                   just build-release
               else
+                  echo "Using cargo build --release..."
                   cargo build --release
+              fi
+              
+              # Check if build succeeded and find the binary
+              echo "Build completed. Checking for build output..."
+              
+              # List possible binary locations
+              echo "Checking target directory structure:"
+              ls -la target/ 2>/dev/null || echo "No target directory"
+              ls -la target/release/ 2>/dev/null || echo "No target/release directory"
+              
+              # Some applets build in subdirectories (like music-player)
+              if [[ ! -d "target/release" ]]; then
+                echo "Looking for binaries in subdirectories..."
+                find . -name "target" -type d | while read -r target_dir; do
+                  echo "Found target directory: $target_dir"
+                  ls -la "$target_dir/release/" 2>/dev/null || echo "No release in $target_dir"
+                done
               fi
               
               # Create applet-specific artifact directory
               APPLET_ARTIFACT_DIR="/tmp/artifacts/${APPLET_NAME}"
               mkdir -p "$APPLET_ARTIFACT_DIR"
               
-              # Find and copy the built binary to artifacts
-              echo "Searching for binaries in target/release..."
-              ls -la target/release/ 2>/dev/null || echo "target/release directory not found"
+              # Search for binaries in multiple possible locations
+              echo "Searching for cosmic binaries..."
+              BINARY_NAME=""
               
-              # List all cosmic* files to debug
-              echo "All cosmic* files found:"
-              find target/release -name "cosmic*" -type f 2>/dev/null | head -5
-              
-              # Check if files are executable
-              echo "Checking executable permissions:"
-              find target/release -name "cosmic*" -type f 2>/dev/null | while read -r file; do
-                if [[ -x "$file" ]]; then
-                  echo "✓ $file (executable)"
-                else
-                  echo "✗ $file (not executable) - making executable"
-                  chmod +x "$file"
+              # Try standard target/release first
+              if [[ -d "target/release" ]]; then
+                BINARY_NAME=$(find target/release -name "cosmic*" -type f 2>/dev/null | head -1)
+                if [[ -n "$BINARY_NAME" ]]; then
+                  echo "Found binary in target/release: $BINARY_NAME"
                 fi
-              done
-              
-              BINARY_NAME=$(find target/release -name "cosmic*applet*" -type f -executable 2>/dev/null | head -1)
-              if [[ -z "$BINARY_NAME" ]]; then
-                echo "No cosmic*applet* found, trying cosmic* pattern..."
-                BINARY_NAME=$(find target/release -name "cosmic*" -type f -executable 2>/dev/null | head -1)
               fi
               
-              echo "Found binary: $BINARY_NAME"
+              # If not found, search in subdirectories
+              if [[ -z "$BINARY_NAME" ]]; then
+                echo "Searching in subdirectories..."
+                BINARY_NAME=$(find . -path "*/target/release/*" -name "cosmic*" -type f 2>/dev/null | head -1)
+                if [[ -n "$BINARY_NAME" ]]; then
+                  echo "Found binary in subdirectory: $BINARY_NAME"
+                fi
+              fi
+              
+              # Last resort: search anywhere for cosmic binaries
+              if [[ -z "$BINARY_NAME" ]]; then
+                echo "Last resort search anywhere..."
+                BINARY_NAME=$(find . -name "cosmic*" -type f 2>/dev/null | head -1)
+                if [[ -n "$BINARY_NAME" ]]; then
+                  echo "Found binary anywhere: $BINARY_NAME"
+                fi
+              fi
+              
+              # Make sure binary is executable
+              if [[ -n "$BINARY_NAME" && -f "$BINARY_NAME" ]]; then
+                chmod +x "$BINARY_NAME"
+                echo "Made binary executable: $BINARY_NAME"
+              else
+                echo "::error:: No cosmic binary found after build"
+                echo "::error:: Directory contents:"
+                find . -name "*.rs" | head -5
+                echo "::error:: Build artifacts:"
+                find . -name "target" -type d | while read -r dir; do
+                  echo "Contents of $dir:"
+                  ls -la "$dir/" 2>/dev/null || echo "Cannot list $dir"
+                  if [[ -d "$dir/release" ]]; then
+                    echo "Contents of $dir/release:"
+                    ls -la "$dir/release/" 2>/dev/null || echo "Cannot list $dir/release"
+                  fi
+                done
+                exit 1
+              fi
               if [[ -n "$BINARY_NAME" && -f "$BINARY_NAME" ]]; then
                   BINARY_BASENAME=$(basename "$BINARY_NAME")
                   cp "$BINARY_NAME" "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME"
