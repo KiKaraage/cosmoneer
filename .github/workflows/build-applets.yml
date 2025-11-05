@@ -233,56 +233,6 @@ jobs:
                   fi
                 done
               fi
-                    if [[ -e "$file_path" ]]; then
-                      mkdir -p "$APPLET_ARTIFACT_DIR/$(dirname "$file_path")"
-                      cp "$file_path" "$APPLET_ARTIFACT_DIR/$file_path"
-                      echo "Copied quoted file $file_path to artifacts"
-                    fi
-                  done
-                  
-                  # Pattern 3: directory references without ./
-                  echo "$line" | grep -oE '\b(data|i18n-json|schema|icons|po|locale|applications|share)\b' | while read -r dir_name; do
-                    if [[ -d "$dir_name" ]]; then
-                      cp -r "$dir_name" "$APPLET_ARTIFACT_DIR/"
-                      echo "Copied directory $dir_name to artifacts"
-                    fi
-                  done
-                  
-                  # Pattern 4: find commands and their paths
-                  if echo "$line" | grep -q "find"; then
-                    # Extract paths from find commands
-                    echo "$line" | grep -oE "find [^[:space:]]+" | sed 's/find //' | while read -r find_path; do
-                      if [[ -d "$find_path" ]]; then
-                        cp -r "$find_path" "$APPLET_ARTIFACT_DIR/"
-                        echo "Copied find path $find_path to artifacts"
-                      fi
-                    done
-                  fi
-                  
-                  # Pattern 5: install commands with source files
-                  if echo "$line" | grep -q "install.*-D"; then
-                    # Extract source files from install commands
-                    echo "$line" | grep -oE 'install[^-]*-D[^[:space:]]+ [^[:space:]]+' | awk '{print $3}' | while read -r install_src; do
-                      if [[ -e "$install_src" ]]; then
-                        if [[ -d "$install_src" ]]; then
-                          cp -r "$install_src" "$APPLET_ARTIFACT_DIR/"
-                          echo "Copied install source directory $install_src to artifacts"
-                        else
-                          mkdir -p "$APPLET_ARTIFACT_DIR/$(dirname "$install_src")"
-                          cp "$install_src" "$APPLET_ARTIFACT_DIR/$install_src"
-                          echo "Copied install source file $install_src to artifacts"
-                        fi
-                      fi
-                    done
-                  fi
-                done
-                
-                # Also copy any .desktop files found anywhere in the project
-                find . -name "*.desktop" -exec cp {} "$APPLET_ARTIFACT_DIR/" \; 2>/dev/null || true
-                
-              else
-                # Fallback: copy common directories if no justfile
-                echo "No justfile found, using fallback directory detection"
                 for dir in data i18n-json schema icons; do
                   if [[ -d "$dir" ]]; then
                     cp -r "$dir" "$APPLET_ARTIFACT_DIR/"
