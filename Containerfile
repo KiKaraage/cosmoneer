@@ -4,8 +4,13 @@ COPY build /build
 COPY custom /custom
 
 # Copy applet artifacts if available
-ARG APPLET_ARTIFACTS_DIR
-COPY ${APPLET_ARTIFACTS_DIR:-/dev/null} /applets
+ARG APPLET_ARTIFACTS_DIR=/dev/null
+RUN if [ -d "${APPLET_ARTIFACTS_DIR}" ] && [ "$(ls -A ${APPLET_ARTIFACTS_DIR} 2>/dev/null)" ]; then \
+        mkdir -p /applets && \
+        cp -r ${APPLET_ARTIFACTS_DIR}/* /applets/; \
+    else \
+        mkdir -p /applets; \
+    fi
 
 ###############################################################################
 # PROJECT NAME CONFIGURATION
