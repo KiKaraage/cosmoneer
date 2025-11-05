@@ -96,28 +96,22 @@ jobs:
              mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
 
              # Build with timeout to prevent hanging
-             if ! timeout 1800 bash -c '
+             (
                set -e
                trap "popd >/dev/null 2>/dev/null || true" EXIT
-               pushd "'"$REPO_DIR"'" >/dev/null
+               pushd "${REPO_DIR}" >/dev/null
                
                # Check if we have a justfile and what build targets are available
                echo "Available just targets:"
                just --list 2>/dev/null || echo "No justfile found"
                
-               # Prefer '\''just build-release'\'' if present, otherwise cargo build --release
+               # Prefer 'just build-release' if present, otherwise cargo build --release
                if just --list 2>/dev/null | grep -q "build-release"; then
                    echo "Using just build-release..."
-                   if ! timeout 600 just build-release; then
-                     echo "::error:: just build-release failed or timed out"
-                     exit 1
-                   fi
+                   timeout 600 just build-release
                else
                    echo "Using cargo build --release..."
-                   if ! timeout 600 cargo build --release; then
-                     echo "::error:: cargo build --release failed or timed out"
-                     exit 1
-                   fi
+                   timeout 600 cargo build --release
                fi
                
                # Verify build succeeded by checking for target directory
@@ -142,7 +136,7 @@ jobs:
                fi
                
                # Create applet-specific artifact directory
-               APPLET_ARTIFACT_DIR="/tmp/artifacts/'"${APPLET_NAME}"'"
+               APPLET_ARTIFACT_DIR="/tmp/artifacts/${APPLET_NAME}"
                mkdir -p "$APPLET_ARTIFACT_DIR"
               
                # Search for actual binary files (exclude source files, translations, etc.)
@@ -340,10 +334,10 @@ jobs:
               fi
               
                popd >/dev/null
-             '; then
+             ) || {
                echo "::error:: Build timed out or failed for ${APPLET_NAME}"
                exit 1
-             fi
+             }
 
             jq ".[\"${APPLET_NAME}\"] = \"${LATEST_COMMIT}\"" build/applet-versions.json > applet-versions.tmp && mv applet-versions.tmp build/applet-versions.json
             echo "::endgroup::"
