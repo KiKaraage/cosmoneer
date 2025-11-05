@@ -104,11 +104,10 @@ jobs:
           # This generates all the tags for your image, you can add custom tags here too!
           # Default tags are "$DEFAULT_TAG", "latest", and "daily" based on trigger
           tags: |
-            type=raw,value=${{ env.DEFAULT_TAG }}
+            type=raw,value=${{ env.DEFAULT_TAG }},enable=${{ github.event_name == 'schedule' }}
             type=raw,value=${{ steps.date.outputs.wib_date }},enable=${{ github.event_name == 'schedule' }}
-            type=raw,value=${{ steps.date.outputs.wib_date }}.{{run_number}},enable=${{ github.event_name == 'push' }}
+            type=raw,value=${{ steps.date.outputs.wib_date }}.${{ github.run_number }},enable=${{ github.event_name == 'push' }}
             type=raw,value=latest,enable=${{ github.event_name == 'push' || github.event_name == 'schedule' }}
-            type=raw,value=daily,enable=${{ github.event_name == 'schedule' }}
             type=sha,enable=${{ github.event_name == 'pull_request' }}
             type=ref,event=pr
           labels: |
@@ -120,7 +119,7 @@ jobs:
             org.opencontainers.image.title=${{ env.IMAGE_NAME }}
             org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
             org.opencontainers.image.vendor=${{ github.repository_owner }}
-            org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYMMDD'}}
+            org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.${{ steps.date.outputs.wib_date }}
             io.artifacthub.package.deprecated=false
             io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
             io.artifacthub.package.license=Apache-2.0
@@ -148,31 +147,31 @@ jobs:
             {"name": "cosmic-connect-applet", "url": "https://github.com/cosmic-utils/cosmic-connect-applet.git"}
           ]'
           
-          echo "Searching for artifacts in repository: $GH_REPO"
+          echo "Searching for specific applet workflow runs in $GH_REPO"
           
-          # Download artifacts from recent successful applet builds in this repository
+          # For each applet, find the most recent successful workflow run by name
           echo "$APPLET_JSON" | jq -r '.[] | .name' | while read -r applet_name; do
-            echo "Checking for artifact: $applet_name"
+            echo "Looking for workflow run: Build $applet_name"
             
-            # Get the most recent successful workflow run for this applet in this repository
-            run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applet.yml" --limit 10 --json databaseId,conclusion,name -q ".[] | select(.conclusion == \"success\" and (.name | contains(\"$applet_name\"))) | .databaseId" | head -1)
+            # Get the most recent successful workflow run for this specific applet by name
+            run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applet.yml" --limit 20 --json databaseId,conclusion,name -q ".[] | select(.conclusion == \"success\" and (.name == \"Build $applet_name\")) | .databaseId" | head -1)
             
             if [ -n "$run_id" ]; then
-              echo "Found successful run $run_id for $applet_name in $GH_REPO"
+              echo "Found successful run $run_id for 'Build $applet_name'"
               
-              # Download artifact if it exists
-              echo "Attempting to download artifact for $applet_name from run $run_id"
-              if gh run download --repo "$GH_REPO" "$run_id" --name "$applet_name" --dir "/tmp/applet-artifacts" 2>/dev/null; then
-                echo "Successfully downloaded $applet_name artifact"
+              # Download all artifacts from this specific applet's workflow run
+              echo "Downloading artifacts from 'Build $applet_name' run $run_id"
+              if gh run download --repo "$GH_REPO" "$run_id" --dir "/tmp/applet-artifacts" 2>/dev/null; then
+                echo "Successfully downloaded artifacts for $applet_name"
               else
-                echo "No artifact found for $applet_name in run $run_id"
+                echo "No artifacts found for $applet_name in run $run_id"
               fi
             else
-              echo "No successful run found for $applet_name in $GH_REPO"
+              echo "No successful workflow run found for 'Build $applet_name'"
             fi
           done
           
-          echo "Downloaded artifacts:"
+          echo "Final downloaded artifacts:"
           ls -la /tmp/applet-artifacts/ || echo "No artifacts directory contents"
         continue-on-error: true
 
