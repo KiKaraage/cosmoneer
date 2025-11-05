@@ -4,8 +4,8 @@ COPY build /build
 COPY custom /custom
 
 # Copy applet artifacts if available (handle missing directory gracefully)
-ARG APPLET_ARTIFACTS_DIR=/dev/null
-COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts 2>/dev/null || true
+ARG APPLET_ARTIFACTS_DIR=./applets-artifacts
+COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts
 
 ###############################################################################
 # PROJECT NAME CONFIGURATION

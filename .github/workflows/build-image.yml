@@ -176,6 +176,20 @@ jobs:
           ls -la /tmp/applet-artifacts/ || echo "No artifacts directory contents"
         continue-on-error: true
 
+      - name: Copy Artifacts to Build Context
+        run: |
+          # Copy artifacts to the repository directory so they're available to the Containerfile
+          if [ -d "/tmp/applet-artifacts" ] && [ "$(ls -A /tmp/applet-artifacts 2>/dev/null)" ]; then
+            echo "Copying artifacts to build context..."
+            mkdir -p ./applets-artifacts
+            cp -r /tmp/applet-artifacts/* ./applets-artifacts/
+            echo "Artifacts copied to build context:"
+            ls -la ./applets-artifacts/
+          else
+            echo "No artifacts to copy"
+            mkdir -p ./applets-artifacts
+          fi
+
       - name: Build Image
         id: build_image
         uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
@@ -189,7 +203,7 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           oci: true
           build-args: |
-            APPLET_ARTIFACTS_DIR=/tmp/applet-artifacts
+            APPLET_ARTIFACTS_DIR=./applets-artifacts
 
       # Rechunk (OPTIONAL): Rechunker optimizes container image layers for better resumability and fixes some distribution errors.
       # It doesn't make downloads faster but provides more reliable image distribution.
