@@ -77,16 +77,13 @@ jobs:
              sudo apt-get install -y --no-install-recommends \
                cargo build-essential git gcc g++ make \
                libxkbcommon-dev libpipewire-0.3-dev libdbus-1-dev \
-               libssl-dev pkg-config libwayland-dev ca-certificates
+               libssl-dev pkg-config libwayland-dev ca-certificates \
+               just
 
-             # Ensure 'just' is available; if not, install via cargo
+             # Verify just is available
              if ! command -v just >/dev/null 2>&1; then
-               echo "Installing 'just' via cargo"
-               export CARGO_HOME="/tmp/cargo"
-               mkdir -p "$CARGO_HOME"
-               # Ensure cargo is in PATH for this shell
-               export PATH="$CARGO_HOME/bin:$PATH"
-               cargo install --locked just
+               echo "::error:: just installation failed"
+               exit 1
              fi
 
              REPO_DIR="/tmp/${APPLET_NAME}"
