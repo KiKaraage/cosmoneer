@@ -12,6 +12,7 @@ Scripts are named with a number prefix (e.g., `10-build.sh`, `20-onepassword.sh`
 - (`20-nvidia.sh` reserved, if there are enough demand for it) 
 - **`30-cosmic-desktop.sh`** - Replaces GNOME with COSMIC desktop and installs Niri window manager
 - **`35-cosmic-niri-ext.sh`** - Builds and installs cosmic-ext-alternative-startup for COSMIC-Niri integration
+- **`36-cosmic-applets.sh`** - Installs COSMIC applets from build artifacts (binary, desktop files, icons, i18n)
 - **`50-extras.sh`** - Installs Docker CE and configures development environment
 
 ## Example Scripts
@@ -64,7 +65,11 @@ To temporarily disable a script without deleting it:
 The Containerfile runs scripts like this:
 
 ```dockerfile
-RUN /ctx/build/10-build.sh
+RUN /ctx/build/10-build.sh && \
+    /ctx/build/30-cosmic-desktop.sh && \
+    /ctx/build/35-cosmic-niri-ext.sh && \
+    /ctx/build/36-cosmic-applets.sh && \
+    /ctx/build/50-extras.sh
 ```
 
 If you want to run multiple scripts, you can:
