@@ -161,9 +161,9 @@ jobs:
               echo "Found successful run $run_id for $applet_name in $GH_REPO"
               
               # Download artifact if it exists
-              if gh run view --repo "$GH_REPO" "$run_id" --json artifacts -q '.artifacts[] | select(.name == "'"$applet_name"'") | .name' | grep -q "$applet_name"; then
-                echo "Downloading artifact for $applet_name"
-                gh run download --repo "$GH_REPO" "$run_id" --name "$applet_name" --dir "/tmp/applet-artifacts" || echo "Failed to download $applet_name artifact"
+              echo "Attempting to download artifact for $applet_name from run $run_id"
+              if gh run download --repo "$GH_REPO" "$run_id" --name "$applet_name" --dir "/tmp/applet-artifacts" 2>/dev/null; then
+                echo "Successfully downloaded $applet_name artifact"
               else
                 echo "No artifact found for $applet_name in run $run_id"
               fi

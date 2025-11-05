@@ -3,14 +3,9 @@ FROM scratch AS ctx
 COPY build /build
 COPY custom /custom
 
-# Copy applet artifacts if available
+# Copy applet artifacts if available (handle missing directory gracefully)
 ARG APPLET_ARTIFACTS_DIR=/dev/null
-RUN if [ -d "${APPLET_ARTIFACTS_DIR}" ] && [ "$(ls -A ${APPLET_ARTIFACTS_DIR} 2>/dev/null)" ]; then \
-        mkdir -p /applets && \
-        cp -r ${APPLET_ARTIFACTS_DIR}/* /applets/; \
-    else \
-        mkdir -p /applets; \
-    fi
+COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts 2>/dev/null || true
 
 ###############################################################################
 # PROJECT NAME CONFIGURATION
@@ -50,12 +45,27 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
+    set -e && \
+    echo "Setting up applets directory..." && \
+    mkdir -p /applets && \
+    if [ -d "/ctx/applets-artifacts" ] && [ "$(ls -A /ctx/applets-artifacts 2>/dev/null)" ]; then \
+        echo "Found applet artifacts, copying to /applets..." && \
+        cp -r /ctx/applets-artifacts/* /applets/ && \
+        echo "Applet artifacts copied successfully:" && \
+        ls -la /applets/ || true; \
+    else \
+        echo "No applet artifacts found, /applets will be empty"; \
+    fi && \
+    echo "Running build scripts..." && \
     /ctx/build/10-build.sh && \
     /ctx/build/30-cosmic-desktop.sh && \
     /ctx/build/35-cosmic-niri-ext.sh && \
     /ctx/build/36-cosmic-applets.sh && \
-    /ctx/build/50-extras.sh
+    /ctx/build/50-extras.sh && \
+    echo "Build scripts completed successfully"
     
 ### LINTING
 ## Verify final image and contents are correct.
-RUN bootc container lint
+RUN echo "Running container lint..." && \
+    bootc container lint && \
+    echo "Container lint passed successfully"
