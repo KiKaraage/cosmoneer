@@ -58,8 +58,8 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 echo "Installed binary: $binary_name"
             fi
             
-            # Run just install if justfile exists and has install target
-            if [ -f "justfile" ] && just --list 2>/dev/null | grep -q "install"; then
+            # Run just install if justfile exists and has install target AND binary exists
+            if [ -f "justfile" ] && just --list 2>/dev/null | grep -q "install" && [ -n "$binary" ]; then
                 echo "Running just install for $applet_name"
                 just install
             elif [ -f "install.sh" ]; then
