@@ -102,7 +102,7 @@ jobs:
               -X POST \
               -H "Accept: application/vnd.github.v3+json" \
               -f event_type="build-applet" \
-              -f client_payload="{\"applet_name\":\"${APPLET_NAME}\",\"applet_url\":\"${APPLET_URL}\"}"
+              -F client_payload="{\"applet_name\":\"${APPLET_NAME}\",\"applet_url\":\"${APPLET_URL}\"}"
 
             echo "::endgroup::"
           done
