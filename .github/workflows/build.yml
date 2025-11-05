@@ -11,6 +11,7 @@ on:
       - main
     paths-ignore:
       - '**/README.md'
+      - '.github/workflows/build-applets.yml'
   workflow_dispatch:
 
 env:
