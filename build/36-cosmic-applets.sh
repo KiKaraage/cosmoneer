@@ -18,15 +18,19 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             unzip -q "$zip_file" -d "$temp_dir"
             
             # Move contents up one level if there's a single nested directory
+            # ZIP contains: cosmic-ext-applet-privacy-indicator/
+            # We want: /applets/cosmic-ext-applet-privacy-indicator/
             nested_dir=$(find "$temp_dir" -mindepth 1 -maxdepth 1 -type d | head -1)
             if [ -n "$nested_dir" ] && [ "$(find "$temp_dir" -mindepth 1 -maxdepth 1 | wc -l)" -eq 1 ]; then
                 echo "Moving contents from nested directory..."
-                mv "$nested_dir"/* "/applets/$applet_name/"
-                rmdir "$nested_dir"
+                mv "$nested_dir" "/applets/"
             else
+                echo "No nested directory found, moving all contents..."
+                mkdir -p "/applets/$applet_name"
                 mv "$temp_dir"/* "/applets/$applet_name/"
             fi
             rmdir "$temp_dir"
+            rm "$zip_file"  # Remove ZIP after extraction
         fi
     done
     
