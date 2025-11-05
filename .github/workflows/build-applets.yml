@@ -1,5 +1,6 @@
 ---
 name: Build and Update Applets
+
 on:
   schedule:
     - cron: '0 0 * * 0' # Weekly on Sunday
@@ -106,16 +107,190 @@ jobs:
               else
                   cargo build --release
               fi
+              
+              # Create applet-specific artifact directory
+              APPLET_ARTIFACT_DIR="/tmp/artifacts/${APPLET_NAME}"
+              mkdir -p "$APPLET_ARTIFACT_DIR"
+              
               # Find and copy the built binary to artifacts
               BINARY_NAME=$(find target/release -name "cosmic*applet*" -type f -executable 2>/dev/null | head -1)
+              if [[ -z "$BINARY_NAME" ]]; then
+                BINARY_NAME=$(find target/release -name "cosmic*" -type f -executable 2>/dev/null | head -1)
+              fi
               if [[ -n "$BINARY_NAME" && -f "$BINARY_NAME" ]]; then
                   BINARY_BASENAME=$(basename "$BINARY_NAME")
-                  cp "$BINARY_NAME" "/tmp/artifacts/$BINARY_BASENAME"
+                  cp "$BINARY_NAME" "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME"
                   echo "Copied $BINARY_BASENAME to artifacts"
               else
                   echo "::error:: No binary found in target/release"
                   exit 1
               fi
+              
+              # Copy justfile if it exists
+              if [[ -f "justfile" ]]; then
+                cp justfile "$APPLET_ARTIFACT_DIR/"
+                echo "Copied justfile to artifacts"
+              fi
+              
+              # Parse entire justfile to identify all file references (excluding build commands)
+              if [[ -f "justfile" ]]; then
+                echo "Parsing justfile for all file references..."
+                
+                # Read the entire justfile content
+                JUSTFILE_CONTENT=$(cat justfile)
+                
+                # Function to copy file/directory preserving structure
+                copy_with_structure() {
+                  local src="$1"
+                  local dst_base="$2"
+                  
+                  if [[ -e "$src" ]]; then
+                    local dst_path="$dst_base/$src"
+                    mkdir -p "$(dirname "$dst_path")"
+                    if [[ -d "$src" ]]; then
+                      cp -r "$src" "$dst_path"
+                      echo "Copied directory $src to artifacts (preserving structure)"
+                    else
+                      cp "$src" "$dst_path"
+                      echo "Copied file $src to artifacts (preserving structure)"
+                    fi
+                  fi
+                }
+                
+                # Extract variable assignments that might contain paths
+                echo "$JUSTFILE_CONTENT" | grep -E "^[a-zA-Z][a-zA-Z0-9_-]*\s*:=.*" | while IFS= read -r line; do
+                  # Extract paths from variable assignments
+                  # Pattern: desktop-src := 'res' / desktop
+                  echo "$line" | grep -oE "'[^']*'|" [^"]*" | sed "s/['\"]//g" | while read -r path_part; do
+                    copy_with_structure "$path_part" "$APPLET_ARTIFACT_DIR"
+                  done
+                done
+                
+                # Skip build-related targets and parse file references from non-build targets
+                echo "$JUSTFILE_CONTENT" | grep -v -E "^(build|test|check|clean|run|vendor|fmt|dev|default|spellcheck|validate|flatpak)[^:]*:" | while IFS= read -r line; do
+                  # Skip empty lines and comments
+                  [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+                  
+                  # Pattern 1: Variable references in install commands ({{bin-src}}, {{desktop-src}}, etc.)
+                  echo "$line" | grep -oE '\{\{[^}]+\}\}' | sed 's/[{}]*//g' | while read -r var_name; do
+                    # Look for the variable definition in the justfile
+                    var_value=$(echo "$JUSTFILE_CONTENT" | grep -E "^[[:space:]]*$var_name\s*:=" | tail -1 | sed -E "s/^[[:space:]]*$var_name\s*:=\s*//" | sed "s/[[:space:]]*$//")
+                    if [[ -n "$var_value" ]]; then
+                      # Resolve the variable value (handle concatenations like 'res' / desktop)
+                      resolved_path=$(echo "$var_value" | sed "s/'//g" | sed 's| |/|g' | sed 's|/ |//g')
+                      copy_with_structure "$resolved_path" "$APPLET_ARTIFACT_DIR"
+                    fi
+                  done
+                  
+                  # Pattern 2: Direct file paths in install commands
+                  if echo "$line" | grep -q "install.*-D"; then
+                    # Extract source files from install commands (first argument after -D)
+                    echo "$line" | sed -E 's/.*install[^-]*-D[^[:space:]]+[[:space:]]+([^[:space:]]+).*/\1/' | while read -r install_src; do
+                      # Skip if it's a variable reference (already handled above)
+                      if [[ ! "$install_src" =~ ^\{\{ ]]; then
+                        clean_src=$(echo "$install_src" | sed "s/[{}']//g")
+                        copy_with_structure "$clean_src" "$APPLET_ARTIFACT_DIR"
+                      fi
+                    done
+                  fi
+                  
+                  # Pattern 3: for loops with directory paths
+                  if echo "$line" | grep -q "for.*in.*ls"; then
+                    # Extract directory from for loops like "for size in `ls {{icons-src}}`"
+                    loop_dir=$(echo "$line" | grep -oE '`ls [^`]+`' | sed 's/`ls //' | sed 's/`//' | sed 's/[{}]*//g')
+                    copy_with_structure "$loop_dir" "$APPLET_ARTIFACT_DIR"
+                  fi
+                  
+                  # Pattern 4: Import statements
+                  if echo "$line" | grep -q "import"; then
+                    import_file=$(echo "$line" | grep -oE 'import "[^"]+"' | sed 's/import "//' | sed 's/"//')
+                    copy_with_structure "$import_file" "$APPLET_ARTIFACT_DIR"
+                  fi
+                done
+                
+                # Pattern 5: Common directories that appear in all applets
+                for dir in res data i18n-json schema icons; do
+                  copy_with_structure "$dir" "$APPLET_ARTIFACT_DIR"
+                done
+                
+                # Pattern 6: Copy any .desktop, .metainfo.xml, .svg files found anywhere (preserving structure)
+                find . -name "*.desktop" -exec bash -c 'copy_with_structure "${1#./}" "$2"' _ {} "$APPLET_ARTIFACT_DIR" \; 2>/dev/null || true
+                find . -name "*.metainfo.xml" -exec bash -c 'copy_with_structure "${1#./}" "$2"' _ {} "$APPLET_ARTIFACT_DIR" \; 2>/dev/null || true
+                find . -name "*.svg" -exec bash -c 'copy_with_structure "${1#./}" "$2"' _ {} "$APPLET_ARTIFACT_DIR" \; 2>/dev/null || true
+                
+                # Pattern 7: Check for install.sh scripts (like in privacy-indicator)
+                if [[ -f "install.sh" ]]; then
+                  copy_with_structure "install.sh" "$APPLET_ARTIFACT_DIR"
+                fi
+                
+              else
+                # Fallback: copy common directories if no justfile
+                echo "No justfile found, using fallback directory detection"
+                for dir in res data i18n-json schema icons; do
+                  if [[ -d "$dir" ]]; then
+                    cp -r "$dir" "$APPLET_ARTIFACT_DIR/"
+                    echo "Copied $dir directory to artifacts (fallback)"
+                  fi
+                done
+              fi
+                    if [[ -e "$file_path" ]]; then
+                      mkdir -p "$APPLET_ARTIFACT_DIR/$(dirname "$file_path")"
+                      cp "$file_path" "$APPLET_ARTIFACT_DIR/$file_path"
+                      echo "Copied quoted file $file_path to artifacts"
+                    fi
+                  done
+                  
+                  # Pattern 3: directory references without ./
+                  echo "$line" | grep -oE '\b(data|i18n-json|schema|icons|po|locale|applications|share)\b' | while read -r dir_name; do
+                    if [[ -d "$dir_name" ]]; then
+                      cp -r "$dir_name" "$APPLET_ARTIFACT_DIR/"
+                      echo "Copied directory $dir_name to artifacts"
+                    fi
+                  done
+                  
+                  # Pattern 4: find commands and their paths
+                  if echo "$line" | grep -q "find"; then
+                    # Extract paths from find commands
+                    echo "$line" | grep -oE "find [^[:space:]]+" | sed 's/find //' | while read -r find_path; do
+                      if [[ -d "$find_path" ]]; then
+                        cp -r "$find_path" "$APPLET_ARTIFACT_DIR/"
+                        echo "Copied find path $find_path to artifacts"
+                      fi
+                    done
+                  fi
+                  
+                  # Pattern 5: install commands with source files
+                  if echo "$line" | grep -q "install.*-D"; then
+                    # Extract source files from install commands
+                    echo "$line" | grep -oE 'install[^-]*-D[^[:space:]]+ [^[:space:]]+' | awk '{print $3}' | while read -r install_src; do
+                      if [[ -e "$install_src" ]]; then
+                        if [[ -d "$install_src" ]]; then
+                          cp -r "$install_src" "$APPLET_ARTIFACT_DIR/"
+                          echo "Copied install source directory $install_src to artifacts"
+                        else
+                          mkdir -p "$APPLET_ARTIFACT_DIR/$(dirname "$install_src")"
+                          cp "$install_src" "$APPLET_ARTIFACT_DIR/$install_src"
+                          echo "Copied install source file $install_src to artifacts"
+                        fi
+                      fi
+                    done
+                  fi
+                done
+                
+                # Also copy any .desktop files found anywhere in the project
+                find . -name "*.desktop" -exec cp {} "$APPLET_ARTIFACT_DIR/" \; 2>/dev/null || true
+                
+              else
+                # Fallback: copy common directories if no justfile
+                echo "No justfile found, using fallback directory detection"
+                for dir in data i18n-json schema icons; do
+                  if [[ -d "$dir" ]]; then
+                    cp -r "$dir" "$APPLET_ARTIFACT_DIR/"
+                    echo "Copied $dir directory to artifacts (fallback)"
+                  fi
+                done
+              fi
+              
               popd >/dev/null
             )
 
