@@ -1,5 +1,6 @@
 ---
 name: Build Applet
+run-name: "Build ${{ github.event.client_payload.applet_name }}"
 
 on:
   repository_dispatch:
@@ -281,8 +282,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Upload Applet Artifact
-        run: |
-          APPLET_NAME="${{ github.event.client_payload.applet_name }}"
-          if [ -d "/tmp/artifacts/${APPLET_NAME}" ]; then
-            gh run upload --name "${APPLET_NAME}" "/tmp/artifacts/${APPLET_NAME}"
-          fi
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.client_payload.applet_name }}
+          path: /tmp/artifacts/${{ github.event.client_payload.applet_name }}/
