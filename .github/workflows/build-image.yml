@@ -131,11 +131,49 @@ jobs:
           sep-annotations: " "
 
       - name: Download Applet Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: cosmic-*
-          path: /tmp/applet-artifacts
-          merge-multiple: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -e
+          mkdir -p /tmp/applet-artifacts
+          
+          # Get list of applets from the check-applet-updates workflow
+          APPLET_LIST='[
+            {name: "cosmic-ext-applet-emoji-selector", url: "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"},
+            {name: "cosmic-ext-applet-privacy-indicator", url: "https://github.com/D-Brox/cosmic-ext-applet-privacy-indicator"},
+            {name: "cosmic-ext-applet-vitals", url: "https://github.com/Coinio/cosmic-ext-applet-vitals.git"},
+            {name: "cosmic-applet-music-player", url: "https://github.com/Ebbo/cosmic-applet-music-player.git"},
+            {name: "cosmic-ext-applet-caffeine", url: "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
+            {name: "cosmic-connect-applet", url: "https://github.com/cosmic-utils/cosmic-connect-applet.git"}
+          ]'
+          
+          echo "Searching for artifacts in repository: $GH_REPO"
+          
+          # Download artifacts from recent successful applet builds in this repository
+          echo "$APPLET_LIST" | jq -r '.[] | .name' | while read -r applet_name; do
+            echo "Checking for artifact: $applet_name"
+            
+            # Get the most recent successful workflow run for this applet in this repository
+            run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applet.yml" --limit 10 --json databaseId,conclusion,name -q ".[] | select(.conclusion == \"success\" and (.name | contains(\"$applet_name\"))) | .databaseId" | head -1)
+            
+            if [ -n "$run_id" ]; then
+              echo "Found successful run $run_id for $applet_name in $GH_REPO"
+              
+              # Download artifact if it exists
+              if gh run view --repo "$GH_REPO" "$run_id" --json artifacts -q '.artifacts[] | select(.name == "'"$applet_name"'") | .name' | grep -q "$applet_name"; then
+                echo "Downloading artifact for $applet_name"
+                gh run download --repo "$GH_REPO" "$run_id" --name "$applet_name" --dir "/tmp/applet-artifacts" || echo "Failed to download $applet_name artifact"
+              else
+                echo "No artifact found for $applet_name in run $run_id"
+              fi
+            else
+              echo "No successful run found for $applet_name in $GH_REPO"
+            fi
+          done
+          
+          echo "Downloaded artifacts:"
+          ls -la /tmp/applet-artifacts/ || echo "No artifacts directory contents"
         continue-on-error: true
 
       - name: Build Image
