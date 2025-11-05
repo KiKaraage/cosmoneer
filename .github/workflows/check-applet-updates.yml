@@ -98,11 +98,11 @@ jobs:
             jq ".[\"${APPLET_NAME}\"] = \"${LATEST_COMMIT}\"" build/applet-versions.json > applet-versions.tmp && mv applet-versions.tmp build/applet-versions.json
 
             # Trigger build workflow
-            gh api repos/$GITHUB_REPOSITORY/dispatches \
-              -X POST \
+            curl -X POST \
+              -H "Authorization: Bearer $GH_TOKEN" \
               -H "Accept: application/vnd.github.v3+json" \
-              -f event_type="build-applet" \
-              -F client_payload="{\"applet_name\":\"${APPLET_NAME}\",\"applet_url\":\"${APPLET_URL}\"}"
+              https://api.github.com/repos/$GITHUB_REPOSITORY/dispatches \
+              -d '{"event_type":"build-applet","client_payload":{"applet_name":"'"$APPLET_NAME"'","applet_url":"'"$APPLET_URL"'"}}'
 
             echo "::endgroup::"
           done
