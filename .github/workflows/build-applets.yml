@@ -161,7 +161,7 @@ jobs:
                 echo "$JUSTFILE_CONTENT" | grep -E "^[a-zA-Z][a-zA-Z0-9_-]*\s*:=.*" | while IFS= read -r line; do
                   # Extract paths from variable assignments
                   # Pattern: desktop-src := 'res' / desktop
-                  echo "$line" | grep -oE "'[^']*'|" [^"]*" | sed "s/['\"]//g" | while read -r path_part; do
+                  echo "$line" | grep -oE "'[^']*'|\"[^\"]*\"" | sed "s/['\"]//g" | while read -r path_part; do
                     copy_with_structure "$path_part" "$APPLET_ARTIFACT_DIR"
                   done
                 done
@@ -227,13 +227,6 @@ jobs:
                 # Fallback: copy common directories if no justfile
                 echo "No justfile found, using fallback directory detection"
                 for dir in res data i18n-json schema icons; do
-                  if [[ -d "$dir" ]]; then
-                    cp -r "$dir" "$APPLET_ARTIFACT_DIR/"
-                    echo "Copied $dir directory to artifacts (fallback)"
-                  fi
-                done
-              fi
-                for dir in data i18n-json schema icons; do
                   if [[ -d "$dir" ]]; then
                     cp -r "$dir" "$APPLET_ARTIFACT_DIR/"
                     echo "Copied $dir directory to artifacts (fallback)"
