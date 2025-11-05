@@ -106,8 +106,16 @@ jobs:
               else
                   cargo build --release
               fi
-              # Install to the staging directory
-              DESTDIR=/tmp/artifacts just install
+              # Find and copy the built binary to artifacts
+              BINARY_NAME=$(find target/release -name "cosmic*applet*" -type f -executable 2>/dev/null | head -1)
+              if [[ -n "$BINARY_NAME" && -f "$BINARY_NAME" ]]; then
+                  BINARY_BASENAME=$(basename "$BINARY_NAME")
+                  cp "$BINARY_NAME" "/tmp/artifacts/$BINARY_BASENAME"
+                  echo "Copied $BINARY_BASENAME to artifacts"
+              else
+                  echo "::error:: No binary found in target/release"
+                  exit 1
+              fi
               popd >/dev/null
             )
 
