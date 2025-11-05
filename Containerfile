@@ -3,6 +3,10 @@ FROM scratch AS ctx
 COPY build /build
 COPY custom /custom
 
+# Copy applet artifacts if available
+ARG APPLET_ARTIFACTS_DIR
+COPY ${APPLET_ARTIFACTS_DIR:-/dev/null} /applets
+
 ###############################################################################
 # PROJECT NAME CONFIGURATION
 ###############################################################################
@@ -44,6 +48,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build/10-build.sh && \
     /ctx/build/30-cosmic-desktop.sh && \
     /ctx/build/35-cosmic-niri-ext.sh && \
+    /ctx/build/36-cosmic-applets.sh && \
     /ctx/build/50-extras.sh
     
 ### LINTING
