@@ -6,7 +6,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '00 19 * * *'  # 19:00 / 07:00pm UTC everyday
+    - cron: '00 19 * * *'  # 19:00 / 07:00pm UTC everyday (02:00 WIB next day)
   push:
     branches:
       - main
@@ -22,7 +22,7 @@ env:
   IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/120078124?s=200&v=4"  # Put your own image here for a fancy profile on https://artifacthub.io/!
   IMAGE_NAME: "${{ github.event.repository.name }}"  # output image name, usually same as repo name
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
-  DEFAULT_TAG: "stable"
+  DEFAULT_TAG: "daily"  # Default tag, with 'latest' for pushes and 'daily' for scheduled builds
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}-${{ inputs.brand_name}}-${{ inputs.stream_name }}
@@ -74,6 +74,26 @@ jobs:
           # https://artifacthub.io/docs/topics/repositories/container-images/
           # https://linux.die.net/man/1/date
           echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
+          
+          # Calculate Indonesian date (UTC+7) for different scenarios
+          CURRENT_HOUR=$(date -u +%H)
+          
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            # For scheduled builds, always use WIB date (UTC+7)
+            WIB_DATE=$(date -u -d "+7 hours" +%y%m%d)
+            echo "wib_date=$WIB_DATE" >> $GITHUB_OUTPUT
+            echo "Scheduled build - Indonesian date (WIB): $WIB_DATE"
+          elif [ "$CURRENT_HOUR" -ge 19 ]; then
+            # For pushes between 19:00-23:59 UTC, use WIB date (next day)
+            WIB_DATE=$(date -u -d "+7 hours" +%y%m%d)
+            echo "wib_date=$WIB_DATE" >> $GITHUB_OUTPUT
+            echo "Push after 19:00 UTC - Indonesian date (WIB): $WIB_DATE"
+          else
+            # For other times, use UTC date
+            UTC_DATE=$(date -u +%y%m%d)
+            echo "wib_date=$UTC_DATE" >> $GITHUB_OUTPUT
+            echo "Push before 19:00 UTC - UTC date: $UTC_DATE"
+          fi
 
       # Image metadata for https://artifacthub.io/ - This is optional but is highly recommended so we all can get a index of all the custom images
       # The metadata by itself is not going to do anything, you choose if you want your image to be on ArtifactHub or not.
@@ -82,11 +102,13 @@ jobs:
         id: metadata
         with:
           # This generates all the tags for your image, you can add custom tags here too!
-          # Default tags are "$DEFAULT_TAG" and "$DEFAULT_TAG.$date".
+          # Default tags are "$DEFAULT_TAG", "latest", and "daily" based on trigger
           tags: |
             type=raw,value=${{ env.DEFAULT_TAG }}
-            type=raw,value=${{ env.DEFAULT_TAG }}.{{date 'YYMMDD'}}
-            type=raw,value={{date 'YYMMDD'}}
+            type=raw,value=${{ steps.date.outputs.wib_date }},enable=${{ github.event_name == 'schedule' }}
+            type=raw,value=${{ steps.date.outputs.wib_date }}.{{run_number}},enable=${{ github.event_name == 'push' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'push' || github.event_name == 'schedule' }}
+            type=raw,value=daily,enable=${{ github.event_name == 'schedule' }}
             type=sha,enable=${{ github.event_name == 'pull_request' }}
             type=ref,event=pr
           labels: |
