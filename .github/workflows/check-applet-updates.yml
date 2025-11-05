@@ -1,0 +1,115 @@
+---
+name: Check for Applet Updates
+
+on:
+  schedule:
+  - cron: '0 0 * * 0'  # Weekly on Sunday
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/check-applet-updates.yml'
+      - '.github/workflows/build-applet.yml'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  check:
+    name: Check for Applet Updates
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends git jq ca-certificates
+
+      - name: Determine Force Check
+        id: force
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            echo "force=true" >> $GITHUB_OUTPUT
+          else
+            echo "force=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Define Applets
+        id: applets
+        run: |
+          APPLET_JSON=$(jq -n '[
+            {name: "cosmic-ext-applet-emoji-selector", url: "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"},
+            {name: "cosmic-ext-applet-privacy-indicator", url: "https://github.com/D-Brox/cosmic-ext-applet-privacy-indicator"},
+            {name: "cosmic-ext-applet-vitals", url: "https://github.com/Coinio/cosmic-ext-applet-vitals.git"},
+            {name: "cosmic-applet-music-player", url: "https://github.com/Ebbo/cosmic-applet-music-player.git"},
+            {name: "cosmic-ext-applet-caffeine", url: "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
+            {name: "cosmic-connect-applet", url: "https://github.com/cosmic-utils/cosmic-connect-applet.git"}
+          ]')
+          echo "matrix<<EOF" >> $GITHUB_OUTPUT
+          printf '%s\n' "$APPLET_JSON" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Check Applets and Trigger Builds
+        id: check_applets
+        run: |
+          set -eoux pipefail
+          CHANGES_MADE=false
+          FORCE_CHECK='${{ steps.force.outputs.force }}'
+          APPLET_LIST='${{ steps.applets.outputs.matrix }}'
+
+          # Get list of applets with successful builds (have artifacts)
+          SUCCESSFUL_APPLETS=$(gh run list --workflow build-applet.yml --limit 50 --json conclusion,name -q '.[] | select(.conclusion == "success") | .name | split(" ") | .[1]' | sort | uniq | tr '\n' ' ')
+
+          for row in $(echo "${APPLET_LIST}" | jq -r '.[] | @base64'); do
+            _jq() {
+              echo ${row} | base64 --decode | jq -r ${1}
+            }
+            APPLET_NAME=$(_jq '.name')
+            APPLET_URL=$(_jq '.url')
+
+            echo "::group:: Checking ${APPLET_NAME}"
+            LATEST_COMMIT=$(git ls-remote "${APPLET_URL}" HEAD | awk '{print $1}')
+            CURRENT_COMMIT=$(jq -r ".[\"${APPLET_NAME}\"] // \"\"" build/applet-versions.json)
+
+            # Check if this applet has a successful build (artifact exists)
+            if echo "$SUCCESSFUL_APPLETS" | grep -wq "$APPLET_NAME"; then
+              HAS_ARTIFACT=true
+            else
+              HAS_ARTIFACT=false
+            fi
+
+            if [ "${FORCE_CHECK}" != "true" ] && [ "${HAS_ARTIFACT}" == "true" ] && [ "${LATEST_COMMIT}" == "${CURRENT_COMMIT}" ]; then
+              echo "${APPLET_NAME} is up to date and has artifact. Skipping."
+              echo "::endgroup::"
+              continue
+            fi
+
+            echo "Triggering build for ${APPLET_NAME}"
+            CHANGES_MADE=true
+
+            # Update version
+            jq ".[\"${APPLET_NAME}\"] = \"${LATEST_COMMIT}\"" build/applet-versions.json > applet-versions.tmp && mv applet-versions.tmp build/applet-versions.json
+
+            # Trigger build workflow
+            gh api repos/$GITHUB_REPOSITORY/dispatches \
+              -X POST \
+              -H "Accept: application/vnd.github.v3+json" \
+              -f event_type="build-applet" \
+              -f client_payload="{\"applet_name\":\"${APPLET_NAME}\",\"applet_url\":\"${APPLET_URL}\"}"
+
+            echo "::endgroup::"
+          done
+
+          echo "changes_made=${CHANGES_MADE}" >> $GITHUB_OUTPUT
+
+      - name: Commit Updated Versions
+        if: steps.check_applets.outputs.changes_made == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci(applets): Update applet versions"
+          file_pattern: "build/applet-versions.json"
