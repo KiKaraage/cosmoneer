@@ -1,17 +1,19 @@
 ---
-name: Build container image
+name: Build Image
+
 on:
   pull_request:
     branches:
       - main
   schedule:
-    - cron: '05 10 * * *'  # 10:05am UTC everyday
+    - cron: '00 19 * * *'  # 19:00 / 07:00pm UTC everyday
   push:
     branches:
       - main
     paths-ignore:
-      - '**/README.md'
-      - '.github/workflows/build-applets.yml'
+      - '**/*.md'
+      - '.github/workflows/check-applet-updates.yml'
+      - '.github/workflows/build-applet.yml'
   workflow_dispatch:
 
 env:
@@ -106,6 +108,14 @@ jobs:
           sep-tags: " "
           sep-annotations: " "
 
+      - name: Download Applet Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cosmic-*
+          path: /tmp/applet-artifacts
+          merge-multiple: true
+        continue-on-error: true
+
       - name: Build Image
         id: build_image
         uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
@@ -117,7 +127,9 @@ jobs:
           image: ${{ env.IMAGE_NAME }}
           tags: ${{ env.DEFAULT_TAG }}
           labels: ${{ steps.metadata.outputs.labels }}
-          oci: false
+          oci: true
+          build-args: |
+            APPLET_ARTIFACTS_DIR=/tmp/applet-artifacts
 
       # Rechunk (OPTIONAL): Rechunker optimizes container image layers for better resumability and fixes some distribution errors.
       # It doesn't make downloads faster but provides more reliable image distribution.
