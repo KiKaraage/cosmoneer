@@ -66,7 +66,22 @@ build_and_install_applet() {
             cargo build --release
         fi
 
-        just install
+        # Check if just install is available and working, otherwise install manually
+        if just --list 2>/dev/null | grep -q "install" && just install 2>/dev/null; then
+            echo "Installed using just install"
+        else
+            echo "Installing manually..."
+            # Find the built binary and install it
+            BINARY_NAME=$(find target/release -name "cosmic*applet*" -type f -executable 2>/dev/null | head -1)
+            if [[ -n "$BINARY_NAME" && -f "$BINARY_NAME" ]]; then
+                BINARY_BASENAME=$(basename "$BINARY_NAME")
+                install -Dm0755 "$BINARY_NAME" "/usr/bin/$BINARY_BASENAME"
+                echo "Manually installed $BINARY_BASENAME"
+            else
+                echo "::error:: No binary found in target/release"
+                exit 1
+            fi
+        fi
 
         popd >/dev/null
     )
