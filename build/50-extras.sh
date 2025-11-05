@@ -6,6 +6,8 @@ set -xeuo pipefail
 # Install Docker CE and related extras
 ###############################################################################
 
+echo "::group:: Install & Configure Docker CE"
+
 # Add Docker repository and enable when installing
 dnf5 config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
 dnf5 config-manager setopt docker-ce-stable.enabled=0
@@ -31,3 +33,4 @@ g docker -
 EOF
 
 echo "Docker installation and configuration complete!"
+echo "::endgroup::"
