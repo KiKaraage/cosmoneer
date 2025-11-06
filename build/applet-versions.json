@@ -4,5 +4,7 @@
   "cosmic-ext-applet-vitals": "4895abe0e17fb1d25bb43c363fe58139bd47f087",
   "cosmic-applet-music-player": "1fe94a89a85be34b867ee94268e46e7fd72e88b8",
   "cosmic-ext-applet-caffeine": "1a4ab86d1db1ef294b2cfb24a07f068da0f715ae",
-  "cosmic-connect-applet": "97818e42b39344d6f2e26622a2438f01f88a0829"
+  "cosmic-connect-applet": "97818e42b39344d6f2e26622a2438f01f88a0829",
+  "cosmic-ext-applet-clipboard-manager": "f74b562a09e88e8d20ee0b9c5ab8cade8e4edbdb",
+  "cosmic-ext-applet-ollama": "227df9d4b3d505d23ec5a3d3eef1197c24c96fb0"
 }
