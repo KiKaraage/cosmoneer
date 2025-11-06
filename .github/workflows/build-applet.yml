@@ -1,6 +1,6 @@
 ---
 name: Build Applet
-run-name: "${{ github.event_name == 'repository_dispatch' && format('Build {0}', github.event.client_payload.applet_name) || 'Build workflow' }}"
+run-name: "${{ github.event_name == 'repository_dispatch' && format('Build {0}', github.event.client_payload.applet_name) || 'Validate workflow' }}"
 
 on:
   repository_dispatch:
@@ -32,7 +32,7 @@ jobs:
             libssl-dev pkg-config libwayland-dev ca-certificates \
             just unzip
 
-      - name: Check for Changes
+      - name: Act based on Changes
         id: check_changes
         if: github.event_name == 'repository_dispatch'
         run: |
@@ -40,7 +40,7 @@ jobs:
           APPLET_NAME="${{ github.event.client_payload.applet_name }}"
           APPLET_URL="${{ github.event.client_payload.applet_url }}"
 
-          echo "::group:: Checking for changes in ${APPLET_NAME}"
+          echo "::group:: Acting based on changes in ${APPLET_NAME}"
           
           # Get latest commit from remote
           LATEST_COMMIT=$(git ls-remote "${APPLET_URL}" HEAD | awk '{print $1}')
@@ -54,11 +54,13 @@ jobs:
           if [ -n "$CURRENT_COMMIT" ] && [ "$LATEST_COMMIT" = "$CURRENT_COMMIT" ]; then
             echo "No changes detected for ${APPLET_NAME}. Skipping build."
             echo "should_build=false" >> $GITHUB_OUTPUT
+            echo "::endgroup::"
+            echo "::notice::Build skipped for ${APPLET_NAME} - no changes detected"
           else
             echo "Changes detected for ${APPLET_NAME}. Proceeding with build."
             echo "should_build=true" >> $GITHUB_OUTPUT
+            echo "::endgroup::"
           fi
-          echo "::endgroup::"
 
       - name: Build Applet
         if: github.event_name == 'repository_dispatch' && steps.check_changes.outputs.should_build == 'true'
@@ -316,6 +318,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Upload Applet Artifact
+        if: github.event_name == 'repository_dispatch' && steps.check_changes.outputs.should_build == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.client_payload.applet_name }}
