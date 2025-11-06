@@ -15,7 +15,17 @@ on:
       applet_name:
         description: 'Specific applet to build (optional)'
         required: false
-        type: string
+        type: choice
+        options:
+          - ''
+          - 'cosmic-ext-applet-emoji-selector'
+          - 'cosmic-ext-applet-privacy-indicator'
+          - 'cosmic-ext-applet-vitals'
+          - 'cosmic-applet-music-player'
+          - 'cosmic-ext-applet-caffeine'
+          - 'cosmic-connect-applet'
+          - 'cosmic-ext-applet-clipboard-manager'
+          - 'cosmic-ext-applet-ollama'
 
 permissions:
   contents: write
@@ -190,6 +200,18 @@ jobs:
             echo "Available just targets:"
             just --list 2>/dev/null || echo "No justfile found"
 
+            # Override name for cosmic-connect-applet to use proper naming
+            if [ "${APPLET_NAME}" = "cosmic-connect-applet" ]; then
+                echo "Overriding name for cosmic-connect-applet (justfile has cosmic-applet-template)..."
+                export name="cosmic-connect-applet"
+            else
+                # Extract the name from justfile for other applets
+                if [ -f "justfile" ]; then
+                    export name=$(grep "^name :=" justfile | sed "s/name := '//" | sed "s/'//")
+                    echo "Extracted name from justfile: $name"
+                fi
+            fi
+
             # Prefer 'just build-release' if present, otherwise cargo build --release
             if just --list 2>/dev/null | grep -q "build-release"; then
                 echo "Using just build-release..."
@@ -238,13 +260,26 @@ jobs:
 
             # Search in the target/release directory
             echo "Searching in $MAIN_TARGET_DIR/release..."
-            while IFS= read -r -d '' file; do
-              if is_binary "$file"; then
-                BINARY_NAME="$file"
-                echo "Found binary: $BINARY_NAME"
-                break
-              fi
-            done < <(find "$MAIN_TARGET_DIR/release" -name "cosmic*" -type f -executable ! -name "*.ftl" ! -name "*.json" ! -name "*.xml" ! -name "*.toml" -print0 2>/dev/null)
+            # First try to find the specific binary name
+            if [ -n "${name:-}" ]; then
+                SPECIFIC_BINARY="$MAIN_TARGET_DIR/release/$name"
+                if [ -f "$SPECIFIC_BINARY" ] && is_binary "$SPECIFIC_BINARY"; then
+                    BINARY_NAME="$SPECIFIC_BINARY"
+                    echo "Found specific binary: $BINARY_NAME"
+                fi
+            fi
+            
+            # Fallback to generic search if specific binary not found
+            if [ -z "$BINARY_NAME" ]; then
+                echo "Specific binary not found, searching for any cosmic binaries..."
+                while IFS= read -r -d '' file; do
+                  if is_binary "$file"; then
+                    BINARY_NAME="$file"
+                    echo "Found binary: $BINARY_NAME"
+                    break
+                  fi
+                done < <(find "$MAIN_TARGET_DIR/release" -name "cosmic*" -type f -executable ! -name "*.ftl" ! -name "*.json" ! -name "*.xml" ! -name "*.toml" -print0 2>/dev/null)
+            fi
 
             # Validate we found a binary
             if [[ -z "$BINARY_NAME" || ! -f "$BINARY_NAME" ]]; then

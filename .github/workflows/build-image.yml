@@ -14,6 +14,7 @@ on:
       - '**/*.md'
       - '.github/workflows/check-applet-updates.yml'
       - '.github/workflows/build-applet.yml'
+      - '.github/workflows/applet-management.yml'
   workflow_dispatch:
 
 env:

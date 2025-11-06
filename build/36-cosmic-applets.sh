@@ -12,6 +12,8 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
         if [ -f "$zip_file" ]; then
             applet_name=$(basename "$zip_file" .zip)
             echo "Extracting $applet_name..."
+            # Convert underscores back to hyphens for directory naming consistency
+            applet_dir_name=$(echo "$applet_name" | sed 's/_/-/g')
             # Extract to temp directory first to handle nested structure
             temp_dir="/tmp/$applet_name"
             mkdir -p "$temp_dir"
@@ -23,11 +25,11 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             nested_dir=$(find "$temp_dir" -mindepth 1 -maxdepth 1 -type d | head -1)
             if [ -n "$nested_dir" ] && [ "$(find "$temp_dir" -mindepth 1 -maxdepth 1 | wc -l)" -eq 1 ]; then
                 echo "Moving contents from nested directory..."
-                mv "$nested_dir" "/applets/"
+                mv "$nested_dir" "/applets/$applet_dir_name"
             else
                 echo "No nested directory found, moving all contents..."
-                mkdir -p "/applets/$applet_name"
-                mv "$temp_dir"/* "/applets/$applet_name/"
+                mkdir -p "/applets/$applet_dir_name"
+                mv "$temp_dir"/* "/applets/$applet_dir_name/"
             fi
             rmdir "$temp_dir"
             rm "$zip_file"  # Remove ZIP after extraction
@@ -48,10 +50,30 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             cd "$applet_dir"
             
             # Install binary if present (in target/release/ or root)
-            binary=$(find . -path "*/target/release/*" -name "cosmic*" -type f -executable | head -1)
+            # First try to find the expected binary name
+            expected_binary_name="$applet_name"
+            binary=$(find . -path "*/target/release/*" -name "$expected_binary_name" -type f -executable | head -1)
+            
             if [ -z "$binary" ]; then
+                # Try to find from justfile name variable
+                if [ -f "justfile" ]; then
+                    justfile_name=$(grep "^name :=" justfile | sed "s/name := '//" | sed "s/'//")
+                    if [ -n "$justfile_name" ]; then
+                        binary=$(find . -path "*/target/release/*" -name "$justfile_name" -type f -executable | head -1)
+                    fi
+                fi
+            fi
+            
+            if [ -z "$binary" ]; then
+                # Fallback to generic cosmic search
+                binary=$(find . -path "*/target/release/*" -name "cosmic*" -type f -executable | head -1)
+            fi
+            
+            if [ -z "$binary" ]; then
+                # Final fallback to root directory search
                 binary=$(find . -maxdepth 2 -name "cosmic*" -type f -executable | head -1)
             fi
+            
             if [ -n "$binary" ]; then
                 binary_name=$(basename "$binary")
                 install -Dm0755 "$binary" "/usr/bin/$binary_name"
