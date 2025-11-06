@@ -16,6 +16,9 @@ COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts
 # Base Image
 FROM ghcr.io/ublue-os/bluefin:stable
 
+# Image metadata to override base image description
+LABEL org.opencontainers.image.description="A scroller desktop image with COSMIC, Niri and Bluefin goodies together"
+
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest
 # FROM ghcr.io/ublue-os/bluefin-nvidia:stable
