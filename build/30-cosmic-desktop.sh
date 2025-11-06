@@ -120,23 +120,6 @@ flatpak remote-add --if-not-exists --system cosmic https://apt.pop-os.org/cosmic
 echo "COSMIC Flatpak remote configured"
 echo "::endgroup::"
 
-echo "::group:: Enable COSMIC Data Control Protocol"
 
-# Enable data control protocol for clipboard manager applet
-# This allows privileged clients to access the clipboard
-# Set environment variable for both shell sessions and systemd user services
-mkdir -p /etc/profile.d
-echo 'export COSMIC_DATA_CONTROL_ENABLED=1' > /etc/profile.d/data_control_cosmic.sh
-chmod 644 /etc/profile.d/data_control_cosmic.sh
-
-# Also set it for systemd user services (which includes the compositor)
-mkdir -p /etc/systemd/user/cosmic-session.service.d
-cat > /etc/systemd/user/cosmic-session.service.d/data-control.conf << 'EOF'
-[Service]
-Environment="COSMIC_DATA_CONTROL_ENABLED=1"
-EOF
-
-echo "COSMIC data control protocol enabled"
-echo "::endgroup::"
 
 echo "COSMIC desktop installation complete!"
