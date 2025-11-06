@@ -1,6 +1,6 @@
 ---
 name: Applet Management
-run-name: "${{ github.event_name == 'schedule' && 'Weekly Applet Check' || github.event_name == 'workflow_dispatch' && (github.event.inputs.force_all == 'true' && 'Force Build All Applets' || github.event.inputs.applet_name && format('Build {0}', github.event.inputs.applet_name) || 'Check Applet Updates') || github.event_name == 'push' && 'Validate Workflow' }}"
+run-name: "${{ github.event_name == 'schedule' && 'Weekly Applet Check' || github.event_name == 'workflow_dispatch' && (github.event.inputs.force_all == 'true' && 'Force Build All Applets' || github.event.inputs.applet_name && format('Build {0}', github.event.inputs.applet_name) || 'Check Applet Updates') }}"
 
 on:
   schedule:
@@ -16,11 +16,6 @@ on:
         description: 'Specific applet to build (optional)'
         required: false
         type: string
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/applet-management.yml'
 
 permissions:
   contents: write
@@ -30,7 +25,7 @@ jobs:
   check-updates:
     name: Check for Updates
     runs-on: ubuntu-24.04
-    if: github.event_name != 'push'
+    
 
     outputs:
       applets_to_build: ${{ steps.check_applets.outputs.applets_to_build }}

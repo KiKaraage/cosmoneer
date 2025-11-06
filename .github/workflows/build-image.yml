@@ -146,7 +146,7 @@ jobs:
             {"name": "cosmic-ext-applet-caffeine", "url": "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
             {"name": "cosmic-connect-applet", "url": "https://github.com/cosmic-utils/cosmic-connect-applet.git"},
             {"name": "cosmic-ext-applet-ollama", "url": "https://github.com/cosmic-utils/cosmic-ext-applet-ollama"},
-            {"name": "cosmic-ext-applet-clipboard", "url": "https://github.com/cosmic-utils/clipboard-manager"}
+            {"name": "cosmic-ext-applet-clipboard-manager", "url": "https://github.com/cosmic-utils/clipboard-manager"}
           ]'
           
           echo "Searching for specific applet workflow runs in $GH_REPO"
