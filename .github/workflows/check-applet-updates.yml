@@ -10,7 +10,6 @@ on:
       - main
     paths:
       - '.github/workflows/check-applet-updates.yml'
-      - '.github/workflows/build-applet.yml'
 
 permissions:
   contents: write
@@ -56,7 +55,7 @@ jobs:
           printf '%s\n' "$APPLET_JSON" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Check Applets and Trigger Builds
+      - name: Detect New Applets and Trigger Builds
         id: check_applets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -65,6 +64,34 @@ jobs:
           CHANGES_MADE=false
           FORCE_CHECK='${{ steps.force.outputs.force }}'
           APPLET_LIST='${{ steps.applets.outputs.matrix }}'
+
+          # Get previous applet list from git to detect new additions
+          if [ "${FORCE_CHECK}" == "true" ]; then
+            # Force check means check all applets
+            NEW_APPLETS=$(echo "${APPLET_LIST}" | jq -r '.[].name')
+          else
+            # Get previous version of this file to detect new applets
+            PREVIOUS_FILE=$(git show HEAD~1:.github/workflows/check-applet-updates.yml 2>/dev/null || echo "")
+            if [ -n "$PREVIOUS_FILE" ]; then
+              # Extract applet names from previous file
+              PREVIOUS_APPLETS=$(echo "$PREVIOUS_FILE" | grep -A 20 "APPLET_JSON=" | grep "name:" | sed 's/.*name: "\([^"]*\)".*/\1/' | sort | tr '\n' ' ')
+              CURRENT_APPLETS=$(echo "${APPLET_LIST}" | jq -r '.[].name' | sort | tr '\n' ' ')
+              
+              # Find applets that are new (in current but not in previous)
+              NEW_APPLETS=""
+              for applet in $CURRENT_APPLETS; do
+                if ! echo "$PREVIOUS_APPLETS" | grep -wq "$applet"; then
+                  NEW_APPLETS="$NEW_APPLETS $applet"
+                fi
+              done
+              NEW_APPLETS=$(echo "$NEW_APPLETS" | xargs -n1 | sort | xargs) # Sort and clean up
+            else
+              # No previous file, treat all as new
+              NEW_APPLETS=$(echo "${APPLET_LIST}" | jq -r '.[].name')
+            fi
+          fi
+
+          echo "New applets detected: $NEW_APPLETS"
 
           # Get list of applets with successful builds (have artifacts)
           SUCCESSFUL_APPLETS=$(gh run list --workflow build-applet.yml --limit 50 --json conclusion,name -q '.[] | select(.conclusion == "success") | .name | split(" ") | .[1]' | sort | uniq | tr '\n' ' ')
@@ -75,6 +102,12 @@ jobs:
             }
             APPLET_NAME=$(_jq '.name')
             APPLET_URL=$(_jq '.url')
+
+            # Skip if this is not a new applet and we're not forcing
+            if [ "${FORCE_CHECK}" != "true" ] && ! echo "$NEW_APPLETS" | grep -wq "$APPLET_NAME"; then
+              echo "${APPLET_NAME} is not new, skipping"
+              continue
+            fi
 
             echo "::group:: Checking ${APPLET_NAME}"
             LATEST_COMMIT=$(git ls-remote "${APPLET_URL}" HEAD | awk '{print $1}')
@@ -87,7 +120,7 @@ jobs:
               HAS_ARTIFACT=false
             fi
 
-            if [ "${FORCE_CHECK}" != "true" ] && [ "${HAS_ARTIFACT}" == "true" ] && [ "${LATEST_COMMIT}" == "${CURRENT_COMMIT}" ]; then
+            if [ "${HAS_ARTIFACT}" == "true" ] && [ "${LATEST_COMMIT}" == "${CURRENT_COMMIT}" ]; then
               echo "${APPLET_NAME} is up to date and has artifact. Skipping."
               echo "::endgroup::"
               continue
