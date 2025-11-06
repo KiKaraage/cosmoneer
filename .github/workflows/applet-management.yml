@@ -1,23 +1,40 @@
 ---
-name: Build Applet
-run-name: "${{ github.event_name == 'repository_dispatch' && format('Build {0}', github.event.client_payload.applet_name) || 'Validate workflow' }}"
+name: Applet Management
+run-name: "${{ github.event_name == 'schedule' && 'Weekly Applet Check' || github.event_name == 'workflow_dispatch' && (github.event.inputs.force_all == 'true' && 'Force Build All Applets' || github.event.inputs.applet_name && format('Build {0}', github.event.inputs.applet_name) || 'Check Applet Updates') || github.event_name == 'push' && 'Validate Workflow' }}"
 
 on:
-  repository_dispatch:
-    types: [build-applet]
+  schedule:
+  - cron: '0 0 * * 0'  # Weekly on Sunday
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: 'Force build all applets'
+        required: false
+        default: 'false'
+        type: boolean
+      applet_name:
+        description: 'Specific applet to build (optional)'
+        required: false
+        type: string
   push:
     branches:
       - main
     paths:
-      - '.github/workflows/build-applet.yml'
+      - '.github/workflows/applet-management.yml'
 
 permissions:
-  contents: read
+  contents: write
+  actions: write
 
 jobs:
-  build:
-    name: Build ${{ github.event.client_payload.applet_name }}
+  check-updates:
+    name: Check for Updates
     runs-on: ubuntu-24.04
+    if: github.event_name != 'push'
+
+    outputs:
+      applets_to_build: ${{ steps.check_applets.outputs.applets_to_build }}
+      changes_made: ${{ steps.check_applets.outputs.changes_made }}
 
     steps:
       - name: Checkout Repository
@@ -26,66 +43,138 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
+          sudo apt-get install -y --no-install-recommends git jq ca-certificates
+
+      - name: Determine Force Check
+        id: force
+        run: |
+          if [ "${{ github.event.inputs.force_all }}" = "true" ]; then
+            echo "force=true" >> $GITHUB_OUTPUT
+          elif [ -n "${{ github.event.inputs.applet_name }}" ]; then
+            echo "force=true" >> $GITHUB_OUTPUT
+          else
+            echo "force=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Define Applets
+        id: applets
+        run: |
+          APPLET_JSON=$(jq -n '[
+            {name: "cosmic-ext-applet-emoji-selector", url: "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"},
+            {name: "cosmic-ext-applet-privacy-indicator", url: "https://github.com/D-Brox/cosmic-ext-applet-privacy-indicator"},
+            {name: "cosmic-ext-applet-vitals", url: "https://github.com/Coinio/cosmic-ext-applet-vitals.git"},
+            {name: "cosmic-applet-music-player", url: "https://github.com/Ebbo/cosmic-applet-music-player.git"},
+            {name: "cosmic-ext-applet-caffeine", url: "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
+            {name: "cosmic-connect-applet", url: "https://github.com/cosmic-utils/cosmic-connect-applet.git"},
+            {name: "cosmic-ext-applet-clipboard-manager", url: "https://github.com/cosmic-utils/clipboard-manager"},
+            {name: "cosmic-ext-applet-ollama", url: "https://github.com/cosmic-utils/cosmic-ext-applet-ollama.git"}
+          ]')
+          echo "matrix<<EOF" >> $GITHUB_OUTPUT
+          printf '%s\n' "$APPLET_JSON" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Check Applets and Prepare Build List
+        id: check_applets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eoux pipefail
+          CHANGES_MADE=false
+          FORCE_CHECK='${{ steps.force.outputs.force }}'
+          APPLET_LIST='${{ steps.applets.outputs.matrix }}'
+          SPECIFIC_APPLET="${{ github.event.inputs.applet_name }}"
+
+          # Get list of applets with successful builds (have artifacts)
+          SUCCESSFUL_APPLETS=$(gh run list --workflow applet-management.yml --limit 50 --json conclusion,name -q '.[] | select(.conclusion == "success") | .name | split(" ") | .[1]' | sort | uniq | tr '\n' ' ')
+
+          APPLETS_TO_BUILD="[]"
+
+          for row in $(echo "${APPLET_LIST}" | jq -r '.[] | @base64'); do
+            _jq() {
+              echo ${row} | base64 --decode | jq -r ${1}
+            }
+            APPLET_NAME=$(_jq '.name')
+            APPLET_URL=$(_jq '.url')
+
+            # Skip if specific applet requested and this isn't it
+            if [ -n "$SPECIFIC_APPLET" ] && [ "$APPLET_NAME" != "$SPECIFIC_APPLET" ]; then
+              continue
+            fi
+
+            echo "::group:: Checking ${APPLET_NAME}"
+            LATEST_COMMIT=$(git ls-remote "${APPLET_URL}" HEAD | awk '{print $1}')
+            CURRENT_COMMIT=$(jq -r ".[\"${APPLET_NAME}\"] // \"\"" build/applet-versions.json)
+
+            # Check if this applet has a successful build (artifact exists)
+            if echo "$SUCCESSFUL_APPLETS" | grep -wq "$APPLET_NAME"; then
+              HAS_ARTIFACT=true
+            else
+              HAS_ARTIFACT=false
+            fi
+
+            if [ "${FORCE_CHECK}" != "true" ] && [ "${HAS_ARTIFACT}" == "true" ] && [ "${LATEST_COMMIT}" == "${CURRENT_COMMIT}" ]; then
+              echo "${APPLET_NAME} is up to date and has artifact. Skipping."
+              echo "::endgroup::"
+              continue
+            fi
+
+            echo "Adding ${APPLET_NAME} to build queue"
+            CHANGES_MADE=true
+
+            # Update version
+            jq ".[\"${APPLET_NAME}\"] = \"${LATEST_COMMIT}\"" build/applet-versions.json > applet-versions.tmp && mv applet-versions.tmp build/applet-versions.json
+
+            # Add to build list
+            APPLETS_TO_BUILD=$(echo "$APPLETS_TO_BUILD" | jq ". + [{name: \"${APPLET_NAME}\", url: \"${APPLET_URL}\"}]")
+
+            echo "::endgroup::"
+          done
+
+          echo "applets_to_build<<EOF" >> $GITHUB_OUTPUT
+          printf '%s\n' "$APPLETS_TO_BUILD" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "changes_made=${CHANGES_MADE}" >> $GITHUB_OUTPUT
+
+      - name: Commit Updated Versions
+        if: steps.check_applets.outputs.changes_made == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci(applets): Update applet versions"
+          file_pattern: "build/applet-versions.json"
+
+  build-applets:
+    name: Build Applet
+    runs-on: ubuntu-24.04
+    needs: check-updates
+    if: needs.check-updates.outputs.changes_made == 'true' || github.event_name == 'workflow_dispatch'
+    
+    strategy:
+      matrix:
+        applet: ${{ fromJson(needs.check-updates.outputs.applets_to_build) }}
+      fail-fast: false
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             cargo build-essential git gcc g++ make \
             libxkbcommon-dev libpipewire-0.3-dev libdbus-1-dev \
             libssl-dev pkg-config libwayland-dev ca-certificates \
             just unzip
 
-      - name: Act based on Changes
-        id: check_changes
-        if: github.event_name == 'repository_dispatch'
-        run: |
-          set -eoux pipefail
-          APPLET_NAME="${{ github.event.client_payload.applet_name }}"
-          APPLET_URL="${{ github.event.client_payload.applet_url }}"
-
-          echo "::group:: Acting based on changes in ${APPLET_NAME}"
-          
-          # Get latest commit from remote
-          LATEST_COMMIT=$(git ls-remote "${APPLET_URL}" HEAD | awk '{print $1}')
-          
-          # Get current commit from versions file
-          CURRENT_COMMIT=$(jq -r ".[\"${APPLET_NAME}\"] // \"\"" build/applet-versions.json)
-          
-          echo "Latest commit: ${LATEST_COMMIT}"
-          echo "Current commit: ${CURRENT_COMMIT}"
-          
-          if [ -n "$CURRENT_COMMIT" ] && [ "$LATEST_COMMIT" = "$CURRENT_COMMIT" ]; then
-            echo "No changes detected for ${APPLET_NAME}. Skipping build."
-            echo "should_build=false" >> $GITHUB_OUTPUT
-            echo "::endgroup::"
-            echo "::notice::Build skipped for ${APPLET_NAME} - no changes detected"
-          else
-            echo "Changes detected for ${APPLET_NAME}. Proceeding with build."
-            echo "should_build=true" >> $GITHUB_OUTPUT
-            echo "::endgroup::"
-          fi
-
       - name: Build Applet
-        if: github.event_name == 'repository_dispatch' && steps.check_changes.outputs.should_build == 'true'
         run: |
           set -eoux pipefail
-          APPLET_NAME="${{ github.event.client_payload.applet_name }}"
-          APPLET_URL="${{ github.event.client_payload.applet_url }}"
+          APPLET_NAME="${{ matrix.applet.name }}"
+          APPLET_URL="${{ matrix.applet.url }}"
 
           mkdir -p /tmp/artifacts/${APPLET_NAME}
 
           echo "::group:: Building ${APPLET_NAME}"
-
-          # Install build dependencies for Ubuntu
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            cargo build-essential git gcc g++ make \
-            libxkbcommon-dev libpipewire-0.3-dev libdbus-1-dev \
-            libssl-dev pkg-config libwayland-dev ca-certificates \
-            just
-
-          # Verify just is available
-          if ! command -v just >/dev/null 2>&1; then
-            echo "::error:: just installation failed"
-            exit 1
-          fi
 
           REPO_DIR="/tmp/${APPLET_NAME}"
           rm -rf "${REPO_DIR}"
@@ -318,8 +407,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Upload Applet Artifact
-        if: github.event_name == 'repository_dispatch' && steps.check_changes.outputs.should_build == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.client_payload.applet_name }}
-          path: /tmp/artifacts/${{ github.event.client_payload.applet_name }}/
+          name: ${{ matrix.applet.name }}
+          path: /tmp/artifacts/${{ matrix.applet.name }}/
