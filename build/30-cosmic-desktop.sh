@@ -108,12 +108,6 @@ echo "::endgroup::"
 
 echo "::group:: Install Additional Utilities"
 
-dnf5 install -y \
-    sfwbar \
-    msedit \
-    brightnessctl \
-    fontawesome-fonts \
-    fontawesome-fonts-web
 
 echo "Additional utilities installed"
 echo "::endgroup::"
