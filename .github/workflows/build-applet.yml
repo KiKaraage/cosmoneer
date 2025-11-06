@@ -1,6 +1,6 @@
 ---
 name: Build Applet
-run-name: "Build ${{ github.event.client_payload.applet_name }}"
+run-name: "${{ github.event_name == 'repository_dispatch' && format('Build {0}', github.event.client_payload.applet_name) || 'Build workflow' }}"
 
 on:
   repository_dispatch:
@@ -34,6 +34,7 @@ jobs:
 
       - name: Check for Changes
         id: check_changes
+        if: github.event_name == 'repository_dispatch'
         run: |
           set -eoux pipefail
           APPLET_NAME="${{ github.event.client_payload.applet_name }}"
@@ -60,7 +61,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Build Applet
-        if: steps.check_changes.outputs.should_build == 'true'
+        if: github.event_name == 'repository_dispatch' && steps.check_changes.outputs.should_build == 'true'
         run: |
           set -eoux pipefail
           APPLET_NAME="${{ github.event.client_payload.applet_name }}"
