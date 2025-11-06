@@ -5,6 +5,11 @@ run-name: "Build ${{ github.event.client_payload.applet_name }}"
 on:
   repository_dispatch:
     types: [build-applet]
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/build-applet.yml'
 
 permissions:
   contents: read
@@ -27,7 +32,35 @@ jobs:
             libssl-dev pkg-config libwayland-dev ca-certificates \
             just unzip
 
+      - name: Check for Changes
+        id: check_changes
+        run: |
+          set -eoux pipefail
+          APPLET_NAME="${{ github.event.client_payload.applet_name }}"
+          APPLET_URL="${{ github.event.client_payload.applet_url }}"
+
+          echo "::group:: Checking for changes in ${APPLET_NAME}"
+          
+          # Get latest commit from remote
+          LATEST_COMMIT=$(git ls-remote "${APPLET_URL}" HEAD | awk '{print $1}')
+          
+          # Get current commit from versions file
+          CURRENT_COMMIT=$(jq -r ".[\"${APPLET_NAME}\"] // \"\"" build/applet-versions.json)
+          
+          echo "Latest commit: ${LATEST_COMMIT}"
+          echo "Current commit: ${CURRENT_COMMIT}"
+          
+          if [ -n "$CURRENT_COMMIT" ] && [ "$LATEST_COMMIT" = "$CURRENT_COMMIT" ]; then
+            echo "No changes detected for ${APPLET_NAME}. Skipping build."
+            echo "should_build=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected for ${APPLET_NAME}. Proceeding with build."
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          fi
+          echo "::endgroup::"
+
       - name: Build Applet
+        if: steps.check_changes.outputs.should_build == 'true'
         run: |
           set -eoux pipefail
           APPLET_NAME="${{ github.event.client_payload.applet_name }}"
