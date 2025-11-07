@@ -71,12 +71,17 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             fi
             
             if [ -z "$binary" ]; then
-                # Fallback to generic cosmic search
+                # Fallback to generic cosmic search in target/release
                 binary=$(find . -path "*/target/release/*" -name "cosmic*" -type f -executable | head -1)
             fi
             
             if [ -z "$binary" ]; then
-                # Final fallback to root directory search
+                # Final fallback to root directory search with expected binary name
+                binary=$(find . -maxdepth 2 -name "$expected_binary_name" -type f -executable | head -1)
+            fi
+            
+            if [ -z "$binary" ]; then
+                # Final fallback to root directory search with generic cosmic pattern
                 binary=$(find . -maxdepth 2 -name "cosmic*" -type f -executable | head -1)
             fi
             
