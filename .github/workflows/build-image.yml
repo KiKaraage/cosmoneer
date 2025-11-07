@@ -95,6 +95,23 @@ jobs:
             echo "wib_date=$UTC_DATE" >> $GITHUB_OUTPUT
             echo "Push before 19:00 UTC - UTC date: $UTC_DATE"
           fi
+          
+          # Calculate daily build number for push events
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # Get today's date in the same format as wib_date for comparison
+            TODAY_DATE=$(echo "${{ steps.date.outputs.wib_date }}")
+            
+            # Get all workflow runs for today and count them
+            TODAY_RUNS=$(gh run list --repo "${{ github.repository }}" --workflow "build-image.yml" \
+              --json databaseId,createdAt,conclusion \
+              --limit 100 \
+              -q "[.[] | select(.conclusion != null) | (.createdAt | split(\"T\")[0] | strptime(\"%Y-%m-%d\") | strftime(\"%y%m%d\"))] | length" 2>/dev/null || echo "0")
+            
+            # Calculate today's build number (current run + 1)
+            DAILY_BUILD_NUMBER=$((TODAY_RUNS + 1))
+            echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
+            echo "Daily build number for $TODAY_DATE: $DAILY_BUILD_NUMBER"
+          fi
 
       # Image metadata for https://artifacthub.io/ - This is optional but is highly recommended so we all can get a index of all the custom images
       # The metadata by itself is not going to do anything, you choose if you want your image to be on ArtifactHub or not.
@@ -107,7 +124,7 @@ jobs:
           tags: |
             type=raw,value=${{ env.DEFAULT_TAG }},enable=${{ github.event_name == 'schedule' }}
             type=raw,value=${{ steps.date.outputs.wib_date }},enable=${{ github.event_name == 'schedule' }}
-            type=raw,value=${{ steps.date.outputs.wib_date }}.${{ github.run_number }},enable=${{ github.event_name == 'push' }}
+            type=raw,value=${{ steps.date.outputs.wib_date }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' }}
             type=raw,value=latest,enable=${{ github.event_name == 'push' || github.event_name == 'schedule' }}
             type=sha,enable=${{ github.event_name == 'pull_request' }}
             type=ref,event=pr
