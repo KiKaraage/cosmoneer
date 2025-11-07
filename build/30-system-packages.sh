@@ -134,19 +134,19 @@ echo "::group:: ublue COPR Packages"
 echo "Installing ublue COPR packages..."
 
 # Package swaps with ublue COPR
-echo "Swapping fwupd with ublue-os staging version..."
-copr_install_isolated "ublue-os/staging" "fwupd"
+echo "Swapping fwupd with ublue-os packages version..."
+copr_install_isolated "ublue-os/packages" "fwupd"
 
 # Install ublue packages
 echo "Installing ublue packages..."
-copr_install_isolated "ublue-os/staging" "ublue-brew"
-copr_install_isolated "ublue-os/staging" "ublue-polkit-rules"
-copr_install_isolated "ublue-os/staging" "ublue-setup-services"
-copr_install_isolated "ublue-os/staging" "uupd"
+copr_install_isolated "ublue-os/packages" "ublue-brew"
+copr_install_isolated "ublue-os/packages" "ublue-polkit-rules"
+copr_install_isolated "ublue-os/packages" "ublue-setup-services"
+copr_install_isolated "ublue-os/packages" "uupd"
 
 # Install additional COPR packages
 echo "Installing additional COPR packages..."
-copr_install_isolated "ublue-os/staging" "ublue-os-udev-rules"
+copr_install_isolated "ublue-os/packages" "ublue-os-udev-rules"
 
 # Install cliphist from zirconium COPR (if available)
 echo "Installing cliphist from zirconium packages..."
@@ -157,6 +157,35 @@ echo "::endgroup::"
 echo "::group:: Configure ublue-brew"
 
 echo "Configuring ublue-brew integration..."
+
+# Fix critical symlink issue for ublue-brew
+# The brew-setup.service doesn't create the essential symlink from 
+# /home/linuxbrew/.linuxbrew to /var/home/linuxbrew/.linuxbrew
+echo "Adding symlink fix to brew-setup.service..."
+if [ -f "/usr/lib/systemd/system/brew-setup.service" ]; then
+    # Create a drop-in to add the symlink fix
+    mkdir -p /usr/lib/systemd/system/brew-setup.service.d
+    cat > /usr/lib/systemd/system/brew-setup.service.d/symlink-fix.conf <<'EOF'
+[Service]
+ExecStartPost=/usr/bin/ln -sf /var/home/linuxbrew/.linuxbrew /home/linuxbrew/.linuxbrew
+EOF
+    echo "Symlink fix added to brew-setup.service"
+else
+    echo "Warning: brew-setup.service not found, symlink fix skipped"
+fi
+
+# Enable ublue-brew services
+echo "Enabling ublue-brew services..."
+systemctl enable brew-setup.service || echo "brew-setup.service already enabled or not found"
+systemctl enable uupd.timer || echo "uupd.timer already enabled or not found"
+
+# Configure uupd to disable distrobox module (following Zirconium pattern)
+if [ -f "/usr/lib/systemd/system/uupd.service" ]; then
+    echo "Configuring uupd service..."
+    sed -i 's|uupd|& --disable-module-distrobox|' /usr/lib/systemd/system/uupd.service
+    echo "uupd configured to disable distrobox module"
+fi
+
 # Add brew path to sudoers for system-wide access
 sed -Ei "s/secure_path = (.*)/secure_path = \1:\/home\/linuxbrew\/.linuxbrew\/bin/" /etc/sudoers
 
