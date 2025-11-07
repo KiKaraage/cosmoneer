@@ -54,6 +54,10 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             # Install binary if present (in target/release/ or root)
             # First try to find the expected binary name
             expected_binary_name="$applet_name"
+            # Special case for emoji-selector
+            if [ "$applet_name" = "cosmic-ext-applet-emoji-selector" ]; then
+                expected_binary_name="cosmic-applet-emoji-selector"
+            fi
             binary=$(find . -path "*/target/release/*" -name "$expected_binary_name" -type f -executable | head -1)
             
             if [ -z "$binary" ]; then
@@ -77,8 +81,9 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             fi
             
             if [ -n "$binary" ]; then
-                binary_name=$(basename "$binary")
-                # Use proper applet names instead of hash-suffixed binaries
+            echo "Found binary: $binary"
+            binary_name=$(basename "$binary")
+            # Use proper applet names instead of hash-suffixed binaries
                 case "$applet_name" in
                     "cosmic-connect-applet")
                         install -Dm0755 "$binary" "/usr/bin/cosmic-connect-applet"
