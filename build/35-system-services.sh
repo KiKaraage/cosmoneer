@@ -17,8 +17,6 @@ systemctl enable systemd-resolved.service
 
 echo "::endgroup::"
 
-echo "::group:: Bluefin System Services"
-
 # Configure bootc automatic updates (from bluefin)
 echo "Configuring automatic updates..."
 sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/bootc update --quiet|' /usr/lib/systemd/system/bootc-fetch-apply-updates.service
@@ -44,14 +42,8 @@ L /etc/resolv.conf - - - - ../run/systemd/resolve/stub-resolv.conf
 EOF
 systemctl preset systemd-resolved.service
 
-echo "::endgroup::"
-
-echo "::group:: Zirconium-inspired Services"
-
 # Enable firewalld
 systemctl enable firewalld
-
-echo "::endgroup::"
 
 echo "::group:: Container Registry Configuration"
 

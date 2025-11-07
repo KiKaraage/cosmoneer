@@ -53,12 +53,12 @@ echo "::endgroup::"
 echo "::group:: Hardware Module Installation"
 
 # Enable ublue-os/akmods COPR temporarily
-echo "Temporarily enabling ublue-os/akmods COPR..."
-dnf5 -y copr enable ublue-os/akmods
-dnf5 -y copr disable ublue-os/akmods
+# echo "Temporarily enabling ublue-os/akmods COPR..."
+# dnf5 -y copr enable ublue-os/akmods
+# dnf5 -y copr disable ublue-os/akmods
 
 # Install hardware-specific modules
-echo "Installing hardware support modules..."
+# echo "Installing hardware support modules..."
 
 # Gaming controllers (temporarily disabled due to build issues)
 # copr_install_isolated "ublue-os/akmods" "akmod-xone"
@@ -72,7 +72,7 @@ echo "Installing hardware support modules..."
 # Virtual camera (temporarily disabled due to build issues)
 # copr_install_isolated "ublue-os/akmods" "akmod-v4l2loopback"
 
-echo "Hardware modules temporarily disabled to fix build issues"
+# echo "Hardware modules temporarily disabled to fix build issues"
 
 echo "::endgroup::"
 

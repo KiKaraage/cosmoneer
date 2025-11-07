@@ -12,20 +12,7 @@ set -eoux pipefail
 # shellcheck source=/dev/null
 source /ctx/build/copr-helpers.sh
 
-echo "::group:: Remove GNOME Desktop"
 
-# Remove GNOME Shell and related packages
-if ! dnf5 remove -y \
-    gnome-shell \
-    gnome-shell-extension* \
-    gnome-tweaks \
-    gnome-control-center \
-    gdm; then
-    echo "Some GNOME components were not present; continuing"
-fi
-
-echo "GNOME desktop removed"
-echo "::endgroup::"
 
 echo "::group:: Install COSMIC Desktop"
 
