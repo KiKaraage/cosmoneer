@@ -62,7 +62,6 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     fi && \
     echo "Running build scripts..." && \
     /ctx/build/10-base-image.sh && \
-    /ctx/build/15-image-id.sh && \
     /ctx/build/20-kernel-hardware.sh && \
     /ctx/build/25-system-files.sh && \
     /ctx/build/30-system-packages.sh && \
