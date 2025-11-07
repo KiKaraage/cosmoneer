@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Error handling function
+handle_error() {
+    local exit_code=$?
+    local line_number=$1
+    echo "Error occurred in script at line $line_number with exit code $exit_code"
+    echo "Current applet being processed: ${applet_name:-unknown}"
+    echo "Current working directory: $(pwd)"
+    echo "Directory contents:"
+    find . -maxdepth 2 -type f | head -20 || true
+    exit $exit_code
+}
+
+# Set up error trap
+trap 'handle_error $LINENO' ERR
+
 echo "::group:: Install COSMIC Applets"
 
 # Install applets from artifacts if they exist
@@ -83,8 +98,21 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 expected_binary_name="cosmic-applet-emoji-selector"
                 echo "Using special case: looking for cosmic-applet-emoji-selector"
             fi
+            # Function to search for binary in a specific directory
+            search_binary() {
+                local search_dir="$1"
+                local binary_name="$2"
+                echo "Searching for $binary_name in $search_dir..."
+                if [ -d "$search_dir" ]; then
+                    find "$search_dir" -maxdepth 1 -name "$binary_name" -type f -executable | head -1
+                else
+                    echo "Directory $search_dir does not exist"
+                    return 1
+                fi
+            }
+
             echo "Searching for binary: $expected_binary_name in target/release/..."
-            binary=$(find . -path "*/target/release/*" -name "$expected_binary_name" -type f -executable | head -1)
+            binary=$(search_binary "./target/release" "$expected_binary_name")
             
             if [ -z "$binary" ]; then
                 echo "Not found in target/release/, trying justfile name variable..."
@@ -96,14 +124,35 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     justfile_name=$(grep "^name :=" justfile | sed "s/name := '//" | sed "s/'//")
                     if [ -n "$justfile_name" ]; then
                         echo "Found justfile name: $justfile_name"
-                        binary=$(find . -path "*/target/release/*" -name "$justfile_name" -type f -executable | head -1)
+                        binary=$(search_binary "./target/release" "$justfile_name")
                     else
                         echo "No name variable found in justfile with pattern '^name :='"
-                        # Try alternative patterns
+                        # Try alternative patterns for name
                         justfile_name=$(grep "^name\s*=" justfile | sed 's/^name\s*=\s*//' | sed 's/[[:space:]]*$//' | sed 's/^"//' | sed 's/"$//')
                         if [ -n "$justfile_name" ]; then
                             echo "Found justfile name with alternative pattern: $justfile_name"
-                            binary=$(find . -path "*/target/release/*" -name "$justfile_name" -type f -executable | head -1)
+                            binary=$(search_binary "./target/release" "$justfile_name")
+                        else
+                            echo "No name variable found, trying to extract binary name from install target..."
+                            # Look for install target to find binary name
+                            install_binary=$(grep -A 5 "^install:" justfile | grep "install.*target/release.*" | sed 's/.*target\/release\/\([^[:space:]]*\).*/\1/' | head -1)
+                            if [ -n "$install_binary" ]; then
+                                echo "Found binary in install target: $install_binary"
+                                binary=$(search_binary "./target/release" "$install_binary")
+                            else
+                                echo "No binary found in install target, trying id variable..."
+                                # Try id variable (used by emoji selector)
+                                justfile_id=$(grep "^id\s*=" justfile | sed 's/^id\s*=\s*//' | sed 's/[[:space:]]*$//' | sed 's/^"//' | sed 's/"$//')
+                                if [ -n "$justfile_id" ]; then
+                                    echo "Found justfile id: $justfile_id"
+                                    # Extract applet name from id (last part after dots)
+                                    justfile_name=$(echo "$justfile_id" | sed 's/.*\.\([^.]*\)$/\1/')
+                                    echo "Extracted name from id: $justfile_name"
+                                    binary=$(search_binary "./target/release" "$justfile_name")
+                                else
+                                    echo "No name or id variable found in justfile"
+                                fi
+                            fi
                         fi
                     fi
                 else
@@ -114,19 +163,19 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             if [ -z "$binary" ]; then
                 echo "Not found with justfile name, trying generic cosmic search in target/release..."
                 # Fallback to generic cosmic search in target/release
-                binary=$(find . -path "*/target/release/*" -name "cosmic*" -type f -executable | head -1)
+                binary=$(search_binary "./target/release" "cosmic*")
             fi
             
             if [ -z "$binary" ]; then
-                echo "Not found in target/release/, searching root directory for $expected_binary_name..."
-                # Final fallback to root directory search with expected binary name
-                binary=$(find . -maxdepth 2 -name "$expected_binary_name" -type f -executable | head -1)
+                echo "Not found in target/release/, searching parent directory for $expected_binary_name..."
+                # Search in parent directory (current directory) with exact name
+                binary=$(search_binary "." "$expected_binary_name")
             fi
             
             if [ -z "$binary" ]; then
-                echo "Not found with expected name, searching root directory for any cosmic binary..."
-                # Final fallback to root directory search with generic cosmic pattern
-                binary=$(find . -maxdepth 2 -name "cosmic*" -type f -executable | head -1)
+                echo "Not found with expected name, searching parent directory for any cosmic binary..."
+                # Final fallback to parent directory search with generic cosmic pattern
+                binary=$(search_binary "." "cosmic*")
             fi
             
             if [ -n "$binary" ]; then
