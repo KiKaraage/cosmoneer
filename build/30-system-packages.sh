@@ -139,14 +139,12 @@ copr_install_isolated "ublue-os/packages" "fwupd"
 
 # Install ublue packages
 echo "Installing ublue packages..."
-copr_install_isolated "ublue-os/packages" "ublue-brew"
-copr_install_isolated "ublue-os/packages" "ublue-polkit-rules"
-copr_install_isolated "ublue-os/packages" "ublue-setup-services"
-copr_install_isolated "ublue-os/packages" "uupd"
-
-# Install additional COPR packages
-echo "Installing additional COPR packages..."
-copr_install_isolated "ublue-os/packages" "ublue-os-udev-rules"
+copr_install_isolated "ublue-os/packages" \
+    "ublue-brew" \
+    "ublue-polkit-rules" \
+    "ublue-setup-services" \
+    "uupd" \
+    "ublue-os-udev-rules"
 
 # Install cliphist from zirconium COPR (if available)
 echo "Installing cliphist from zirconium packages..."
