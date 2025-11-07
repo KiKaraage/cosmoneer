@@ -3,16 +3,9 @@
 set -eoux pipefail
 
 ###############################################################################
-# Swap GNOME Desktop with COSMIC Desktop + Niri
+# COSMIC Desktop and Niri Window Manager
 ###############################################################################
-# This script replaces the GNOME desktop environment with System76's COSMIC 
-# desktop and adds the Niri window manager.
-#
-# COSMIC: New desktop environment built in Rust by System76
-# https://github.com/pop-os/cosmic-epoch
-#
-# Niri: Scrollable-tiling Wayland compositor
-# https://github.com/YaLTeR/niri
+# This script combines the installation of COSMIC desktop and Niri window manager
 ###############################################################################
 
 # Source helper functions
@@ -96,20 +89,49 @@ COSMICDESKTOP
 echo "Display manager configured"
 echo "::endgroup::"
 
-echo "::group:: Configure Niri Service"
+echo "::group:: Build cosmic-ext-alternative-startup for Niri"
 
-# Helper function to add Wants= directives to niri.service
-add_wants_niri() {
-    sed -i "s/\[Unit\]/\[Unit\]\nWants=$1/" "/usr/lib/systemd/user/niri.service"
-}
+# Install dependencies for building
+dnf5 install -y \
+    cargo \
+    rust \
+    libxkbcommon-devel \
+    wayland-devel
 
-echo "Niri service configured"
+# Clone and build cosmic-ext-alternative-startup
+cd /tmp
+git clone --depth 1 https://github.com/Drakulix/cosmic-ext-alternative-startup.git
+cd cosmic-ext-alternative-startup
+
+# Build the project
+export CARGO_HOME="/tmp/cargo"
+export CARGO_TARGET_DIR="/tmp/cargo-target"
+mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
+cargo build --release
+
+# Install the binary
+install -Dm755 "$CARGO_TARGET_DIR/release/cosmic-ext-alternative-startup" /usr/bin/cosmic-ext-alternative-startup
+
+echo "cosmic-ext-alternative-startup built and installed"
 echo "::endgroup::"
 
-echo "::group:: Install Additional Utilities"
+echo "::group:: Install Niri Session Files"
 
+# Clone the cosmic-ext-extra-sessions repo for Niri configuration
+cd /tmp
+git clone --depth 1 https://github.com/Drakulix/cosmic-ext-extra-sessions.git
+cd cosmic-ext-extra-sessions/niri
 
-echo "Additional utilities installed"
+# Install start-cosmic-ext-niri script
+install -Dm755 start-cosmic-ext-niri /usr/bin/start-cosmic-ext-niri
+
+# Update session file to use installed path
+sed -i 's|/usr/local/bin/start-cosmic-ext-niri|/usr/bin/start-cosmic-ext-niri|' cosmic-ext-niri.desktop
+
+# Install cosmic-ext-niri.desktop session file
+install -Dm644 cosmic-ext-niri.desktop /usr/share/wayland-sessions/cosmic-ext-niri.desktop
+
+echo "Niri session files installed"
 echo "::endgroup::"
 
 echo "::group:: Add COSMIC Flatpak Remote"
@@ -120,6 +142,13 @@ flatpak remote-add --if-not-exists --system cosmic https://apt.pop-os.org/cosmic
 echo "COSMIC Flatpak remote configured"
 echo "::endgroup::"
 
+echo "::group:: Cleanup"
 
+# Clean up build artifacts
+cd /
+rm -rf /tmp/cosmic-ext-alternative-startup /tmp/cosmic-ext-extra-sessions /tmp/cargo /tmp/cargo-target
 
-echo "COSMIC desktop installation complete!"
+echo "Cleanup complete"
+echo "::endgroup::"
+
+echo "COSMIC desktop and Niri installation complete!"

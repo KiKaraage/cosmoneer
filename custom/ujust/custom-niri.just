@@ -4,7 +4,7 @@
 #####################
 ## Commands for configuring Niri with COSMIC
 
-# Configure Niri for COSMIC integration
+# Configure Niri for COSMIC integration (minimal additive approach)
 [group('System')]
 configure-niri-cosmic:
     #!/usr/bin/bash
@@ -18,48 +18,48 @@ configure-niri-cosmic:
     # Create config directory if it doesn't exist
     mkdir -p "$CONFIG_DIR"
 
-    # Run niri once to generate default config if it doesn't exist
+    # Handle existing vs new configs
     if [ ! -f "$CONFIG_FILE" ]; then
-        echo "Generating default Niri configuration..."
-        # Note: This might need to be run in a different way depending on environment
-        echo "Please run 'niri' once to generate a default config, then run this command again."
-        exit 1
-    fi
-
-    # Backup existing config
-    cp "$CONFIG_FILE" "$CONFIG_FILE.backup-$(date +%Y%m%d-%H%M%S)"
-    echo "Backed up existing config"
-
-    # Check if spawn-at-startup is already configured
-    if grep -q "spawn-at-startup.*cosmic-ext-alternative-startup" "$CONFIG_FILE"; then
-        echo "COSMIC spawn-at-startup already configured"
+        echo "Setting up default Niri configuration with COSMIC integration..."
+        cp /etc/skel/.config/niri/config.kdl "$CONFIG_FILE"
+        echo "Default configuration applied!"
     else
-        echo "Adding COSMIC spawn-at-startup to Niri config..."
-        # Add spawn-at-startup for COSMIC
-        echo '' >> "$CONFIG_FILE"
-        echo 'spawn-at-startup "cosmic-ext-alternative-startup"' >> "$CONFIG_FILE"
+        echo "Existing Niri configuration found."
+        
+        # Check if COSMIC spawn-at-startup is already configured
+        if grep -q "spawn-at-startup.*cosmic-ext-alternative-startup" "$CONFIG_FILE"; then
+            echo "COSMIC spawn-at-startup already configured"
+        else
+            echo "Adding COSMIC spawn-at-startup to existing Niri config..."
+            # Backup existing config first
+            cp "$CONFIG_FILE" "$CONFIG_FILE.backup-$(date +%Y%m%d-%H%M%S)"
+            
+            # Add spawn-at-startup at the beginning of the file (after any potential comments/imports)
+            # Create temp file with the new line at the top
+            temp_file=$(mktemp)
+            
+            # Copy first few lines (comments, imports, etc.) then add our spawn line
+            awk '
+            BEGIN { added = 0 }
+            /^[[:space:]]*(spawn-at-startup|input|output|layout|window-rule|binds)/ && !added {
+                print "spawn-at-startup \"cosmic-ext-alternative-startup\""
+                print ""
+                added = 1
+            }
+            { print }
+            ' "$CONFIG_FILE" > "$temp_file"
+            
+            # Replace original with temp file
+            mv "$temp_file" "$CONFIG_FILE"
+            echo "COSMIC spawn-at-startup added to configuration!"
+        fi
+        
+        echo "Keeping your existing Niri keybindings."
+        echo "Use 'ujust show-niri-config' to view current configuration."
     fi
 
-    # Check if COSMIC keybindings are already configured
-    if grep -q "cosmic-term" "$CONFIG_FILE"; then
-        echo "COSMIC keybindings already configured"
-    else
-        echo "Adding COSMIC keybindings to Niri config..."
-        # Add COSMIC keybindings
-        {
-            echo ''
-            echo '// COSMIC Integration Keybindings'
-            echo 'binds {'
-            echo '    Mod+T { spawn "cosmic-term"; }'
-            echo '    Mod+D { spawn "cosmic-launcher"; }'
-            echo '    Mod+Shift+D { spawn "cosmic-app-library"; }'
-            echo '    Mod+Alt+L { spawn "cosmic-greeter"; }'
-            echo '}'
-        } >> "$CONFIG_FILE"
-    fi
-
-    echo "Niri configuration for COSMIC complete!"
-    echo "Log out and log back into the COSMIC-Niri session for changes to take effect."
+    echo "COSMIC integration is ready!"
+    echo "Log out and log back into 'cosmic-ext-niri' session for changes to take effect."
 
 # Show current Niri configuration
 [group('System')]

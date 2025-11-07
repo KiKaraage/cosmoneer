@@ -2,6 +2,7 @@
 FROM scratch AS ctx
 COPY build /build
 COPY custom /custom
+COPY system_files /system_files
 
 # Copy applet artifacts if available (handle missing directory gracefully)
 ARG APPLET_ARTIFACTS_DIR=./applets-artifacts
@@ -14,7 +15,7 @@ COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts
 ###############################################################################
 
 # Base Image
-FROM ghcr.io/ublue-os/bluefin:stable
+FROM ghcr.io/ublue-os/base-main:43
 
 # Image metadata to override base image description
 LABEL org.opencontainers.image.description="A scroller desktop image with COSMIC, Niri and Bluefin goodies together"
@@ -60,11 +61,18 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
         echo "No applet artifacts found, /applets will be empty"; \
     fi && \
     echo "Running build scripts..." && \
-    /ctx/build/10-build.sh && \
-    /ctx/build/30-cosmic-desktop.sh && \
-    /ctx/build/35-cosmic-niri-ext.sh && \
-    /ctx/build/36-cosmic-applets.sh && \
-    /ctx/build/50-extras.sh && \
+    /ctx/build/10-base-image.sh && \
+    /ctx/build/15-image-id.sh && \
+    /ctx/build/20-kernel-hardware.sh && \
+    /ctx/build/25-system-files.sh && \
+    /ctx/build/30-system-packages.sh && \
+    /ctx/build/35-system-services.sh && \
+    /ctx/build/40-cosmic-niri.sh && \
+    /ctx/build/42-niri-config.sh && \
+    /ctx/build/45-cosmic-applets.sh && \
+    /ctx/build/50-additional-software.sh && \
+    /ctx/build/60-shell-docs.sh && \
+    /ctx/build/99-cleanup.sh && \
     echo "Build scripts completed successfully"
     
 ### LINTING
