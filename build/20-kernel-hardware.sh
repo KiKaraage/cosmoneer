@@ -79,7 +79,7 @@ echo "::endgroup::"
 echo "::group:: Install Firmware Packages"
 
 echo "Installing wireless firmware..."
-dnf5 install -y \
+dnf5 install -y --skip-unavailable \
     atheros-firmware \
     brcmfmac-firmware \
     iwlegacy-firmware \
@@ -91,14 +91,13 @@ dnf5 install -y \
     tiwilink-firmware
 
 echo "Installing audio firmware..."
-dnf5 install -y \
+dnf5 install -y --skip-unavailable \
     alsa-firmware \
     alsa-sof-firmware \
     alsa-tools-firmware
 
 echo "Installing camera firmware..."
-dnf5 install -y \
-    libcamera-firmware \
+dnf5 install -y --skip-unavailable \
     libcamera-v4l2 \
     libcamera-gstreamer \
     libcamera-tools
