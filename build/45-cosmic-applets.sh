@@ -28,7 +28,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             applet_name=$(basename "$zip_file" .zip)
             echo "Extracting $applet_name..."
             # Convert underscores back to hyphens for directory naming consistency
-            applet_dir_name=$(echo "$applet_name" | sed 's/_/-/g')
+            applet_dir_name=${applet_name//_/-}
             # Extract to temp directory first to handle nested structure
             temp_dir="/tmp/$applet_name"
             mkdir -p "$temp_dir"
@@ -146,7 +146,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                                 if [ -n "$justfile_id" ]; then
                                     echo "Found justfile id: $justfile_id"
                                     # Extract applet name from id (last part after dots)
-                                    justfile_name=$(echo "$justfile_id" | sed 's/.*\.\([^.]*\)$/\1/')
+                                    justfile_name=${justfile_id##*.}
                                     echo "Extracted name from id: $justfile_name"
                                     binary=$(search_binary "./target/release" "$justfile_name")
                                 else
