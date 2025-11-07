@@ -55,35 +55,8 @@ rm -f /tmp/crystal-dock.rpm
 echo "Crystal Dock installed successfully"
 echo "::endgroup::"
 
-echo "::group:: Installing WaveTerminal"
-echo "Downloading WaveTerminal..."
-# Download WaveTerminal (latest release)
-WAVE_VERSION=$(curl -s https://api.github.com/repos/wavetermdev/waveterm/releases/latest | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4)
-echo "WaveTerminal version: ${WAVE_VERSION#v}"
-echo "Fetching waveterm-linux-x86_64-${WAVE_VERSION#v}.rpm..."
-curl -L -o /tmp/waveterm.rpm "https://github.com/wavetermdev/waveterm/releases/download/$WAVE_VERSION/waveterm-linux-x86_64-${WAVE_VERSION#v}.rpm"
-echo "Installing WaveTerminal RPM..."
-# Remove existing Wave directory if it exists to avoid RPM conflicts
-if [ -d "/opt/Wave" ]; then
-    echo "Removing existing /opt/Wave directory..."
-    rm -rf /opt/Wave
-fi
-# Also remove any existing waveterm installation
-if rpm -q waveterm >/dev/null 2>&1; then
-    echo "Removing existing waveterm package..."
-    rpm -e --nodeps waveterm
-fi
-# Try dnf5 first, then fallback to direct rpm installation with more aggressive flags
-if ! dnf5 install -y --allowerasing /tmp/waveterm.rpm; then
-    echo "dnf5 installation failed, trying direct rpm installation..."
-    # Remove directory again in case it was created during dnf5 attempt
-    rm -rf /opt/Wave
-    # Install with rpm using more aggressive flags
-    rpm -ivh --force --nodeps --replacefiles /tmp/waveterm.rpm
-fi
-rm -f /tmp/waveterm.rpm
-echo "WaveTerminal installed successfully"
-echo "::endgroup::"
+# WaveTerminal installation removed due to RPM packaging conflicts
+# Can be re-added later using AppImage format if needed
 
 echo "::group:: Installing Qt6 Theme Configuration"
 # Install qt6ct from Fedora repos
