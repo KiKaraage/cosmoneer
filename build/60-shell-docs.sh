@@ -17,7 +17,7 @@ tar -xzf /tmp/starship.tar.gz -C /tmp
 install -c -m 0755 /tmp/starship /usr/bin/starship
 
 # Add Starship to bashrc
-echo 'eval "$(starship init bash)"' >> /etc/bashrc
+echo "eval \"\$(starship init bash)\"" >> /etc/bashrc
 
 echo "Cleaning up boot messages..."
 # Remove console-login-helper-messages for cleaner boot
