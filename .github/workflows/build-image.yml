@@ -270,6 +270,8 @@ jobs:
         run: |
           # Get the first tag from metadata outputs to use as the source
           first_tag=$(echo "${{ steps.metadata.outputs.tags }}" | awk '{print $1}')
+          echo "First tag: $first_tag"
+          echo "All tags: ${{ steps.metadata.outputs.tags }}"
           for tag in ${{ steps.metadata.outputs.tags }}; do
             podman tag ${{ env.IMAGE_NAME }}:$first_tag ${{ env.IMAGE_NAME }}:$tag
           done
