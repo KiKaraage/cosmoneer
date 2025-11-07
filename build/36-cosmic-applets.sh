@@ -90,11 +90,24 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 echo "Not found in target/release/, trying justfile name variable..."
                 # Try to find from justfile name variable
                 if [ -f "justfile" ]; then
+                    echo "Justfile contents (first 10 lines):"
+                    head -10 justfile | sed 's/^/  /' || true
+                    echo ""
                     justfile_name=$(grep "^name :=" justfile | sed "s/name := '//" | sed "s/'//")
                     if [ -n "$justfile_name" ]; then
                         echo "Found justfile name: $justfile_name"
                         binary=$(find . -path "*/target/release/*" -name "$justfile_name" -type f -executable | head -1)
+                    else
+                        echo "No name variable found in justfile with pattern '^name :='"
+                        # Try alternative patterns
+                        justfile_name=$(grep "^name\s*=" justfile | sed 's/^name\s*=\s*//' | sed 's/[[:space:]]*$//' | sed 's/^"//' | sed 's/"$//')
+                        if [ -n "$justfile_name" ]; then
+                            echo "Found justfile name with alternative pattern: $justfile_name"
+                            binary=$(find . -path "*/target/release/*" -name "$justfile_name" -type f -executable | head -1)
+                        fi
                     fi
+                else
+                    echo "No justfile found"
                 fi
             fi
             
