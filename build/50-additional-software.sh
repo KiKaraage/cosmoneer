@@ -68,7 +68,19 @@ if [ -d "/opt/Wave" ]; then
     echo "Removing existing /opt/Wave directory..."
     rm -rf /opt/Wave
 fi
-dnf5 install -y /tmp/waveterm.rpm
+# Also remove any existing waveterm installation
+if rpm -q waveterm >/dev/null 2>&1; then
+    echo "Removing existing waveterm package..."
+    rpm -e --nodeps waveterm
+fi
+# Try dnf5 first, then fallback to direct rpm installation with more aggressive flags
+if ! dnf5 install -y --allowerasing /tmp/waveterm.rpm; then
+    echo "dnf5 installation failed, trying direct rpm installation..."
+    # Remove directory again in case it was created during dnf5 attempt
+    rm -rf /opt/Wave
+    # Install with rpm using more aggressive flags
+    rpm -ivh --force --nodeps --replacefiles /tmp/waveterm.rpm
+fi
 rm -f /tmp/waveterm.rpm
 echo "WaveTerminal installed successfully"
 echo "::endgroup::"
