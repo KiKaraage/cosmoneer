@@ -214,18 +214,6 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                         install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-music-player"
                         echo "Installed binary: cosmic-ext-applet-music-player (from $binary_name)"
                         ;;
-                    "cosmic-connect-applet")
-                        install -Dm0755 "$binary" "/usr/bin/cosmic-connect-applet"
-                        echo "Installed binary: cosmic-connect-applet (from $binary_name)"
-                        ;;
-                    "cosmic-ext-applet-ollama")
-                        install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-ollama"
-                        echo "Installed binary: cosmic-ext-applet-ollama (from $binary_name)"
-                        ;;
-                    "cosmic-ext-applet-privacy-indicator")
-                        install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-privacy-indicator"
-                        echo "Installed binary: cosmic-ext-applet-privacy-indicator (from $binary_name)"
-                        ;;
                     *)
                         install -Dm0755 "$binary" "/usr/bin/$binary_name"
                         echo "Installed binary: $binary_name"
