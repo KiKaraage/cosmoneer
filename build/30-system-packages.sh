@@ -27,9 +27,6 @@ FEDORA_PACKAGES=(
     # Shells & Terminal
     fish
     zsh
-    bash-color-prompt
-    tmux
-    eza
     ugrep
     bat
     atuin
@@ -40,7 +37,6 @@ FEDORA_PACKAGES=(
     zenity
     powertop
     lm_sensors
-    bootc
     bcache-tools
     ddcutil
     evtest
@@ -62,21 +58,16 @@ FEDORA_PACKAGES=(
     # Additional Packages
     ibus-mozc
     mozc
-    ibus-libpinyin
-    ibus-hangul
-    mesa-libGLU
     libxcrypt-compat
     setools-console
     usbip
-    xprop
-    pulseaudio-utils
     openssh-askpass
     oddjob-mkhomedir
 )
 
 # Install all Fedora packages (bulk - safe from COPR injection)
 echo "Installing ${#FEDORA_PACKAGES[@]} packages from Fedora repos..."
-dnf5 -y install "${FEDORA_PACKAGES[@]}"
+dnf5 -y install --skip-unavailable "${FEDORA_PACKAGES[@]}"
 
 echo "::endgroup::"
 
@@ -85,7 +76,7 @@ echo "::group:: Docker CE"
 echo "Installing Docker CE..."
 dnf5 config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
 dnf5 config-manager setopt docker-ce-stable.enabled=0
-dnf5 install -y --enablerepo='docker-ce-stable' docker-ce docker-ce-cli docker-compose-plugin
+dnf5 install -y --skip-unavailable --enablerepo='docker-ce-stable' docker-ce docker-ce-cli docker-compose-plugin
 
 echo "Configuring Docker CE..."
 # Enable SSH agent globally
@@ -130,7 +121,7 @@ EXCLUDED_PACKAGES=(
 if [[ "${#EXCLUDED_PACKAGES[@]}" -gt 0 ]]; then
     readarray -t INSTALLED_EXCLUDED < <(rpm -qa --queryformat='%{NAME}\n' "${EXCLUDED_PACKAGES[@]}" 2>/dev/null || true)
     if [[ "${#INSTALLED_EXCLUDED[@]}" -gt 0 ]]; then
-        dnf5 -y remove "${INSTALLED_EXCLUDED[@]}"
+        dnf5 -y remove --skip-unavailable "${INSTALLED_EXCLUDED[@]}"
     else
         echo "No excluded packages found to remove."
     fi
