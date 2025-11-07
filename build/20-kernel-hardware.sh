@@ -38,7 +38,7 @@ echo "::group:: AKMODS Hardware Support"
 
 # Fetch AKMODS from container registry
 echo "Fetching AKMODS from ghcr.io/ublue-os/akmods:$AKMODS_FLAVOR"
-skopeo copy "docker://ghcr.io/ublue-os/akmods:$AKMODS_FLAVOR" "oci-archive:/tmp/akmods.tar"
+skopeo copy --remove-signatures "docker://ghcr.io/ublue-os/akmods:$AKMODS_FLAVOR" "oci-archive:/tmp/akmods.tar"
 
 echo "Extracting AKMODS packages..."
 mkdir -p /tmp/akmods-extracted
