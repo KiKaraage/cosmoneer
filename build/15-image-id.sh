@@ -5,6 +5,7 @@ echo "::group:: ===$(basename "$0")==="
 set -xeuo pipefail
 
 IMAGE_PRETTY_NAME="Cosmoneer"
+IMAGE_NAME="cosmoneer"
 IMAGE_VENDOR="KiKaraage"
 IMAGE_LIKE="fedora"
 HOME_URL="https://github.com/KiKaraage/Cosmoneer"
