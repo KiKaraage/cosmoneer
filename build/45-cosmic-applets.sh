@@ -108,22 +108,16 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             search_binary() {
                 local search_dir="$1"
                 local binary_name="$2"
-                echo "Searching for $binary_name in $search_dir..."
+                echo "Searching for $binary_name in $search_dir..." >&2
                 if [ -d "$search_dir" ]; then
                     find "$search_dir" -maxdepth 1 -name "$binary_name" -type f -executable | head -1
                 else
-                    echo "Directory $search_dir does not exist"
+                    echo "Directory $search_dir does not exist" >&2
                 fi
             }
 
-            echo "Searching for binary: $expected_binary_name in target/release/..."
-            binary=$(search_binary "./target/release" "$expected_binary_name")
-            
-            if [ -z "$binary" ]; then
-                echo "Not found in target/release/, searching parent directory for $expected_binary_name..."
-                # Search in parent directory (current directory) with exact name
-                binary=$(search_binary "." "$expected_binary_name")
-            fi
+            echo "Searching for binary: $expected_binary_name in current directory..."
+            binary=$(search_binary "." "$expected_binary_name")
             
             if [ -z "$binary" ]; then
                 echo "Not found in target/release/, trying justfile name variable..."
@@ -135,21 +129,21 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     justfile_name=$(grep "^name :=" justfile | sed "s/name := '//" | sed "s/'//")
                     if [ -n "$justfile_name" ]; then
                         echo "Found justfile name: $justfile_name"
-                        binary=$(search_binary "./target/release" "$justfile_name")
+                        binary=$(search_binary "." "$justfile_name")
                     else
                         echo "No name variable found in justfile with pattern '^name :='"
                         # Try alternative patterns for name
                         justfile_name=$(grep "^name\s*=" justfile | sed 's/^name\s*=\s*//' | sed 's/[[:space:]]*$//' | sed 's/^"//' | sed 's/"$//')
                         if [ -n "$justfile_name" ]; then
                             echo "Found justfile name with alternative pattern: $justfile_name"
-                            binary=$(search_binary "./target/release" "$justfile_name")
+                            binary=$(search_binary "." "$justfile_name")
                         else
                             echo "No name variable found, trying to extract binary name from install target..."
                             # Look for install target to find binary name
                             install_binary=$(grep -A 5 "^install:" justfile | grep "install.*target/release.*" | sed 's/.*target\/release\/\([^[:space:]]*\).*/\1/' | head -1)
                             if [ -n "$install_binary" ]; then
                                 echo "Found binary in install target: $install_binary"
-                                binary=$(search_binary "./target/release" "$install_binary")
+                                binary=$(search_binary "." "$install_binary")
                             else
                                 echo "No binary found in install target, trying id variable..."
                                 # Try id variable (used by emoji selector)
@@ -159,7 +153,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                                     # Extract applet name from id (last part after dots)
                                     justfile_name=${justfile_id##*.}
                                     echo "Extracted name from id: $justfile_name"
-                                    binary=$(search_binary "./target/release" "$justfile_name")
+                                    binary=$(search_binary "." "$justfile_name")
                                 else
                                     echo "No name or id variable found in justfile"
                                 fi
@@ -172,20 +166,8 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             fi
             
             if [ -z "$binary" ]; then
-                echo "Not found with justfile name, trying generic cosmic search in target/release..."
-                # Fallback to generic cosmic search in target/release
-                binary=$(search_binary "./target/release" "cosmic*")
-            fi
-            
-            if [ -z "$binary" ]; then
-                echo "Not found in target/release/, searching parent directory for $expected_binary_name..."
-                # Search in parent directory (current directory) with exact name
-                binary=$(search_binary "." "$expected_binary_name")
-            fi
-            
-            if [ -z "$binary" ]; then
-                echo "Not found with expected name, searching parent directory for any cosmic binary..."
-                # Final fallback to parent directory search with generic cosmic pattern
+                echo "Not found with justfile name, searching for any cosmic binary..."
+                # Fallback to generic cosmic search
                 binary=$(search_binary "." "cosmic*")
             fi
             
