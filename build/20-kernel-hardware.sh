@@ -60,17 +60,19 @@ dnf5 -y copr disable ublue-os/akmods
 # Install hardware-specific modules
 echo "Installing hardware support modules..."
 
-# Gaming controllers
-copr_install_isolated "ublue-os/akmods" "akmod-xone"
+# Gaming controllers (temporarily disabled due to build issues)
+# copr_install_isolated "ublue-os/akmods" "akmod-xone"
 
-# Razer devices
-copr_install_isolated "ublue-os/akmods" "akmod-openrazer"
+# Razer devices (temporarily disabled due to build issues)
+# copr_install_isolated "ublue-os/akmods" "akmod-openrazer"
 
-# Framework laptop
-copr_install_isolated "ublue-os/akmods" "akmod-framework-laptop"
+# Framework laptop (temporarily disabled due to build issues)
+# copr_install_isolated "ublue-os/akmods" "akmod-framework-laptop"
 
-# Virtual camera
-copr_install_isolated "ublue-os/akmods" "akmod-v4l2loopback"
+# Virtual camera (temporarily disabled due to build issues)
+# copr_install_isolated "ublue-os/akmods" "akmod-v4l2loopback"
+
+echo "Hardware modules temporarily disabled to fix build issues"
 
 echo "::endgroup::"
 
