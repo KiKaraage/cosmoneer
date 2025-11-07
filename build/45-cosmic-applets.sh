@@ -113,12 +113,17 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     find "$search_dir" -maxdepth 1 -name "$binary_name" -type f -executable | head -1
                 else
                     echo "Directory $search_dir does not exist"
-                    return 1
                 fi
             }
 
             echo "Searching for binary: $expected_binary_name in target/release/..."
             binary=$(search_binary "./target/release" "$expected_binary_name")
+            
+            if [ -z "$binary" ]; then
+                echo "Not found in target/release/, searching parent directory for $expected_binary_name..."
+                # Search in parent directory (current directory) with exact name
+                binary=$(search_binary "." "$expected_binary_name")
+            fi
             
             if [ -z "$binary" ]; then
                 echo "Not found in target/release/, trying justfile name variable..."
