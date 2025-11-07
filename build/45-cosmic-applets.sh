@@ -98,6 +98,12 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 expected_binary_name="cosmic-applet-emoji-selector"
                 echo "Using special case: looking for cosmic-applet-emoji-selector"
             fi
+            # Special case for music-player
+            if [ "$applet_name" = "cosmic-applet-music-player" ]; then
+                expected_binary_name="cosmic-ext-applet-music-player"
+                echo "Using special case: looking for cosmic-ext-applet-music-player"
+            fi
+
             # Function to search for binary in a specific directory
             search_binary() {
                 local search_dir="$1"
@@ -198,6 +204,22 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     "cosmic-ext-applet-emoji-selector")
                         install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-emoji-selector"
                         echo "Installed binary: cosmic-ext-applet-emoji-selector (from $binary_name)"
+                        ;;
+                    "cosmic-applet-music-player")
+                        install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-music-player"
+                        echo "Installed binary: cosmic-ext-applet-music-player (from $binary_name)"
+                        ;;
+                    "cosmic-connect-applet")
+                        install -Dm0755 "$binary" "/usr/bin/cosmic-connect-applet"
+                        echo "Installed binary: cosmic-connect-applet (from $binary_name)"
+                        ;;
+                    "cosmic-ext-applet-ollama")
+                        install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-ollama"
+                        echo "Installed binary: cosmic-ext-applet-ollama (from $binary_name)"
+                        ;;
+                    "cosmic-ext-applet-privacy-indicator")
+                        install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-privacy-indicator"
+                        echo "Installed binary: cosmic-ext-applet-privacy-indicator (from $binary_name)"
                         ;;
                     *)
                         install -Dm0755 "$binary" "/usr/bin/$binary_name"
