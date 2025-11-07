@@ -139,7 +139,6 @@ copr_install_isolated "ublue-os/staging" "fwupd"
 
 # Install ublue packages
 echo "Installing ublue packages..."
-copr_install_isolated "ublue-os/staging" "ublue-bling"
 copr_install_isolated "ublue-os/staging" "ublue-brew"
 copr_install_isolated "ublue-os/staging" "ublue-polkit-rules"
 copr_install_isolated "ublue-os/staging" "ublue-setup-services"
