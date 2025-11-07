@@ -121,7 +121,7 @@ EXCLUDED_PACKAGES=(
 if [[ "${#EXCLUDED_PACKAGES[@]}" -gt 0 ]]; then
     readarray -t INSTALLED_EXCLUDED < <(rpm -qa --queryformat='%{NAME}\n' "${EXCLUDED_PACKAGES[@]}" 2>/dev/null || true)
     if [[ "${#INSTALLED_EXCLUDED[@]}" -gt 0 ]]; then
-        dnf5 -y remove --skip-unavailable "${INSTALLED_EXCLUDED[@]}"
+        dnf5 -y remove "${INSTALLED_EXCLUDED[@]}"
     else
         echo "No excluded packages found to remove."
     fi

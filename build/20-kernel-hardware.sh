@@ -103,12 +103,8 @@ dnf5 install -y --skip-unavailable \
     libcamera-tools
 
 echo "Installing network and storage packages..."
-dnf5 install -y \
-    NetworkManager-wifi \
-    cifs-utils \
-    firewalld \
+dnf5 install -y --skip-unavailable \
     gvfs-smb \
-    fuse-common \
     fuse-devel
 
 echo "::endgroup::"
