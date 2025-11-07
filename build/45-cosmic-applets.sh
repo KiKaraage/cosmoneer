@@ -215,9 +215,12 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 
                 # Manual installation based on preserved structure
                 
-                # Install desktop files, prioritizing res/ over root to avoid duplicates
+                # Install desktop files, checking multiple directories
                 if [ -d "res" ]; then
                     desktop_files=$(find res -name "*.desktop" -type f 2>/dev/null)
+                fi
+                if [ -z "$desktop_files" ] && [ -d "data" ]; then
+                    desktop_files=$(find data -name "*.desktop" -type f 2>/dev/null)
                 fi
                 if [ -z "$desktop_files" ]; then
                     desktop_files=$(find . -maxdepth 1 -name "*.desktop" -type f 2>/dev/null)
@@ -225,9 +228,15 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 if [ -n "$desktop_files" ]; then
                     echo "Installing desktop files..."
                     echo "$desktop_files" | while read -r desktop_file; do
-                        install -Dm0644 "$desktop_file" "/usr/share/applications/$(basename "$desktop_file")"
-                        echo "  Installed desktop file: $(basename "$desktop_file")"
+                        if [ -f "$desktop_file" ]; then
+                            install -Dm0644 "$desktop_file" "/usr/share/applications/$(basename "$desktop_file")"
+                            echo "  Installed desktop file: $(basename "$desktop_file")"
+                        else
+                            echo "  Warning: Desktop file not found: $desktop_file"
+                        fi
                     done
+                else
+                    echo "No desktop files found for $applet_name"
                 fi
                 
                 # Install metainfo files, prioritizing res/ over root to avoid duplicates

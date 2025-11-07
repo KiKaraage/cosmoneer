@@ -390,6 +390,20 @@ jobs:
                     resolved_path=$(echo "$var_value" | sed "s/'//g" | sed "s| |/|g" | sed "s|/ |//g")
                     # Skip empty resolved paths
                     [[ -n "$resolved_path" ]] && copy_with_structure "$resolved_path" "$APPLET_ARTIFACT_DIR"
+                    
+                    # Special handling for id variable - also look for id.desktop and id.metainfo.xml
+                    if [[ "$var_name" == "id" && -n "$resolved_path" ]]; then
+                      echo "Found id variable: $resolved_path, looking for associated files..."
+                      # Look for desktop file with id name
+                      for dir in data res; do
+                        if [[ -f "$dir/$resolved_path.desktop" ]]; then
+                          copy_with_structure "$dir/$resolved_path.desktop" "$APPLET_ARTIFACT_DIR"
+                        fi
+                        if [[ -f "$dir/$resolved_path.metainfo.xml" ]]; then
+                          copy_with_structure "$dir/$resolved_path.metainfo.xml" "$APPLET_ARTIFACT_DIR"
+                        fi
+                      done
+                    fi
                   fi
                 done
 
@@ -397,10 +411,23 @@ jobs:
                 if echo "$line" | grep -q "install.*-D"; then
                   # Extract source files from install commands (first argument after -D)
                   install_src=$(echo "$line" | sed -E 's/.*install[^-]*-D[^[:space:]]+[[:space:]]+([^[:space:]]+).*/\1/')
-                  # Skip if it's a variable reference (already handled above) or empty
-                  if [[ -n "$install_src" && ! "$install_src" =~ ^\{\{ ]]; then
-                    clean_src=$(echo "$install_src" | sed "s/[{}']//g")
-                    [[ -n "$clean_src" ]] && copy_with_structure "$clean_src" "$APPLET_ARTIFACT_DIR"
+                  
+                  # Handle variable substitution in install paths
+                  if [[ -n "$install_src" ]]; then
+                    # Replace {{id}} and other variables with their actual values
+                    resolved_src="$install_src"
+                    while IFS= read -r var_name; do
+                      var_value=$(echo "$JUSTFILE_CONTENT" | grep -E "^[[:space:]]*$var_name\s*:=" | tail -1 | sed -E "s/^[[:space:]]*$var_name\s*:=\s*//" | sed "s/[[:space:]]*$//" | sed "s/'//g")
+                      if [[ -n "$var_value" ]]; then
+                        resolved_src=$(echo "$resolved_src" | sed "s/{{$var_name}}/$var_value/g")
+                      fi
+                    done < <(echo "$install_src" | grep -oE '\{\{[^}]+\}\}' | sed 's/[{}]*//g')
+                    
+                    # Skip if it's still a variable reference or empty
+                    if [[ -n "$resolved_src" && ! "$resolved_src" =~ ^\{\{ ]]; then
+                      clean_src=$(echo "$resolved_src" | sed "s/[{}']//g")
+                      [[ -n "$clean_src" ]] && copy_with_structure "$clean_src" "$APPLET_ARTIFACT_DIR"
+                    fi
                   fi
                 fi
 
