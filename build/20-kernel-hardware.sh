@@ -15,7 +15,7 @@ source /ctx/build/copr-helpers.sh
 echo "::group:: Kernel Version Management"
 
 # Set kernel and akmods flavor from build args
-AKMODS_FLAVOR="${AKMODS_FLAVOR:-main}"
+AKMODS_FLAVOR="${AKMODS_FLAVOR:-main-43}"
 KERNEL="${KERNEL:-}"
 
 echo "Using AKMODS flavor: $AKMODS_FLAVOR"
