@@ -120,7 +120,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             binary=$(search_binary "." "$expected_binary_name")
             
             if [ -z "$binary" ]; then
-                echo "Not found in target/release/, trying justfile name variable..."
+                echo "Binary not found, trying justfile name variable..."
                 # Try to find from justfile name variable
                 if [ -f "justfile" ]; then
                     echo "Justfile contents (first 10 lines):"
@@ -215,8 +215,13 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 
                 # Manual installation based on preserved structure
                 
-                # Install desktop files from their original locations
-                desktop_files=$(find . -name "*.desktop" -type f)
+                # Install desktop files, prioritizing res/ over root to avoid duplicates
+                if [ -d "res" ]; then
+                    desktop_files=$(find res -name "*.desktop" -type f 2>/dev/null)
+                fi
+                if [ -z "$desktop_files" ]; then
+                    desktop_files=$(find . -maxdepth 1 -name "*.desktop" -type f 2>/dev/null)
+                fi
                 if [ -n "$desktop_files" ]; then
                     echo "Installing desktop files..."
                     echo "$desktop_files" | while read -r desktop_file; do
@@ -225,8 +230,13 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     done
                 fi
                 
-                # Install metainfo files from their original locations
-                metainfo_files=$(find . -name "*.metainfo.xml" -type f)
+                # Install metainfo files, prioritizing res/ over root to avoid duplicates
+                if [ -d "res" ]; then
+                    metainfo_files=$(find res -name "*.metainfo.xml" -type f 2>/dev/null)
+                fi
+                if [ -z "$metainfo_files" ]; then
+                    metainfo_files=$(find . -maxdepth 1 -name "*.metainfo.xml" -type f 2>/dev/null)
+                fi
                 if [ -n "$metainfo_files" ]; then
                     echo "Installing metainfo files..."
                     echo "$metainfo_files" | while read -r metainfo_file; do
