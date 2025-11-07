@@ -127,7 +127,7 @@ jobs:
             type=raw,value=${{ steps.date.outputs.wib_date }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' }}
             type=raw,value=latest,enable=${{ github.event_name == 'push' || github.event_name == 'schedule' }}
             type=sha,enable=${{ github.event_name == 'pull_request' }}
-            type=ref,event=pr
+            type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
