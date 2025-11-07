@@ -47,6 +47,8 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             applet_name=$(basename "$applet_dir")
             echo "Installing applet: $applet_name"
             
+            
+            
             cd "$applet_dir"
             
             # Install binary if present (in target/release/ or root)
@@ -76,8 +78,29 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             
             if [ -n "$binary" ]; then
                 binary_name=$(basename "$binary")
-                install -Dm0755 "$binary" "/usr/bin/$binary_name"
-                echo "Installed binary: $binary_name"
+                # Use proper applet names instead of hash-suffixed binaries
+                case "$applet_name" in
+                    "cosmic-connect-applet")
+                        install -Dm0755 "$binary" "/usr/bin/cosmic-connect-applet"
+                        echo "Installed binary: cosmic-connect-applet"
+                        ;;
+                    "cosmic-ext-applet-ollama")
+                        install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-ollama"
+                        echo "Installed binary: cosmic-ext-applet-ollama"
+                        ;;
+                    "cosmic-ext-applet-privacy-indicator")
+                        install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-privacy-indicator"
+                        echo "Installed binary: cosmic-ext-applet-privacy-indicator"
+                        ;;
+                    "cosmic-ext-applet-emoji-selector")
+                        install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-emoji-selector"
+                        echo "Installed binary: cosmic-ext-applet-emoji-selector"
+                        ;;
+                    *)
+                        install -Dm0755 "$binary" "/usr/bin/$binary_name"
+                        echo "Installed binary: $binary_name"
+                        ;;
+                esac
             fi
             
             # Only run just install if we didn't already install a binary
