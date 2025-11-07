@@ -63,6 +63,11 @@ echo "WaveTerminal version: ${WAVE_VERSION#v}"
 echo "Fetching waveterm-linux-x86_64-${WAVE_VERSION#v}.rpm..."
 curl -L -o /tmp/waveterm.rpm "https://github.com/wavetermdev/waveterm/releases/download/$WAVE_VERSION/waveterm-linux-x86_64-${WAVE_VERSION#v}.rpm"
 echo "Installing WaveTerminal RPM..."
+# Remove existing Wave directory if it exists to avoid RPM conflicts
+if [ -d "/opt/Wave" ]; then
+    echo "Removing existing /opt/Wave directory..."
+    rm -rf /opt/Wave
+fi
 dnf5 install -y /tmp/waveterm.rpm
 rm -f /tmp/waveterm.rpm
 echo "WaveTerminal installed successfully"
