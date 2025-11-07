@@ -1,9 +1,46 @@
-#!/usr/bin/env bash
-set -oue pipefail
+#!/usr/bin/bash
+
+set -eoux pipefail
 
 ###############################################################################
-# Install GitHub Release RPMs and Additional Utilities
+# Additional Software and External RPMs
 ###############################################################################
+# This script installs additional software from dnf5 and external RPM sources
+###############################################################################
+
+echo "::group:: Install Hardware and Networking Packages"
+
+echo "Installing hardware support packages..."
+dnf5 install -y \
+    igt-gpu-tools \
+    switcheroo-control
+
+echo "Installing printer drivers..."
+dnf5 install -y \
+    foo2zjs
+
+echo "Installing mobile device support..."
+dnf5 install -y \
+    ifuse
+
+echo "Installing networking tools..."
+dnf5 install -y \
+    tailscale \
+    iwd \
+    waypipe
+
+echo "Installing additional utilities..."
+dnf5 install -y \
+    msedit \
+    fontawesome-fonts \
+    fontawesome-fonts-web
+
+echo "Enabling Tailscale service..."
+systemctl enable tailscaled
+
+echo "::endgroup::"
+
+echo "::group:: Install GitHub Release RPMs"
 
 echo "::group:: Installing Crystal Dock"
 echo "Downloading Crystal Dock..."
@@ -16,16 +53,6 @@ echo "Installing Crystal Dock RPM..."
 dnf5 install -y /tmp/crystal-dock.rpm
 rm -f /tmp/crystal-dock.rpm
 echo "Crystal Dock installed successfully"
-echo "::endgroup::"
-
-echo "::group:: Installing Qt6 Theme Configuration"
-# Install qt6ct from Fedora repos
-echo "Checking qt6ct availability..."
-QT6CT_VERSION=$(dnf5 info qt6ct | grep -E "^Version[[:space:]]*:" | awk '{print $3}')
-echo "qt6ct version: $QT6CT_VERSION"
-echo "Installing qt6ct for Qt6 application theming..."
-dnf5 install -y qt6ct
-echo "qt6ct installed successfully"
 echo "::endgroup::"
 
 echo "::group:: Installing WaveTerminal"
@@ -41,25 +68,14 @@ rm -f /tmp/waveterm.rpm
 echo "WaveTerminal installed successfully"
 echo "::endgroup::"
 
-echo "::group:: Installing Additional Utilities"
-echo "Checking package versions..."
-MSEDIT_VERSION=$(dnf5 info msedit 2>/dev/null | grep -E "^Version[[:space:]]*:" | awk '{print $3}' || echo "unknown")
-BRIGHTNESSCTL_VERSION=$(dnf5 info brightnessctl 2>/dev/null | grep -E "^Version[[:space:]]*:" | awk '{print $3}' || echo "unknown")
-FONTAWESOME_VERSION=$(dnf5 info fontawesome-fonts 2>/dev/null | grep -E "^Version[[:space:]]*:" | awk '{print $3}' || echo "unknown")
-echo "msedit version: $MSEDIT_VERSION"
-echo "brightnessctl version: $BRIGHTNESSCTL_VERSION"
-echo "fontawesome-fonts version: $FONTAWESOME_VERSION"
-echo "Installing additional utilities:"
-echo "  - msedit (text editor)"
-echo "  - brightnessctl (brightness control)"
-echo "  - fontawesome-fonts (icon fonts)"
-echo "  - fontawesome-fonts-web (web icon fonts)"
-dnf5 install -y \
-    msedit \
-    brightnessctl \
-    fontawesome-fonts \
-    fontawesome-fonts-web
-echo "Additional utilities installed successfully"
+echo "::group:: Installing Qt6 Theme Configuration"
+# Install qt6ct from Fedora repos
+echo "Checking qt6ct availability..."
+QT6CT_VERSION=$(dnf5 info qt6ct | grep -E "^Version[[:space:]]*:" | awk '{print $3}')
+echo "qt6ct version: $QT6CT_VERSION"
+echo "Installing qt6ct for Qt6 application theming..."
+dnf5 install -y qt6ct
+echo "qt6ct installed successfully"
 echo "::endgroup::"
 
 echo "::group:: Configuring Qt6 Platform Theme"
@@ -69,4 +85,6 @@ echo "QT_QPA_PLATFORMTHEME=qt6ct" >> /etc/environment
 echo "Qt6 platform theme configured - Qt6 applications will now use qt6ct for theming"
 echo "::endgroup::"
 
-echo "All GitHub RPM installations and configurations completed successfully!"
+echo "::endgroup::"
+
+echo "Additional software installation complete!"

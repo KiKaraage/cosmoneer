@@ -127,7 +127,7 @@ jobs:
             type=raw,value=${{ steps.date.outputs.wib_date }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' }}
             type=raw,value=latest,enable=${{ github.event_name == 'push' || github.event_name == 'schedule' }}
             type=sha,enable=${{ github.event_name == 'pull_request' }}
-            type=ref,event=pr
+            type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
@@ -218,7 +218,7 @@ jobs:
           # Postfix image name with -custom to make it a little more descriptive
           # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
           image: ${{ env.IMAGE_NAME }}
-          tags: ${{ env.DEFAULT_TAG }}
+          tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           oci: true
           build-args: |
@@ -268,8 +268,10 @@ jobs:
       # Tag for registry (remove this step if using rechunker above)
       - name: Tag for registry
         run: |
+          # Get the first tag from metadata outputs to use as the source
+          first_tag=$(echo "${{ steps.metadata.outputs.tags }}" | awk '{print $1}')
           for tag in ${{ steps.metadata.outputs.tags }}; do
-            podman tag ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} ${{ env.IMAGE_NAME }}:$tag
+            podman tag ${{ env.IMAGE_NAME }}:$first_tag ${{ env.IMAGE_NAME }}:$tag
           done
 
       # SBOM (OPTIONAL): Software Bill of Materials generation using Syft

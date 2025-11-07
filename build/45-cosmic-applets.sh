@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Error handling function
+handle_error() {
+    local exit_code=$?
+    local line_number=$1
+    echo "Error occurred in script at line $line_number with exit code $exit_code"
+    echo "Current applet being processed: ${applet_name:-unknown}"
+    echo "Current working directory: $(pwd)"
+    echo "Directory contents:"
+    find . -maxdepth 2 -type f | head -20 || true
+    exit $exit_code
+}
+
+# Set up error trap
+trap 'handle_error $LINENO' ERR
+
 echo "::group:: Install COSMIC Applets"
 
 # Install applets from artifacts if they exist
@@ -13,7 +28,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             applet_name=$(basename "$zip_file" .zip)
             echo "Extracting $applet_name..."
             # Convert underscores back to hyphens for directory naming consistency
-            applet_dir_name=$(echo "$applet_name" | sed 's/_/-/g')
+            applet_dir_name=${applet_name//_/-}
             # Extract to temp directory first to handle nested structure
             temp_dir="/tmp/$applet_name"
             mkdir -p "$temp_dir"
@@ -83,11 +98,29 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 expected_binary_name="cosmic-applet-emoji-selector"
                 echo "Using special case: looking for cosmic-applet-emoji-selector"
             fi
-            echo "Searching for binary: $expected_binary_name in target/release/..."
-            binary=$(find . -path "*/target/release/*" -name "$expected_binary_name" -type f -executable | head -1)
+            # Special case for music-player
+            if [ "$applet_name" = "cosmic-applet-music-player" ]; then
+                expected_binary_name="cosmic-ext-applet-music-player"
+                echo "Using special case: looking for cosmic-ext-applet-music-player"
+            fi
+
+            # Function to search for binary in a specific directory
+            search_binary() {
+                local search_dir="$1"
+                local binary_name="$2"
+                echo "Searching for $binary_name in $search_dir..." >&2
+                if [ -d "$search_dir" ]; then
+                    find "$search_dir" -maxdepth 1 -name "$binary_name" -type f -executable | head -1
+                else
+                    echo "Directory $search_dir does not exist" >&2
+                fi
+            }
+
+            echo "Searching for binary: $expected_binary_name in current directory..."
+            binary=$(search_binary "." "$expected_binary_name")
             
             if [ -z "$binary" ]; then
-                echo "Not found in target/release/, trying justfile name variable..."
+                echo "Binary not found, trying justfile name variable..."
                 # Try to find from justfile name variable
                 if [ -f "justfile" ]; then
                     echo "Justfile contents (first 10 lines):"
@@ -96,14 +129,35 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     justfile_name=$(grep "^name :=" justfile | sed "s/name := '//" | sed "s/'//")
                     if [ -n "$justfile_name" ]; then
                         echo "Found justfile name: $justfile_name"
-                        binary=$(find . -path "*/target/release/*" -name "$justfile_name" -type f -executable | head -1)
+                        binary=$(search_binary "." "$justfile_name")
                     else
                         echo "No name variable found in justfile with pattern '^name :='"
-                        # Try alternative patterns
+                        # Try alternative patterns for name
                         justfile_name=$(grep "^name\s*=" justfile | sed 's/^name\s*=\s*//' | sed 's/[[:space:]]*$//' | sed 's/^"//' | sed 's/"$//')
                         if [ -n "$justfile_name" ]; then
                             echo "Found justfile name with alternative pattern: $justfile_name"
-                            binary=$(find . -path "*/target/release/*" -name "$justfile_name" -type f -executable | head -1)
+                            binary=$(search_binary "." "$justfile_name")
+                        else
+                            echo "No name variable found, trying to extract binary name from install target..."
+                            # Look for install target to find binary name
+                            install_binary=$(grep -A 5 "^install:" justfile | grep "install.*target/release.*" | sed 's/.*target\/release\/\([^[:space:]]*\).*/\1/' | head -1)
+                            if [ -n "$install_binary" ]; then
+                                echo "Found binary in install target: $install_binary"
+                                binary=$(search_binary "." "$install_binary")
+                            else
+                                echo "No binary found in install target, trying id variable..."
+                                # Try id variable (used by emoji selector)
+                                justfile_id=$(grep "^id\s*=" justfile | sed 's/^id\s*=\s*//' | sed 's/[[:space:]]*$//' | sed 's/^"//' | sed 's/"$//')
+                                if [ -n "$justfile_id" ]; then
+                                    echo "Found justfile id: $justfile_id"
+                                    # Extract applet name from id (last part after dots)
+                                    justfile_name=${justfile_id##*.}
+                                    echo "Extracted name from id: $justfile_name"
+                                    binary=$(search_binary "." "$justfile_name")
+                                else
+                                    echo "No name or id variable found in justfile"
+                                fi
+                            fi
                         fi
                     fi
                 else
@@ -112,21 +166,9 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             fi
             
             if [ -z "$binary" ]; then
-                echo "Not found with justfile name, trying generic cosmic search in target/release..."
-                # Fallback to generic cosmic search in target/release
-                binary=$(find . -path "*/target/release/*" -name "cosmic*" -type f -executable | head -1)
-            fi
-            
-            if [ -z "$binary" ]; then
-                echo "Not found in target/release/, searching root directory for $expected_binary_name..."
-                # Final fallback to root directory search with expected binary name
-                binary=$(find . -maxdepth 2 -name "$expected_binary_name" -type f -executable | head -1)
-            fi
-            
-            if [ -z "$binary" ]; then
-                echo "Not found with expected name, searching root directory for any cosmic binary..."
-                # Final fallback to root directory search with generic cosmic pattern
-                binary=$(find . -maxdepth 2 -name "cosmic*" -type f -executable | head -1)
+                echo "Not found with justfile name, searching for any cosmic binary..."
+                # Fallback to generic cosmic search
+                binary=$(search_binary "." "cosmic*")
             fi
             
             if [ -n "$binary" ]; then
@@ -150,6 +192,10 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                         install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-emoji-selector"
                         echo "Installed binary: cosmic-ext-applet-emoji-selector (from $binary_name)"
                         ;;
+                    "cosmic-applet-music-player")
+                        install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-music-player"
+                        echo "Installed binary: cosmic-ext-applet-music-player (from $binary_name)"
+                        ;;
                     *)
                         install -Dm0755 "$binary" "/usr/bin/$binary_name"
                         echo "Installed binary: $binary_name"
@@ -169,8 +215,13 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 
                 # Manual installation based on preserved structure
                 
-                # Install desktop files from their original locations
-                desktop_files=$(find . -name "*.desktop" -type f)
+                # Install desktop files, prioritizing res/ over root to avoid duplicates
+                if [ -d "res" ]; then
+                    desktop_files=$(find res -name "*.desktop" -type f 2>/dev/null)
+                fi
+                if [ -z "$desktop_files" ]; then
+                    desktop_files=$(find . -maxdepth 1 -name "*.desktop" -type f 2>/dev/null)
+                fi
                 if [ -n "$desktop_files" ]; then
                     echo "Installing desktop files..."
                     echo "$desktop_files" | while read -r desktop_file; do
@@ -179,8 +230,13 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     done
                 fi
                 
-                # Install metainfo files from their original locations
-                metainfo_files=$(find . -name "*.metainfo.xml" -type f)
+                # Install metainfo files, prioritizing res/ over root to avoid duplicates
+                if [ -d "res" ]; then
+                    metainfo_files=$(find res -name "*.metainfo.xml" -type f 2>/dev/null)
+                fi
+                if [ -z "$metainfo_files" ]; then
+                    metainfo_files=$(find . -maxdepth 1 -name "*.metainfo.xml" -type f 2>/dev/null)
+                fi
                 if [ -n "$metainfo_files" ]; then
                     echo "Installing metainfo files..."
                     echo "$metainfo_files" | while read -r metainfo_file; do

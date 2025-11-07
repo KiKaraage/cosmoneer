@@ -3,15 +3,10 @@
 set -eoux pipefail
 
 ###############################################################################
-# Main Build Script
+# Base Image Configuration
 ###############################################################################
-# This script follows the @ublue-os/bluefin pattern for build scripts.
-# It uses set -eoux pipefail for strict error handling and debugging.
+# This script handles base image setup and custom file copying
 ###############################################################################
-
-# Source helper functions
-# shellcheck source=/dev/null
-source /ctx/build/copr-helpers.sh
 
 echo "::group:: Copy Custom Files"
 
@@ -35,22 +30,6 @@ echo "Flatpak preinstall files copied to /etc/flatpak/preinstall.d/"
 
 echo "::endgroup::"
 
-echo "::group:: Install Packages"
-
-echo "No additional packages to install in main build script"
-echo "Package installations are handled in specialized build scripts:"
-echo "  - 25-github-rpms.sh (GitHub release RPMs)"
-echo "  - 30-cosmic-desktop.sh (COSMIC desktop packages)"
-echo "  - 35-cosmic-niri-ext.sh (Niri extensions)"
-
-# Install packages using dnf5
-# Example: dnf5 install -y tmux
-
-# Example using COPR with isolated pattern:
-# copr_install_isolated "ublue-os/staging" package-name
-
-echo "::endgroup::"
-
 echo "::group:: System Configuration"
 
 echo "Configuring systemd services..."
@@ -58,8 +37,7 @@ echo "Configuring systemd services..."
 echo "Enabling podman.socket for container management..."
 systemctl enable podman.socket
 echo "podman.socket enabled successfully"
-# Example: systemctl mask unwanted-service
 
 echo "::endgroup::"
 
-echo "Custom build complete!"
+echo "Base image configuration complete!"
