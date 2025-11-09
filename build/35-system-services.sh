@@ -80,26 +80,28 @@ RestartSec=5
 WantedBy=default.target
 EOF
 
-# Create swayidle service (useful for Niri sessions)
-tee /usr/lib/systemd/user/swayidle.service <<'EOF'
-[Unit]
-Description=Idle management daemon
-PartOf=graphical-session.target
-After=graphical-session.target
+echo "::group:: Configure Niri Services"
 
-[Service]
-Type=simple
-ExecStart=/usr/bin/swayidle
-Restart=on-failure
-RestartSec=5
+# Helper function to add Wants dependencies to niri.service
+add_wants_niri() {
+    sed -i "s/\[Unit\]/\[Unit\]\nWants=$1/" "/usr/lib/systemd/user/niri.service"
+}
 
-[Install]
-WantedBy=default.target
-EOF
+# Add services that should be started with niri
+add_wants_niri cosmic-idle.service
+add_wants_niri cosmic-ext-alternative-startup.service
+add_wants_niri waybar.service
+
+# Enable the services globally
+systemctl enable --global cosmic-idle.service
+systemctl enable --global cosmic-ext-alternative-startup.service
+systemctl enable --global waybar.service
+
+echo "Niri services configured"
+echo "::endgroup::"
 
 # Enable user services
 systemctl enable --global cliphist.service
-systemctl enable --global swayidle.service
 
 echo "::endgroup::"
 
