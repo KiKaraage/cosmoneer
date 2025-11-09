@@ -40,23 +40,9 @@ systemctl enable tailscaled
 
 echo "::endgroup::"
 
-echo "::group:: Install GitHub Release RPMs"
 
-echo "::group:: Installing Crystal Dock"
-echo "Downloading Crystal Dock..."
-# Download Crystal Dock (latest release)
-CRYSTAL_VERSION=$(curl -s https://api.github.com/repos/dangvd/crystal-dock/releases/latest | grep -o '"tag_name": "[^"]*' | cut -d'"' -f4 | sed 's/v//')
-echo "Crystal Dock version: $CRYSTAL_VERSION"
-echo "Fetching crystal-dock-${CRYSTAL_VERSION}-1.x86_64.rpm..."
-curl -L -o /tmp/crystal-dock.rpm "https://github.com/dangvd/crystal-dock/releases/latest/download/crystal-dock-${CRYSTAL_VERSION}-1.x86_64.rpm"
-echo "Installing Crystal Dock RPM..."
-dnf5 install -y /tmp/crystal-dock.rpm
-rm -f /tmp/crystal-dock.rpm
-echo "Crystal Dock installed successfully"
-echo "::endgroup::"
 
-# WaveTerminal installation removed due to RPM packaging conflicts
-# Can be re-added later using AppImage format if needed
+
 
 echo "::group:: Installing Qt6 Theme Configuration"
 # Install qt6ct from Fedora repos

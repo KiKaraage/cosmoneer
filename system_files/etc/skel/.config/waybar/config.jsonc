@@ -1,0 +1,12 @@
+{
+    "layer": "top",
+    "position": "bottom",
+    "modules-center": ["wlr/taskbar"],
+    "width": 2,
+    "wlr/taskbar": {
+        "format": "{icon}",
+        "icon-size": 20,
+        "tooltip-format": "{title}",
+        "on-click": "activate"
+    }
+}

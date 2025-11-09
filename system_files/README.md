@@ -3,6 +3,7 @@
 
 ## Structure:
 # etc/ - System configuration files
+# skel/ - Skeleton files for new user home directories
 # usr/lib/systemd/system/ - System service files
 # usr/lib/tmpfiles.d/ - Temporary file configurations
 # usr/lib/sysusers.d/ - User and group configurations
@@ -13,3 +14,4 @@
 # - tmpfiles for proper file handling
 # - sysusers for user/group management
 # - ublue-os integration files
+# - etc/skel/ files are automatically copied to new user homes

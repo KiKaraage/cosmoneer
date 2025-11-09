@@ -1,0 +1,14 @@
+window#waybar {
+  background: rgba(255, 255, 255, 0);
+  color: rgb(0, 0, 0);
+}
+#taskbar {
+  opacity: 0;
+  transition: ease 0.1s;
+}
+#taskbar:hover {
+  opacity: 1;
+}
+#taskbar > button.active {
+  border: rgba(255, 255, 255, 0.3) 2px;
+}

@@ -144,7 +144,8 @@ copr_install_isolated "ublue-os/packages" \
     "ublue-polkit-rules" \
     "ublue-setup-services" \
     "uupd" \
-    "ublue-os-udev-rules"
+    "ublue-os-udev-rules" \
+    "ublue-bling"
 
 # Install cliphist from zirconium COPR (if available)
 echo "Installing cliphist from zirconium packages..."

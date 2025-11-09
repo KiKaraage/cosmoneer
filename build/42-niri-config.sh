@@ -36,8 +36,6 @@ output {
     // Auto-configure displays
 }
 
-// Launch COSMIC services at startup
-spawn-at-startup "cosmic-ext-alternative-startup"
 
 // COSMIC Integration Keybindings
 binds {
