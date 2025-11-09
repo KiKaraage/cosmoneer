@@ -119,10 +119,13 @@ echo "Creating tmpfiles.d configurations..."
 mkdir -p /usr/lib/tmpfiles.d
 
 # Temporary directories for applications
+# Note: %u template variables don't work in tmpfiles.d during container build
+# These directories will be created dynamically at user session startup
 tee /usr/lib/tmpfiles.d/cosmoneer.conf <<'EOF'
 # Type Path Mode UID GID Age Argument
-d /run/user/%u/tmp 0700 %u %u - -
-d /run/user/%u/cliphist 0700 %u %u - -
+# User-specific temp directories - created at session startup
+d /run/user/1000/tmp 0700 1000 1000 - -
+d /run/user/1000/cliphist 0700 1000 1000 - -
 EOF
 
 echo "::endgroup::"
