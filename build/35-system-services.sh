@@ -82,22 +82,15 @@ EOF
 
 echo "::group:: Configure Niri Services"
 
-# Helper function to add Wants dependencies to niri.service
-add_wants_niri() {
-    sed -i "s/\[Unit\]/\[Unit\]\nWants=$1/" "/usr/lib/systemd/user/niri.service"
-}
+# Fix cosmic-idle.service to uncomment PartOf=graphical-session.target
+sed -i 's/# PartOf=graphical-session.target/PartOf=graphical-session.target/' "/usr/lib/systemd/user/cosmic-idle.service"
 
-# Add services that should be started with niri
-add_wants_niri cosmic-idle.service
-add_wants_niri cosmic-ext-alternative-startup.service
-add_wants_niri waybar.service
-
-# Enable the services globally
+# Enable the services globally so they start with the cosmic session
 systemctl enable --global cosmic-idle.service
 systemctl enable --global cosmic-ext-alternative-startup.service
 systemctl enable --global waybar.service
 
-echo "Niri services configured"
+echo "Niri services configured for cosmic-session"
 echo "::endgroup::"
 
 # Enable user services
