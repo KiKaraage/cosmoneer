@@ -76,30 +76,87 @@ COSMICDESKTOP
 echo "Display manager configured"
 echo "::endgroup::"
 
-echo "::group:: Build cosmic-ext-alternative-startup for Niri"
+echo "::group:: Install cosmic-ext-alternative-startup for Niri"
 
-# Install dependencies for building
-dnf5 install -y \
-    cargo \
-    rust \
-    libxkbcommon-devel \
-    wayland-devel
+# Check if binary exists in applets artifacts
+if [ -f "/applets/cosmic-ext-alternative-startup" ]; then
+    echo "Found cosmic-ext-alternative-startup binary in artifacts, installing..."
+    install -Dm755 /applets/cosmic-ext-alternative-startup /usr/bin/cosmic-ext-alternative-startup
+    echo "cosmic-ext-alternative-startup installed from artifacts"
+else
+    echo "cosmic-ext-alternative-startup binary not found in artifacts, building from source..."
+    
+    # Install dependencies for building
+    dnf5 install -y \
+        cargo \
+        rust \
+        libxkbcommon-devel \
+        wayland-devel
 
-# Clone and build cosmic-ext-alternative-startup
-cd /tmp
-git clone --depth 1 https://github.com/Drakulix/cosmic-ext-alternative-startup.git
-cd cosmic-ext-alternative-startup
+    # Clone and build cosmic-ext-alternative-startup
+    cd /tmp
+    git clone --depth 1 https://github.com/Drakulix/cosmic-ext-alternative-startup.git
+    cd cosmic-ext-alternative-startup
 
-# Build the project
-export CARGO_HOME="/tmp/cargo"
-export CARGO_TARGET_DIR="/tmp/cargo-target"
-mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
-cargo build --release
+    # Build the project
+    export CARGO_HOME="/tmp/cargo"
+    export CARGO_TARGET_DIR="/tmp/cargo-target"
+    mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
+    cargo build --release
 
-# Install the binary
-install -Dm755 "$CARGO_TARGET_DIR/release/cosmic-ext-alternative-startup" /usr/bin/cosmic-ext-alternative-startup
+    # Install the binary
+    install -Dm755 "$CARGO_TARGET_DIR/release/cosmic-ext-alternative-startup" /usr/bin/cosmic-ext-alternative-startup
 
-echo "cosmic-ext-alternative-startup built and installed"
+    echo "cosmic-ext-alternative-startup built and installed"
+    
+    # Cleanup build artifacts
+    cd /
+    rm -rf /tmp/cosmic-ext-alternative-startup /tmp/cargo /tmp/cargo-target
+fi
+
+echo "::endgroup::"
+
+echo "::group:: Install cosmic-ext-bg-theme"
+
+# Check if binary exists in applets artifacts
+if [ -f "/applets/cosmic-ext-bg-theme" ]; then
+    echo "Found cosmic-ext-bg-theme binary in artifacts, installing..."
+    install -Dm755 /applets/cosmic-ext-bg-theme /usr/bin/cosmic-ext-bg-theme
+    echo "cosmic-ext-bg-theme installed from artifacts"
+else
+    echo "cosmic-ext-bg-theme binary not found in artifacts, building from source..."
+    
+    # Install dependencies for building
+    dnf5 install -y \
+        cargo \
+        rust \
+        libxkbcommon-devel \
+        wayland-devel
+
+    # Clone and build cosmic-ext-bg-theme
+    cd /tmp
+    git clone --depth 1 https://github.com/wash2/cosmic_ext_bg_theme.git
+    cd cosmic_ext_bg_theme
+
+    # Build the project
+    export CARGO_HOME="/tmp/cargo"
+    export CARGO_TARGET_DIR="/tmp/cargo-target"
+    mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
+    cargo build --release
+
+    # Install the binary
+    install -Dm755 "$CARGO_TARGET_DIR/release/cosmic-ext-bg-theme" /usr/bin/cosmic-ext-bg-theme
+
+    # Install desktop file
+    install -Dm644 res/cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
+
+    echo "cosmic-ext-bg-theme built and installed"
+    
+    # Cleanup build artifacts
+    cd /
+    rm -rf /tmp/cosmic_ext_bg_theme /tmp/cargo /tmp/cargo-target
+fi
+
 echo "::endgroup::"
 
 echo "::group:: Install Niri Session Files"
@@ -133,7 +190,7 @@ echo "::group:: Cleanup"
 
 # Clean up build artifacts
 cd /
-rm -rf /tmp/cosmic-ext-alternative-startup /tmp/cosmic-ext-extra-sessions /tmp/cargo /tmp/cargo-target
+rm -rf /tmp/cosmic-ext-extra-sessions
 
 echo "Cleanup complete"
 echo "::endgroup::"

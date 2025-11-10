@@ -19,6 +19,10 @@ UBLUE_IMAGE_TAG="${UBLUE_IMAGE_TAG:-daily}"
 IMAGE_INFO="/usr/share/ublue-os/image-info.json"
 IMAGE_REF="ostree-image-signed:docker://ghcr.io/$IMAGE_VENDOR/$IMAGE_NAME"
 
+# Base image information
+BASE_IMAGE_NAME="base-main"
+FEDORA_MAJOR_VERSION="43"
+
 # Image Flavor
 image_flavor="cosmic"
 if [[ "${IMAGE_NAME}" =~ nvidia-open ]]; then

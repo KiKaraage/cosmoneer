@@ -1,0 +1,13 @@
+[Unit]
+Description=COSMIC Background Theme Service
+Documentation=man:cosmic-ext-bg-theme(1)
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/cosmic-ext-bg-theme
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target

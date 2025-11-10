@@ -71,6 +71,9 @@ dnf5 -y install --skip-unavailable "${FEDORA_PACKAGES[@]}"
 
 echo "::endgroup::"
 
+echo "Installing wf-recorder for screen recording..."
+dnf5 install -y wf-recorder
+
 echo "::group:: Docker CE"
 
 echo "Installing Docker CE..."

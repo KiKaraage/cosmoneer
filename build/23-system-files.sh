@@ -5,7 +5,7 @@ set -eoux pipefail
 ###############################################################################
 # System Services & Configuration
 ###############################################################################
-# This script configures essential system services from bluefin and zirconium
+# This script configures essential system services for Cosmoneer
 ###############################################################################
 
 echo "::group:: System Services Configuration"
@@ -17,7 +17,7 @@ systemctl enable systemd-resolved.service
 
 echo "::endgroup::"
 
-# Configure bootc automatic updates (from bluefin)
+# Configure bootc automatic updates
 echo "Configuring automatic updates..."
 sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/bootc update --quiet|' /usr/lib/systemd/system/bootc-fetch-apply-updates.service
 sed -i 's|^OnUnitInactiveSec=.*|OnUnitInactiveSec=7d\nPersistent=true|' /usr/lib/systemd/system/bootc-fetch-apply-updates.timer
@@ -47,7 +47,7 @@ systemctl enable firewalld
 
 echo "::group:: Container Registry Configuration"
 
-# Add container registry configuration (from zirconium)
+# Add container registry configuration
 echo "Configuring container registries..."
 mkdir -p /etc/containers/registries.d
 tee /etc/containers/registries.d/cosmoneer.yaml <<'EOF'
@@ -58,43 +58,59 @@ EOF
 
 echo "::endgroup::"
 
-echo "::group:: Systemd User Services"
+echo "::group:: Portal Configuration"
 
-# Configure user services for cliphist and session management
-echo "Configuring user services..."
-
-# Create cliphist service
-tee /usr/lib/systemd/user/cliphist.service <<'EOF'
-[Unit]
-Description=Clipboard history service
-PartOf=graphical-session.target
-After=graphical-session.target
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/cliphist watch
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=default.target
+# Configure xdg-desktop-portal for COSMIC on Niri
+echo "Configuring portals for COSMIC on Niri session..."
+mkdir -p /etc/xdg-desktop-portal
+tee /etc/xdg-desktop-portal/cosmoneer-portals.conf <<'EOF'
+[preferred]
+default=cosmic
+org.freedesktop.impl.portal.FileChooser=cosmic
+org.freedesktop.impl.portal.Screenshot=cosmic
+org.freedesktop.impl.portal.ScreenCast=cosmic
+org.freedesktop.impl.portal.Settings=cosmic
 EOF
 
-echo "::group:: Configure Niri Services"
+# Update cosmic.portal to work with niri session
+sed -i 's/UseIn=COSMIC/UseIn=COSMIC;niri/' /usr/share/xdg-desktop-portal/portals/cosmic.portal
 
-# Fix cosmic-idle.service to uncomment PartOf=graphical-session.target
-sed -i 's/# PartOf=graphical-session.target/PartOf=graphical-session.target/' "/usr/lib/systemd/user/cosmic-idle.service"
-
-# Enable the services globally so they start with the cosmic session
-systemctl enable --global cosmic-idle.service
-systemctl enable --global cosmic-ext-alternative-startup.service
-systemctl enable --global waybar.service
-
-echo "Niri services configured for cosmic-session"
 echo "::endgroup::"
 
-# Enable user services
+echo "::group:: Copy System Files"
+
+# Copy system files to container
+if [ -d "/ctx/system_files" ]; then
+    echo "Copying system files..."
+    rsync -rvK /ctx/system_files/ /
+    echo "System files copied successfully"
+else
+    echo "No system_files directory found, skipping"
+fi
+
+echo "::endgroup::"
+
+
+echo "::group:: Configure User Services"
+
+# Uncomment PartOf=graphical-session.target for proper session integration
+sed -i 's/# PartOf=graphical-session.target/PartOf=graphical-session.target/' "/usr/lib/systemd/user/cosmic-idle.service"
+
+# Follow Zirconium's pattern: enable globally but ensure session integration
+systemctl enable --global cosmic-idle.service
+systemctl enable --global cosmic-ext-alternative-startup.service
+systemctl enable --global cosmic-ext-bg-theme.service
 systemctl enable --global cliphist.service
+systemctl enable --global waybar.service
+
+
+# Use preset to ensure proper configuration
+systemctl preset --global cosmic-idle.service
+systemctl preset --global cosmic-ext-alternative-startup.service
+systemctl preset --global cosmic-ext-bg-theme.service
+systemctl preset --global cliphist.service
+systemctl preset --global waybar.service
+
 
 echo "::endgroup::"
 
@@ -103,11 +119,6 @@ echo "::group:: System Configuration Files"
 # Create sysusers.d configuration
 echo "Creating sysusers.d configurations..."
 mkdir -p /usr/lib/sysusers.d
-
-# Docker group (already created in 30-system-packages.sh, but ensuring it's here)
-tee /usr/lib/sysusers.d/docker.conf <<'EOF'
-g docker -
-EOF
 
 # Create tmpfiles.d configuration
 echo "Creating tmpfiles.d configurations..."

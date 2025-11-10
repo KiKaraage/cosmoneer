@@ -18,6 +18,48 @@ trap 'handle_error $LINENO' ERR
 
 echo "::group:: Install COSMIC Applets"
 
+# Install cosmic-ext-classic-menu from COPR
+echo "Installing cosmic-ext-classic-menu from championpeak87/cosmic-ext-classic-menu COPR..."
+copr_install_isolated "championpeak87/cosmic-ext-classic-menu" cosmic-ext-classic-menu
+echo "cosmic-ext-classic-menu installed from COPR"
+
+# Install cosmic-ext-applet-yt-dlp from GitHub release
+echo "Installing cosmic-ext-applet-yt-dlp from GitHub release..."
+cd /tmp
+LATEST_RELEASE=$(curl -s https://api.github.com/repos/D-Brox/cosmic-ext-applet-yt-dlp/releases/latest | grep -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//')
+if [ -n "$LATEST_RELEASE" ]; then
+    echo "Latest release: $LATEST_RELEASE"
+    RPM_URL="https://github.com/D-Brox/cosmic-ext-applet-yt-dlp/releases/download/$LATEST_RELEASE/cosmic-ext-applet-yt-dlp-0.1.1-1.x86_64.rpm"
+    echo "Downloading RPM from: $RPM_URL"
+    if curl -L -o cosmic-ext-applet-yt-dlp.rpm "$RPM_URL"; then
+        dnf5 install -y cosmic-ext-applet-yt-dlp.rpm
+        echo "cosmic-ext-applet-yt-dlp installed successfully"
+        rm -f cosmic-ext-applet-yt-dlp.rpm
+    else
+        echo "Failed to download cosmic-ext-applet-yt-dlp RPM"
+    fi
+else
+    echo "Failed to fetch latest release information for cosmic-ext-applet-yt-dlp"
+fi
+
+# Install cosmic-ext-applet-privacy-indicator from GitHub release
+echo "Installing cosmic-ext-applet-privacy-indicator from GitHub release..."
+LATEST_RELEASE=$(curl -s https://api.github.com/repos/D-Brox/cosmic-ext-applet-privacy-indicator/releases/latest | grep -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//')
+if [ -n "$LATEST_RELEASE" ]; then
+    echo "Latest release: $LATEST_RELEASE"
+    RPM_URL="https://github.com/D-Brox/cosmic-ext-applet-privacy-indicator/releases/download/$LATEST_RELEASE/cosmic-ext-applet-privacy-indicator-0.1.2-1.x86_64.rpm"
+    echo "Downloading RPM from: $RPM_URL"
+    if curl -L -o cosmic-ext-applet-privacy-indicator.rpm "$RPM_URL"; then
+        dnf5 install -y cosmic-ext-applet-privacy-indicator.rpm
+        echo "cosmic-ext-applet-privacy-indicator installed successfully"
+        rm -f cosmic-ext-applet-privacy-indicator.rpm
+    else
+        echo "Failed to download cosmic-ext-applet-privacy-indicator RPM"
+    fi
+else
+    echo "Failed to fetch latest release information for cosmic-ext-applet-privacy-indicator"
+fi
+
 # Install applets from artifacts if they exist
 if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
     echo "Installing applets from artifacts..."
@@ -195,6 +237,23 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     "cosmic-applet-music-player")
                         install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-music-player"
                         echo "Installed binary: cosmic-ext-applet-music-player (from $binary_name)"
+                        ;;
+                    "wf-recorder-gui")
+                        # Install wf-recorder-gui from artifacts
+                        if [ -f "wf-recorder-gui" ]; then
+                            install -Dm755 wf-recorder-gui /usr/bin/wf-recorder-gui
+                            echo "Installed binary: wf-recorder-gui"
+                        else
+                            echo "wf-recorder-gui binary not found in artifacts"
+                        fi
+                        
+                        # Install desktop file if present
+                        if [ -f "wf-recorder-gui.desktop" ]; then
+                            install -Dm644 wf-recorder-gui.desktop /usr/share/applications/wf-recorder-gui.desktop
+                            echo "Installed desktop file: wf-recorder-gui.desktop"
+                        else
+                            echo "wf-recorder-gui.desktop not found in artifacts"
+                        fi
                         ;;
                     *)
                         install -Dm0755 "$binary" "/usr/bin/$binary_name"
