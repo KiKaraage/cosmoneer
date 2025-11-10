@@ -1,6 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# COPR Helper Functions (inlined from copr-helpers.sh)
+copr_install_isolated() {
+    local copr_name="$1"
+    shift
+    local packages=("$@")
+
+    if [[ ${#packages[@]} -eq 0 ]]; then
+        echo "ERROR: No packages specified for copr_install_isolated"
+        return 1
+    fi
+
+    repo_id="copr:copr.fedorainfracloud.org:${copr_name//\//:}"
+
+    echo "Installing ${packages[*]} from COPR $copr_name (isolated)"
+
+    dnf5 -y copr enable "$copr_name"
+    dnf5 -y copr disable "$copr_name"
+    dnf5 -y install --enablerepo="$repo_id" "${packages[@]}"
+
+    echo "Installed ${packages[*]} from $copr_name"
+}
+
 # Error handling function
 handle_error() {
     local exit_code=$?
@@ -18,29 +40,34 @@ trap 'handle_error $LINENO' ERR
 
 echo "::group:: Install COSMIC Applets"
 
+# Install common dependencies for GitHub release RPMs
+echo "Installing common dependencies for applet RPMs..."
+dnf5 install -y glibc openssl-libs || echo "Some dependencies may already be installed"
+
 # Install cosmic-ext-classic-menu from COPR
 echo "Installing cosmic-ext-classic-menu from championpeak87/cosmic-ext-classic-menu COPR..."
 copr_install_isolated "championpeak87/cosmic-ext-classic-menu" cosmic-ext-classic-menu
 echo "cosmic-ext-classic-menu installed from COPR"
 
 # Install cosmic-ext-applet-yt-dlp from GitHub release
-echo "Installing cosmic-ext-applet-yt-dlp from GitHub release..."
-cd /tmp
-LATEST_RELEASE=$(curl -s https://api.github.com/repos/D-Brox/cosmic-ext-applet-yt-dlp/releases/latest | grep -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//')
-if [ -n "$LATEST_RELEASE" ]; then
-    echo "Latest release: $LATEST_RELEASE"
-    RPM_URL="https://github.com/D-Brox/cosmic-ext-applet-yt-dlp/releases/download/$LATEST_RELEASE/cosmic-ext-applet-yt-dlp-0.1.1-1.x86_64.rpm"
-    echo "Downloading RPM from: $RPM_URL"
-    if curl -L -o cosmic-ext-applet-yt-dlp.rpm "$RPM_URL"; then
-        dnf5 install -y cosmic-ext-applet-yt-dlp.rpm
-        echo "cosmic-ext-applet-yt-dlp installed successfully"
-        rm -f cosmic-ext-applet-yt-dlp.rpm
-    else
-        echo "Failed to download cosmic-ext-applet-yt-dlp RPM"
-    fi
-else
-    echo "Failed to fetch latest release information for cosmic-ext-applet-yt-dlp"
-fi
+# TEMPORARILY COMMENTED OUT due to dependency issues (nscd, openssl3-libs)
+# echo "Installing cosmic-ext-applet-yt-dlp from GitHub release..."
+# cd /tmp
+# LATEST_RELEASE=$(curl -s https://api.github.com/repos/D-Brox/cosmic-ext-applet-yt-dlp/releases/latest | grep -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//')
+# if [ -n "$LATEST_RELEASE" ]; then
+#     echo "Latest release: $LATEST_RELEASE"
+#     RPM_URL="https://github.com/D-Brox/cosmic-ext-applet-yt-dlp/releases/download/$LATEST_RELEASE/cosmic-ext-applet-yt-dlp-0.1.1-1.x86_64.rpm"
+#     echo "Downloading RPM from: $RPM_URL"
+#     if curl -L -o cosmic-ext-applet-yt-dlp.rpm "$RPM_URL"; then
+#         dnf5 install -y cosmic-ext-applet-yt-dlp.rpm
+#         echo "cosmic-ext-applet-yt-dlp installed successfully"
+#         rm -f cosmic-ext-applet-yt-dlp.rpm
+#     else
+#         echo "Failed to download cosmic-ext-applet-yt-dlp RPM"
+#     fi
+# else
+#     echo "Failed to fetch latest release information for cosmic-ext-applet-yt-dlp"
+# fi
 
 # Install cosmic-ext-applet-privacy-indicator from GitHub release
 echo "Installing cosmic-ext-applet-privacy-indicator from GitHub release..."
@@ -255,6 +282,26 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                             echo "wf-recorder-gui.desktop not found in artifacts"
                         fi
                         ;;
+                    "cosmic-ext-bg-theme")
+                        # Install cosmic-ext-bg-theme from artifacts
+                        if [ -f "cosmic-ext-bg-theme" ]; then
+                            install -Dm755 cosmic-ext-bg-theme /usr/bin/cosmic-ext-bg-theme
+                            echo "Installed binary: cosmic-ext-bg-theme"
+                        else
+                            echo "cosmic-ext-bg-theme binary not found in artifacts"
+                        fi
+                        
+                        # Install desktop file if present
+                        if [ -f "res/cosmic.ext.BgTheme.desktop" ]; then
+                            install -Dm644 res/cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
+                            echo "Installed desktop file: cosmic.ext.BgTheme.desktop"
+                        elif [ -f "cosmic.ext.BgTheme.desktop" ]; then
+                            install -Dm644 cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
+                            echo "Installed desktop file: cosmic.ext.BgTheme.desktop"
+                        else
+                            echo "cosmic.ext.BgTheme.desktop not found in artifacts"
+                        fi
+                        ;;
                     *)
                         install -Dm0755 "$binary" "/usr/bin/$binary_name"
                         echo "Installed binary: $binary_name"
@@ -275,6 +322,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 # Manual installation based on preserved structure
                 
                 # Install desktop files, checking multiple directories
+                desktop_files=""
                 if [ -d "res" ]; then
                     desktop_files=$(find res -name "*.desktop" -type f 2>/dev/null)
                 fi
@@ -299,6 +347,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 fi
                 
                 # Install metainfo files, prioritizing res/ over root to avoid duplicates
+                metainfo_files=""
                 if [ -d "res" ]; then
                     metainfo_files=$(find res -name "*.metainfo.xml" -type f 2>/dev/null)
                 fi

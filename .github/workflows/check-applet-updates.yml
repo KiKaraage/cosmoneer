@@ -94,7 +94,7 @@ jobs:
           echo "New applets detected: $NEW_APPLETS"
 
           # Get list of applets with successful builds (have artifacts)
-          SUCCESSFUL_APPLETS=$(gh run list --workflow build-applet.yml --limit 50 --json conclusion,name -q '.[] | select(.conclusion == "success") | .name | split(" ") | .[1]' | sort | uniq | tr '\n' ' ')
+          SUCCESSFUL_APPLETS=$(gh run list --workflow applet-management.yml --limit 50 --json conclusion,name -q '.[] | select(.conclusion == "success") | .name | split(" ") | .[1]' | sort | uniq | tr '\n' ' ')
 
           for row in $(echo "${APPLET_LIST}" | jq -r '.[] | @base64'); do
             _jq() {
