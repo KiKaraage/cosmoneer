@@ -238,6 +238,23 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                         install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-music-player"
                         echo "Installed binary: cosmic-ext-applet-music-player (from $binary_name)"
                         ;;
+                    "wf-recorder-gui")
+                        # Install wf-recorder-gui from artifacts
+                        if [ -f "wf-recorder-gui" ]; then
+                            install -Dm755 wf-recorder-gui /usr/bin/wf-recorder-gui
+                            echo "Installed binary: wf-recorder-gui"
+                        else
+                            echo "wf-recorder-gui binary not found in artifacts"
+                        fi
+                        
+                        # Install desktop file if present
+                        if [ -f "wf-recorder-gui.desktop" ]; then
+                            install -Dm644 wf-recorder-gui.desktop /usr/share/applications/wf-recorder-gui.desktop
+                            echo "Installed desktop file: wf-recorder-gui.desktop"
+                        else
+                            echo "wf-recorder-gui.desktop not found in artifacts"
+                        fi
+                        ;;
                     *)
                         install -Dm0755 "$binary" "/usr/bin/$binary_name"
                         echo "Installed binary: $binary_name"

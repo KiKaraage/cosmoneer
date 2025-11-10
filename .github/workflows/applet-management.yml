@@ -26,6 +26,7 @@ on:
           - 'cosmic-ext-applet-clipboard-manager'
           - 'cosmic-ext-applet-ollama'
           - 'cosmic-ext-alternative-startup'
+          - 'wf-recorder-gui'
 
 permissions:
   contents: write
@@ -71,8 +72,9 @@ jobs:
             {name: "cosmic-ext-applet-caffeine", url: "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
             {name: "cosmic-connect-applet", url: "https://github.com/cosmic-utils/cosmic-connect-applet.git"},
             {name: "cosmic-ext-applet-clipboard-manager", url: "https://github.com/cosmic-utils/clipboard-manager"},
-            {name: "cosmic-ext-applet-ollama", url: "https://github.com/cosmic-utils/cosmic-ext-applet-ollama.git"}
+            {name: "cosmic-ext-applet-ollama", url: "https://github.com/cosmic-utils/cosmic-ext-applet-ollama.git"},
             {name: "cosmic-ext-alternative-startup", url: "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
+            {name: "wf-recorder-gui", url: "https://github.com/ali205412/wf-recorder-gui.git"}
           ]')
           echo "matrix<<EOF" >> $GITHUB_OUTPUT
           printf '%s\n' "$APPLET_JSON" >> $GITHUB_OUTPUT
@@ -147,6 +149,8 @@ jobs:
           commit_message: "ci(applets): Update applet versions"
           file_pattern: "build/applet-versions.json"
 
+
+
   build-applets:
     name: Build Applet
     runs-on: ubuntu-24.04
@@ -170,6 +174,9 @@ jobs:
             libxkbcommon-dev libpipewire-0.3-dev libdbus-1-dev \
             libssl-dev pkg-config libwayland-dev ca-certificates \
             just unzip
+          
+          # Install wf-recorder for wf-recorder-gui dependency
+          sudo apt-get install -y --no-install-recommends wf-recorder
 
       - name: Build Applet
         run: |
@@ -322,6 +329,38 @@ jobs:
                         mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-ext-alternative-startup"
                         echo "Renamed binary to cosmic-ext-alternative-startup"
                     fi
+                    ;;
+                "wf-recorder-gui")
+                    # Special handling for wf-recorder-gui - manual build process
+                    echo "Building wf-recorder-gui manually..."
+                    
+                    # Install Rust toolchain if not present
+                    if ! command -v cargo >/dev/null 2>&1; then
+                        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+                        source "$HOME/.cargo/env"
+                    fi
+                    
+                    # Clone and build wf-recorder-gui
+                    cd /tmp
+                    rm -rf wf-recorder-gui
+                    git clone https://github.com/ali205412/wf-recorder-gui.git
+                    cd wf-recorder-gui
+                    
+                    # Build project
+                    export CARGO_HOME="/tmp/cargo"
+                    export CARGO_TARGET_DIR="/tmp/cargo-target"
+                    mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
+                    cargo build --release
+                    
+                    # Create artifact directory
+                    APPLET_ARTIFACT_DIR="/tmp/artifacts/wf-recorder-gui"
+                    mkdir -p "$APPLET_ARTIFACT_DIR"
+                    
+                    # Copy binary and desktop file to artifacts
+                    cp "$CARGO_TARGET_DIR/release/wf-recorder-gui" "$APPLET_ARTIFACT_DIR/"
+                    cp wf-recorder-gui.desktop "$APPLET_ARTIFACT_DIR/"
+                    
+                    echo "wf-recorder-gui built and packaged as artifact"
                     ;;
             esac
            else

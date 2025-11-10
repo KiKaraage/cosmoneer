@@ -165,6 +165,7 @@ jobs:
             {"name": "cosmic-ext-applet-ollama", "url": "https://github.com/cosmic-utils/cosmic-ext-applet-ollama"},
             {"name": "cosmic-ext-applet-clipboard-manager", "url": "https://github.com/cosmic-utils/clipboard-manager"}
             {"name": "cosmic-ext-alternative-startup", "url": "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
+            {"name": "wf-recorder-gui", "url": "https://github.com/ali205412/wf-recorder-gui.git"}
           ]'
           
           echo "Searching for specific applet workflow runs in $GH_REPO"
