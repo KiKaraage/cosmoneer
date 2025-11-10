@@ -19,7 +19,6 @@ on:
         options:
           - ''
           - 'cosmic-ext-applet-emoji-selector'
-          - 'cosmic-ext-applet-privacy-indicator'
           - 'cosmic-ext-applet-vitals'
           - 'cosmic-applet-music-player'
           - 'cosmic-ext-applet-caffeine'
@@ -67,7 +66,6 @@ jobs:
         run: |
           APPLET_JSON=$(jq -n '[
             {name: "cosmic-ext-applet-emoji-selector", url: "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"},
-            {name: "cosmic-ext-applet-privacy-indicator", url: "https://github.com/D-Brox/cosmic-ext-applet-privacy-indicator"},
             {name: "cosmic-ext-applet-vitals", url: "https://github.com/Coinio/cosmic-ext-applet-vitals.git"},
             {name: "cosmic-applet-music-player", url: "https://github.com/Ebbo/cosmic-applet-music-player.git"},
             {name: "cosmic-ext-applet-caffeine", url: "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
@@ -304,12 +302,6 @@ jobs:
            cp "$BINARY_NAME" "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME"
            echo "Copied $BINARY_BASENAME to artifacts"
            
-               "cosmic-ext-applet-privacy-indicator")
-                   if [[ "$BINARY_BASENAME" != "cosmic-ext-applet-privacy-indicator" ]]; then
-                       mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-ext-applet-privacy-indicator"
-                       echo "Renamed binary to cosmic-ext-applet-privacy-indicator"
-                   fi
-                   ;;
             # Rename binary to match expected applet name for problematic applets
             case "${APPLET_NAME}" in
                 "cosmic-connect-applet")

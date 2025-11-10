@@ -158,7 +158,6 @@ jobs:
           # Get list of applets from check-applet-updates workflow
           APPLET_JSON='[
             {"name": "cosmic-ext-applet-emoji-selector", "url": "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"},
-            {"name": "cosmic-ext-applet-privacy-indicator", "url": "https://github.com/D-Brox/cosmic-ext-applet-privacy-indicator"},
             {"name": "cosmic-ext-applet-vitals", "url": "https://github.com/Coinio/cosmic-ext-applet-vitals.git"},
             {"name": "cosmic-applet-music-player", "url": "https://github.com/Ebbo/cosmic-applet-music-player.git"},
             {"name": "cosmic-ext-applet-caffeine", "url": "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
