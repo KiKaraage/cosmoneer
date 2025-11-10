@@ -40,6 +40,10 @@ trap 'handle_error $LINENO' ERR
 
 echo "::group:: Install COSMIC Applets"
 
+# Install common dependencies for GitHub release RPMs
+echo "Installing common dependencies for applet RPMs..."
+dnf5 install -y glibc openssl-libs || echo "Some dependencies may already be installed"
+
 # Install cosmic-ext-classic-menu from COPR
 echo "Installing cosmic-ext-classic-menu from championpeak87/cosmic-ext-classic-menu COPR..."
 copr_install_isolated "championpeak87/cosmic-ext-classic-menu" cosmic-ext-classic-menu
@@ -54,12 +58,8 @@ if [ -n "$LATEST_RELEASE" ]; then
     RPM_URL="https://github.com/D-Brox/cosmic-ext-applet-yt-dlp/releases/download/$LATEST_RELEASE/cosmic-ext-applet-yt-dlp-0.1.1-1.x86_64.rpm"
     echo "Downloading RPM from: $RPM_URL"
     if curl -L -o cosmic-ext-applet-yt-dlp.rpm "$RPM_URL"; then
-        if dnf5 install -y --skip-broken cosmic-ext-applet-yt-dlp.rpm; then
-            echo "cosmic-ext-applet-yt-dlp installed successfully"
-        else
-            echo "Failed to install cosmic-ext-applet-yt-dlp due to dependency conflicts"
-            echo "This may be due to incompatible dependencies in the RPM"
-        fi
+        dnf5 install -y cosmic-ext-applet-yt-dlp.rpm
+        echo "cosmic-ext-applet-yt-dlp installed successfully"
         rm -f cosmic-ext-applet-yt-dlp.rpm
     else
         echo "Failed to download cosmic-ext-applet-yt-dlp RPM"
@@ -76,12 +76,8 @@ if [ -n "$LATEST_RELEASE" ]; then
     RPM_URL="https://github.com/D-Brox/cosmic-ext-applet-privacy-indicator/releases/download/$LATEST_RELEASE/cosmic-ext-applet-privacy-indicator-0.1.2-1.x86_64.rpm"
     echo "Downloading RPM from: $RPM_URL"
     if curl -L -o cosmic-ext-applet-privacy-indicator.rpm "$RPM_URL"; then
-        if dnf5 install -y --skip-broken cosmic-ext-applet-privacy-indicator.rpm; then
-            echo "cosmic-ext-applet-privacy-indicator installed successfully"
-        else
-            echo "Failed to install cosmic-ext-applet-privacy-indicator due to dependency conflicts"
-            echo "This may be due to incompatible dependencies in the RPM"
-        fi
+        dnf5 install -y cosmic-ext-applet-privacy-indicator.rpm
+        echo "cosmic-ext-applet-privacy-indicator installed successfully"
         rm -f cosmic-ext-applet-privacy-indicator.rpm
     else
         echo "Failed to download cosmic-ext-applet-privacy-indicator RPM"
