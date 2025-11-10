@@ -27,7 +27,7 @@ configure-niri-cosmic:
         echo "Existing Niri configuration found."
 
         # Check if COSMIC spawn-at-startup is already configured
-        if grep -q "spawn-at-startup.*cosmic-ext-alternative-startup" "$CONFIG_FILE"; then
+        if grep -q "spawn-at-startup.*cosmic-ext-alternative-startup" "$CONFIG_FILE" && grep -q "spawn-at-startup.*cosmic-ext-bg-theme" "$CONFIG_FILE"; then
             echo "COSMIC spawn-at-startup already configured"
         else
             echo "Adding COSMIC spawn-at-startup to existing Niri config..."
@@ -43,6 +43,7 @@ configure-niri-cosmic:
             BEGIN { added = 0 }
             /^[[:space:]]*(spawn-at-startup|input|output|layout|window-rule|binds)/ && !added {
                 print "spawn-at-startup \"cosmic-ext-alternative-startup\""
+                print "spawn-at-startup \"cosmic-ext-bg-theme\""
                 print ""
                 added = 1
             }

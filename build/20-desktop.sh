@@ -116,15 +116,46 @@ fi
 
 echo "::endgroup::"
 
+echo "::group:: Install cosmic-ext-bg-theme"
 
-# Build the project
-export CARGO_HOME="/tmp/cargo"
-export CARGO_TARGET_DIR="/tmp/cargo-target"
-mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
-cargo build --release
+# Check if binary exists in applets artifacts
+if [ -f "/applets/cosmic-ext-bg-theme" ]; then
+    echo "Found cosmic-ext-bg-theme binary in artifacts, installing..."
+    install -Dm755 /applets/cosmic-ext-bg-theme /usr/bin/cosmic-ext-bg-theme
+    echo "cosmic-ext-bg-theme installed from artifacts"
+else
+    echo "cosmic-ext-bg-theme binary not found in artifacts, building from source..."
+    
+    # Install dependencies for building
+    dnf5 install -y \
+        cargo \
+        rust \
+        libxkbcommon-devel \
+        wayland-devel
 
-# Install the binary
-install -Dm755 "$CARGO_TARGET_DIR/release/cosmic-ext-alternative-startup" /usr/bin/cosmic-ext-alternative-startup
+    # Clone and build cosmic-ext-bg-theme
+    cd /tmp
+    git clone --depth 1 https://github.com/wash2/cosmic_ext_bg_theme.git
+    cd cosmic_ext_bg_theme
+
+    # Build the project
+    export CARGO_HOME="/tmp/cargo"
+    export CARGO_TARGET_DIR="/tmp/cargo-target"
+    mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
+    cargo build --release
+
+    # Install the binary
+    install -Dm755 "$CARGO_TARGET_DIR/release/cosmic-ext-bg-theme" /usr/bin/cosmic-ext-bg-theme
+
+    # Install desktop file
+    install -Dm644 res/cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
+
+    echo "cosmic-ext-bg-theme built and installed"
+    
+    # Cleanup build artifacts
+    cd /
+    rm -rf /tmp/cosmic_ext_bg_theme /tmp/cargo /tmp/cargo-target
+fi
 
 echo "::endgroup::"
 

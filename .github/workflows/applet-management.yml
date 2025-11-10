@@ -26,6 +26,7 @@ on:
           - 'cosmic-ext-applet-clipboard-manager'
           - 'cosmic-ext-applet-ollama'
           - 'cosmic-ext-alternative-startup'
+          - 'cosmic-ext-bg-theme'
           - 'wf-recorder-gui'
 
 permissions:
@@ -74,6 +75,7 @@ jobs:
             {name: "cosmic-ext-applet-clipboard-manager", url: "https://github.com/cosmic-utils/clipboard-manager"},
             {name: "cosmic-ext-applet-ollama", url: "https://github.com/cosmic-utils/cosmic-ext-applet-ollama.git"},
             {name: "cosmic-ext-alternative-startup", url: "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
+            {name: "cosmic-ext-bg-theme", url: "https://github.com/wash2/cosmic_ext_bg_theme"},
             {name: "wf-recorder-gui", url: "https://github.com/ali205412/wf-recorder-gui.git"}
           ]')
           echo "matrix<<EOF" >> $GITHUB_OUTPUT
@@ -328,6 +330,17 @@ jobs:
                     if [[ "$BINARY_BASENAME" != "cosmic-ext-alternative-startup" ]]; then
                         mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-ext-alternative-startup"
                         echo "Renamed binary to cosmic-ext-alternative-startup"
+                    fi
+                    ;;
+                "cosmic-ext-bg-theme")
+                    if [[ "$BINARY_BASENAME" != "cosmic-ext-bg-theme" ]]; then
+                        mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-ext-bg-theme"
+                        echo "Renamed binary to cosmic-ext-bg-theme"
+                    fi
+                    # Ensure desktop file is copied
+                    if [[ -f "res/cosmic.ext.BgTheme.desktop" ]]; then
+                        cp "res/cosmic.ext.BgTheme.desktop" "$APPLET_ARTIFACT_DIR/"
+                        echo "Copied desktop file to artifacts"
                     fi
                     ;;
                 "wf-recorder-gui")

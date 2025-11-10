@@ -90,6 +90,7 @@ fi
 
 echo "::endgroup::"
 
+
 echo "::group:: Configure User Services"
 
 # Uncomment PartOf=graphical-session.target for proper session integration
@@ -98,14 +99,18 @@ sed -i 's/# PartOf=graphical-session.target/PartOf=graphical-session.target/' "/
 # Follow Zirconium's pattern: enable globally but ensure session integration
 systemctl enable --global cosmic-idle.service
 systemctl enable --global cosmic-ext-alternative-startup.service
+systemctl enable --global cosmic-ext-bg-theme.service
 systemctl enable --global cliphist.service
 systemctl enable --global waybar.service
+
 
 # Use preset to ensure proper configuration
 systemctl preset --global cosmic-idle.service
 systemctl preset --global cosmic-ext-alternative-startup.service
+systemctl preset --global cosmic-ext-bg-theme.service
 systemctl preset --global cliphist.service
 systemctl preset --global waybar.service
+
 
 echo "::endgroup::"
 

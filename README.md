@@ -20,6 +20,7 @@ This image is based on **Bluefin stable** and includes these customizations:
 - **COSMIC Desktop** - System76's next-generation desktop environment built in Rust ([ryanabx/cosmic-epoch](https://copr.fedorainfracloud.org/coprs/ryanabx/cosmic-epoch/))
 - **Niri Window Manager** - Scrollable-tiling Wayland compositor ([yalter/niri-git](https://copr.fedorainfracloud.org/coprs/yalter/niri-git/))
 - **COSMIC-Niri Integration** - Run COSMIC apps in Niri via cosmic-ext-alternative-startup
+- **Dynamic Background Themes** - Automatic palette generation from wallpapers via cosmic-ext-bg-theme
 - **Fonts preinstalled via Brew** - Recommended Cosmic UI font: Work Sans, Bricolage Grotesque, Aptos
 
 ### Multimedia Support
