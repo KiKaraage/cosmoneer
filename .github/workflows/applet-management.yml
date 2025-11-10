@@ -150,6 +150,7 @@ jobs:
         with:
           commit_message: "ci(applets): Update applet versions"
           file_pattern: "build/applet-versions.json"
+          pull_rebase: true
 
 
 
@@ -288,6 +289,16 @@ jobs:
                     break
                   fi
                 done < <(find "$MAIN_TARGET_DIR/release" -name "cosmic*" -type f -executable ! -name "*.ftl" ! -name "*.json" ! -name "*.xml" ! -name "*.toml" -print0 2>/dev/null)
+            fi
+
+            # Special case for wf-recorder-gui - look for the actual binary name
+            if [ -z "$BINARY_NAME" ] && [ "${APPLET_NAME}" = "wf-recorder-gui" ]; then
+                echo "Searching for wf-recorder-gui binary..."
+                WF_BINARY="$MAIN_TARGET_DIR/release/wf-recorder-gui"
+                if [ -f "$WF_BINARY" ] && is_binary "$WF_BINARY"; then
+                    BINARY_NAME="$WF_BINARY"
+                    echo "Found wf-recorder-gui binary: $BINARY_NAME"
+                fi
             fi
 
             # Validate we found a binary
