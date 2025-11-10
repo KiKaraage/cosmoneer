@@ -26,6 +26,7 @@ on:
           - 'cosmic-connect-applet'
           - 'cosmic-ext-applet-clipboard-manager'
           - 'cosmic-ext-applet-ollama'
+          - 'cosmic-ext-alternative-startup'
 
 permissions:
   contents: write
@@ -73,6 +74,7 @@ jobs:
             {name: "cosmic-connect-applet", url: "https://github.com/cosmic-utils/cosmic-connect-applet.git"},
             {name: "cosmic-ext-applet-clipboard-manager", url: "https://github.com/cosmic-utils/clipboard-manager"},
             {name: "cosmic-ext-applet-ollama", url: "https://github.com/cosmic-utils/cosmic-ext-applet-ollama.git"}
+            {name: "cosmic-ext-alternative-startup", url: "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
           ]')
           echo "matrix<<EOF" >> $GITHUB_OUTPUT
           printf '%s\n' "$APPLET_JSON" >> $GITHUB_OUTPUT
@@ -302,27 +304,34 @@ jobs:
            cp "$BINARY_NAME" "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME"
            echo "Copied $BINARY_BASENAME to artifacts"
            
-           # Rename binary to match expected applet name for problematic applets
-           case "${APPLET_NAME}" in
-               "cosmic-connect-applet")
-                   if [[ "$BINARY_BASENAME" != "cosmic-connect-applet" ]]; then
-                       mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-connect-applet"
-                       echo "Renamed binary to cosmic-connect-applet"
-                   fi
-                   ;;
-               "cosmic-ext-applet-ollama")
-                   if [[ "$BINARY_BASENAME" != "cosmic-ext-applet-ollama" ]]; then
-                       mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-ext-applet-ollama"
-                       echo "Renamed binary to cosmic-ext-applet-ollama"
-                   fi
-                   ;;
                "cosmic-ext-applet-privacy-indicator")
                    if [[ "$BINARY_BASENAME" != "cosmic-ext-applet-privacy-indicator" ]]; then
                        mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-ext-applet-privacy-indicator"
                        echo "Renamed binary to cosmic-ext-applet-privacy-indicator"
                    fi
                    ;;
-           esac
+            # Rename binary to match expected applet name for problematic applets
+            case "${APPLET_NAME}" in
+                "cosmic-connect-applet")
+                    if [[ "$BINARY_BASENAME" != "cosmic-connect-applet" ]]; then
+                        mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-connect-applet"
+                        echo "Renamed binary to cosmic-connect-applet"
+                    fi
+                    ;;
+                "cosmic-ext-applet-ollama")
+                    if [[ "$BINARY_BASENAME" != "cosmic-ext-applet-ollama" ]]; then
+                        mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-ext-applet-ollama"
+                        echo "Renamed binary to cosmic-ext-applet-ollama"
+                    fi
+                    ;;
+
+                "cosmic-ext-alternative-startup")
+                    if [[ "$BINARY_BASENAME" != "cosmic-ext-alternative-startup" ]]; then
+                        mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-ext-alternative-startup"
+                        echo "Renamed binary to cosmic-ext-alternative-startup"
+                    fi
+                    ;;
+            esac
            else
            echo "::error:: No binary found in $MAIN_TARGET_DIR/release"
            exit 1
@@ -490,3 +499,4 @@ jobs:
         with:
           name: ${{ matrix.applet.name }}
           path: /tmp/artifacts/${{ matrix.applet.name }}/
+

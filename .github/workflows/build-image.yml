@@ -155,7 +155,7 @@ jobs:
           set -e
           mkdir -p /tmp/applet-artifacts
           
-          # Get list of applets from the check-applet-updates workflow
+          # Get list of applets from check-applet-updates workflow
           APPLET_JSON='[
             {"name": "cosmic-ext-applet-emoji-selector", "url": "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"},
             {"name": "cosmic-ext-applet-privacy-indicator", "url": "https://github.com/D-Brox/cosmic-ext-applet-privacy-indicator"},
@@ -165,11 +165,12 @@ jobs:
             {"name": "cosmic-connect-applet", "url": "https://github.com/cosmic-utils/cosmic-connect-applet.git"},
             {"name": "cosmic-ext-applet-ollama", "url": "https://github.com/cosmic-utils/cosmic-ext-applet-ollama"},
             {"name": "cosmic-ext-applet-clipboard-manager", "url": "https://github.com/cosmic-utils/clipboard-manager"}
+            {"name": "cosmic-ext-alternative-startup", "url": "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
           ]'
           
           echo "Searching for specific applet workflow runs in $GH_REPO"
           
-          # For each applet, find the most recent successful workflow run by name
+          # For each applet, find most recent successful workflow run by name
           echo "$APPLET_JSON" | jq -r '.[] | .name' | while read -r applet_name; do
             echo "Looking for workflow run: Build $applet_name"
             
@@ -194,6 +195,8 @@ jobs:
           echo "Final downloaded artifacts:"
           ls -la /tmp/applet-artifacts/ || echo "No artifacts directory contents"
         continue-on-error: true
+
+
 
       - name: Copy Artifacts to Build Context
         run: |
