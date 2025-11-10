@@ -174,8 +174,14 @@ jobs:
           echo "$APPLET_JSON" | jq -r '.[] | .name' | while read -r applet_name; do
             echo "Looking for workflow run: Build $applet_name"
             
-            # Get the most recent successful workflow run for this specific applet by name
+            # Try applet-management.yml first, then build-applets.yml for backward compatibility
             run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" --limit 20 --json databaseId,conclusion,name -q ".[] | select(.conclusion == \"success\" and (.name == \"Build $applet_name\")) | .databaseId" | head -1)
+            
+            # If not found in applet-management.yml, try build-applets.yml
+            if [ -z "$run_id" ]; then
+              echo "No successful run found in applet-management.yml, checking build-applets.yml..."
+              run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" --limit 20 --json databaseId,conclusion,name -q ".[] | select(.conclusion == \"success\" and (.name == \"Build $applet_name\")) | .databaseId" | head -1)
+            fi
             
             if [ -n "$run_id" ]; then
               echo "Found successful run $run_id for 'Build $applet_name'"
@@ -188,7 +194,7 @@ jobs:
                 echo "No artifacts found for $applet_name in run $run_id"
               fi
             else
-              echo "No successful workflow run found for 'Build $applet_name'"
+              echo "No successful workflow run found for 'Build $applet_name' in either applet-management.yml or build-applets.yml"
             fi
           done
           

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Source COPR helper functions
-source /ctx/build/copr-helpers.sh
+source "${BASH_SOURCE[0]%/*}/copr-helpers.sh"
 
 # Error handling function
 handle_error() {
