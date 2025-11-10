@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Source COPR helper functions
+source /ctx/build/copr-helpers.sh
+
 # Error handling function
 handle_error() {
     local exit_code=$?
@@ -253,6 +256,26 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                             echo "Installed desktop file: wf-recorder-gui.desktop"
                         else
                             echo "wf-recorder-gui.desktop not found in artifacts"
+                        fi
+                        ;;
+                    "cosmic-ext-bg-theme")
+                        # Install cosmic-ext-bg-theme from artifacts
+                        if [ -f "cosmic-ext-bg-theme" ]; then
+                            install -Dm755 cosmic-ext-bg-theme /usr/bin/cosmic-ext-bg-theme
+                            echo "Installed binary: cosmic-ext-bg-theme"
+                        else
+                            echo "cosmic-ext-bg-theme binary not found in artifacts"
+                        fi
+                        
+                        # Install desktop file if present
+                        if [ -f "res/cosmic.ext.BgTheme.desktop" ]; then
+                            install -Dm644 res/cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
+                            echo "Installed desktop file: cosmic.ext.BgTheme.desktop"
+                        elif [ -f "cosmic.ext.BgTheme.desktop" ]; then
+                            install -Dm644 cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
+                            echo "Installed desktop file: cosmic.ext.BgTheme.desktop"
+                        else
+                            echo "cosmic.ext.BgTheme.desktop not found in artifacts"
                         fi
                         ;;
                     *)

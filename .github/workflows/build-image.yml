@@ -175,7 +175,7 @@ jobs:
             echo "Looking for workflow run: Build $applet_name"
             
             # Get the most recent successful workflow run for this specific applet by name
-            run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applet.yml" --limit 20 --json databaseId,conclusion,name -q ".[] | select(.conclusion == \"success\" and (.name == \"Build $applet_name\")) | .databaseId" | head -1)
+            run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" --limit 20 --json databaseId,conclusion,name -q ".[] | select(.conclusion == \"success\" and (.name == \"Build $applet_name\")) | .databaseId" | head -1)
             
             if [ -n "$run_id" ]; then
               echo "Found successful run $run_id for 'Build $applet_name'"
