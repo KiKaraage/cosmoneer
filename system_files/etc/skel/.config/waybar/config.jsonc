@@ -1,6 +1,7 @@
 {
     "layer": "top",
     "position": "bottom",
+    "mode": "hide",
     "modules-center": ["wlr/taskbar"],
     "width": 2,
     "wlr/taskbar": {
