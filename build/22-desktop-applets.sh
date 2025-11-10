@@ -322,6 +322,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 # Manual installation based on preserved structure
                 
                 # Install desktop files, checking multiple directories
+                desktop_files=""
                 if [ -d "res" ]; then
                     desktop_files=$(find res -name "*.desktop" -type f 2>/dev/null)
                 fi
@@ -346,6 +347,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 fi
                 
                 # Install metainfo files, prioritizing res/ over root to avoid duplicates
+                metainfo_files=""
                 if [ -d "res" ]; then
                     metainfo_files=$(find res -name "*.metainfo.xml" -type f 2>/dev/null)
                 fi

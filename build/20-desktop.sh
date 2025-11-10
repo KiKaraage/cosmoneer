@@ -79,13 +79,34 @@ echo "::endgroup::"
 echo "::group:: Install cosmic-ext-alternative-startup for Niri"
 
 # Check if binary exists in applets artifacts
-if [ -f "/applets/cosmic-ext-alternative-startup" ]; then
-    echo "Found cosmic-ext-alternative-startup binary in artifacts, installing..."
+if [ -d "/applets/cosmic-ext-alternative-startup" ]; then
+    # Look for the binary in the directory
+    BINARY_PATH=""
+    if [ -f "/applets/cosmic-ext-alternative-startup/cosmic-ext-alternative-startup" ]; then
+        BINARY_PATH="/applets/cosmic-ext-alternative-startup/cosmic-ext-alternative-startup"
+    else
+        # Find any executable binary in the directory
+        BINARY_PATH=$(find "/applets/cosmic-ext-alternative-startup" -name "cosmic-ext-alternative-startup" -type f -executable | head -1)
+    fi
+    
+    if [ -n "$BINARY_PATH" ]; then
+        echo "Found cosmic-ext-alternative-startup binary in artifacts, installing..."
+        install -Dm755 "$BINARY_PATH" /usr/bin/cosmic-ext-alternative-startup
+        echo "cosmic-ext-alternative-startup installed from artifacts: $BINARY_PATH"
+    else
+        echo "cosmic-ext-alternative-startup binary not found in artifacts directory, building from source..."
+        BUILD_ALTERNATIVE_STARTUP=true
+    fi
+elif [ -f "/applets/cosmic-ext-alternative-startup" ]; then
+    echo "Found cosmic-ext-alternative-startup binary as file in artifacts, installing..."
     install -Dm755 /applets/cosmic-ext-alternative-startup /usr/bin/cosmic-ext-alternative-startup
     echo "cosmic-ext-alternative-startup installed from artifacts"
 else
     echo "cosmic-ext-alternative-startup binary not found in artifacts, building from source..."
-    
+    BUILD_ALTERNATIVE_STARTUP=true
+fi
+
+if [ "${BUILD_ALTERNATIVE_STARTUP:-false}" = "true" ]; then
     # Install dependencies for building
     dnf5 install -y \
         cargo \
@@ -119,13 +140,43 @@ echo "::endgroup::"
 echo "::group:: Install cosmic-ext-bg-theme"
 
 # Check if binary exists in applets artifacts
-if [ -f "/applets/cosmic-ext-bg-theme" ]; then
-    echo "Found cosmic-ext-bg-theme binary in artifacts, installing..."
+if [ -d "/applets/cosmic-ext-bg-theme" ]; then
+    # Look for the binary in the directory
+    BINARY_PATH=""
+    if [ -f "/applets/cosmic-ext-bg-theme/cosmic-ext-bg-theme" ]; then
+        BINARY_PATH="/applets/cosmic-ext-bg-theme/cosmic-ext-bg-theme"
+    else
+        # Find any executable binary in the directory
+        BINARY_PATH=$(find "/applets/cosmic-ext-bg-theme" -name "cosmic-ext-bg-theme" -type f -executable | head -1)
+    fi
+    
+    if [ -n "$BINARY_PATH" ]; then
+        echo "Found cosmic-ext-bg-theme binary in artifacts, installing..."
+        install -Dm755 "$BINARY_PATH" /usr/bin/cosmic-ext-bg-theme
+        echo "cosmic-ext-bg-theme installed from artifacts: $BINARY_PATH"
+        
+        # Install desktop file if present
+        if [ -f "/applets/cosmic-ext-bg-theme/res/cosmic.ext.BgTheme.desktop" ]; then
+            install -Dm644 "/applets/cosmic-ext-bg-theme/res/cosmic.ext.BgTheme.desktop" /usr/share/applications/cosmic.ext.BgTheme.desktop
+            echo "Installed desktop file: cosmic.ext.BgTheme.desktop"
+        elif [ -f "/applets/cosmic-ext-bg-theme/cosmic.ext.BgTheme.desktop" ]; then
+            install -Dm644 "/applets/cosmic-ext-bg-theme/cosmic.ext.BgTheme.desktop" /usr/share/applications/cosmic.ext.BgTheme.desktop
+            echo "Installed desktop file: cosmic.ext.BgTheme.desktop"
+        fi
+    else
+        echo "cosmic-ext-bg-theme binary not found in artifacts directory, building from source..."
+        BUILD_BG_THEME=true
+    fi
+elif [ -f "/applets/cosmic-ext-bg-theme" ]; then
+    echo "Found cosmic-ext-bg-theme binary as file in artifacts, installing..."
     install -Dm755 /applets/cosmic-ext-bg-theme /usr/bin/cosmic-ext-bg-theme
     echo "cosmic-ext-bg-theme installed from artifacts"
 else
     echo "cosmic-ext-bg-theme binary not found in artifacts, building from source..."
-    
+    BUILD_BG_THEME=true
+fi
+
+if [ "${BUILD_BG_THEME:-false}" = "true" ]; then
     # Install dependencies for building
     dnf5 install -y \
         cargo \
