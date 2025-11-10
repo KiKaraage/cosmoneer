@@ -61,16 +61,15 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
         echo "No applet artifacts found, /applets will be empty"; \
     fi && \
     echo "Running build scripts..." && \
-    /ctx/build/10-base-image.sh && \
-    /ctx/build/20-kernel-hardware.sh && \
-    /ctx/build/25-system-files.sh && \
-    /ctx/build/30-system-packages.sh && \
-    /ctx/build/35-system-services.sh && \
-    /ctx/build/40-cosmic-niri.sh && \
-    /ctx/build/42-niri-config.sh && \
-    /ctx/build/45-cosmic-applets.sh && \
-    /ctx/build/50-additional-software.sh && \
-    /ctx/build/60-shell-docs.sh && \
+    /ctx/build/00-base.sh && \
+    /ctx/build/01-image-id.sh && \
+    /ctx/build/10-kernel-hardware.sh && \
+    /ctx/build/11-packages.sh && \
+    /ctx/build/20-desktop.sh && \
+    /ctx/build/21-desktop-config.sh && \
+    /ctx/build/22-desktop-applets.sh && \
+    /ctx/build/23-system-files.sh && \
+    /ctx/build/30-extras.sh && \
     /ctx/build/99-cleanup.sh && \
     echo "Build scripts completed successfully"
     

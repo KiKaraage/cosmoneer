@@ -4,55 +4,77 @@ This directory contains build scripts that run during image creation. Scripts ar
 
 ## How It Works
 
-Scripts are named with a number prefix (e.g., `10-build.sh`, `20-onepassword.sh`) and run in ascending order during the container build process.
+Scripts are named with a number prefix (e.g., `00-base.sh`, `01-image-id.sh`) and run in ascending order during the container build process.
 
-## Included Scripts
+## Current Scripts
 
-- **`10-build.sh`** - Main build script for base system modifications, package installation, and service configuration
-- (`20-nvidia.sh` reserved, if there are enough demand for it) 
-- **`30-cosmic-desktop.sh`** - Replaces GNOME with COSMIC desktop and installs Niri window manager
-- **`35-cosmic-niri-ext.sh`** - Builds and installs cosmic-ext-alternative-startup for COSMIC-Niri integration
-- **`36-cosmic-applets.sh`** - Installs COSMIC applets from build artifacts (binary, desktop files, icons, i18n)
-- **`50-extras.sh`** - Installs Docker CE and configures development environment
+### Base System
+- **`00-base.sh`** - Base system setup and core configuration
+- **`01-image-id.sh`** - Image identification and metadata
+
+### System Foundation  
+- **`10-kernel-hardware.sh`** - Kernel and hardware support packages
+- **`11-packages.sh`** - System packages, CLI tools, and COPR packages
+
+### Desktop Environment
+- **`20-desktop.sh`** - COSMIC desktop installation
+- **`21-desktop-config.sh`** - Niri window manager configuration
+- **`22-desktop-applets.sh`** - COSMIC applets installation
+
+### System Integration
+- **`23-system-files.sh`** - System files copying and service configuration
+
+### Additional Software
+- **`30-extras.sh`** - Additional software and tools
+
+### Finalization
+- **`99-cleanup.sh`** - Final cleanup tasks
 
 ## Example Scripts
 
-- **`20-onepassword.sh.example`** - Example showing how to install software from third-party RPM repositories (Google Chrome, 1Password)
+- **`onepassword.sh.example`** - Example showing how to install software from third-party RPM repositories
 
 To use an example script:
-1. Remove the `.example` extension
+1. Remove `.example` extension
 2. Make it executable: `chmod +x build/20-yourscript.sh`
 3. The build system will automatically run it in numerical order
 
 ## Creating Your Own Scripts
 
-Create numbered scripts for different purposes:
+Create numbered scripts for different purposes following the existing pattern:
 
 ```bash
-# 10-build.sh - Base system (already exists)
-# 20-drivers.sh - Hardware drivers  
-# 30-development.sh - Development tools
-# 40-gaming.sh - Gaming software
-# 50-cleanup.sh - Final cleanup tasks
+# 12-development.sh - Development tools
+# 15-gaming.sh - Gaming software  
+# 25-multimedia.sh - Multimedia packages
+# 35-custom-services.sh - Custom service configurations
 ```
 
 ### Script Template
 
 ```bash
-#!/usr/bin/env bash
-set -oue pipefail
+#!/usr/bin/bash
+set -eoux pipefail
 
-echo "Running custom setup..."
+###############################################################################
+# Script Purpose
+###############################################################################
+# Brief description of what this script does
+###############################################################################
+
+echo "::group:: Script Name"
 # Your commands here
+echo "::endgroup::"
 ```
 
 ### Best Practices
 
-- **Use descriptive names**: `20-nvidia-drivers.sh` is better than `20-stuff.sh`
+- **Use descriptive names**: `15-gaming.sh` is better than `15-stuff.sh`
 - **One purpose per script**: Easier to debug and maintain
 - **Clean up after yourself**: Remove temporary files and disable temporary repos
 - **Test incrementally**: Add one script at a time and test builds
 - **Comment your code**: Future you will thank present you
+- **Use GitHub groups**: Wrap output in `echo "::group:: Name"` and `echo "::endgroup::"`
 
 ### Disabling Scripts
 
@@ -62,21 +84,20 @@ To temporarily disable a script without deleting it:
 
 ## Execution Order
 
-The Containerfile runs scripts like this:
+The Containerfile runs scripts in this exact order:
 
 ```dockerfile
-RUN /ctx/build/10-build.sh && \
-    /ctx/build/30-cosmic-desktop.sh && \
-    /ctx/build/35-cosmic-niri-ext.sh && \
-    /ctx/build/36-cosmic-applets.sh && \
-    /ctx/build/50-extras.sh
+/ctx/build/00-base.sh && \
+/ctx/build/01-image-id.sh && \
+/ctx/build/10-kernel-hardware.sh && \
+/ctx/build/11-packages.sh && \
+/ctx/build/20-desktop.sh && \
+/ctx/build/21-desktop-config.sh && \
+/ctx/build/22-desktop-applets.sh && \
+/ctx/build/23-system-files.sh && \
+/ctx/build/30-extras.sh && \
+/ctx/build/99-cleanup.sh
 ```
-
-If you want to run multiple scripts, you can:
-
-1. **Modify Containerfile** to run each script explicitly
-2. **Create a runner script** that executes all numbered scripts
-3. **Use the default** and keep everything in `10-build.sh` (simplest)
 
 ## Notes
 
@@ -84,3 +105,5 @@ If you want to run multiple scripts, you can:
 - Build context is available at `/ctx`
 - Use dnf5 for package management (not dnf or yum)
 - Always use `-y` flag for non-interactive installs
+- Services are configured globally but integrated with the COSMIC session
+- Follow Zirconium's pattern: `systemctl enable --global` + `systemctl preset --global`
