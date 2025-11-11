@@ -490,21 +490,49 @@ jobs:
                copy_with_structure "$dir" "$APPLET_ARTIFACT_DIR"
              done
 
-              # Pattern 6: Copy any .desktop, .metainfo.xml, .svg files found anywhere (preserving structure)
-              while IFS= read -r -d '' file; do
-                copy_with_structure "${file#./}" "$APPLET_ARTIFACT_DIR"
-              done < <(find . -name "*.desktop" -type f 2>/dev/null)
-              while IFS= read -r -d '' file; do
-                copy_with_structure "${file#./}" "$APPLET_ARTIFACT_DIR"
-              done < <(find . -name "*.metainfo.xml" -type f 2>/dev/null)
-              while IFS= read -r -d '' file; do
-                copy_with_structure "${file#./}" "$APPLET_ARTIFACT_DIR"
-              done < <(find . -name "*.svg" -type f 2>/dev/null)
+               # Pattern 6: Copy any .desktop, .metainfo.xml, .svg files found anywhere (preserving structure)
+               while IFS= read -r -d '' file; do
+                 copy_with_structure "${file#./}" "$APPLET_ARTIFACT_DIR"
+               done < <(find . -name "*.desktop" -type f 2>/dev/null)
+               while IFS= read -r -d '' file; do
+                 copy_with_structure "${file#./}" "$APPLET_ARTIFACT_DIR"
+               done < <(find . -name "*.metainfo.xml" -type f 2>/dev/null)
+               while IFS= read -r -d '' file; do
+                 copy_with_structure "${file#./}" "$APPLET_ARTIFACT_DIR"
+               done < <(find . -name "*.svg" -type f 2>/dev/null)
 
-             # Pattern 7: Check for install.sh scripts (like in privacy-indicator)
-             if [[ -f "install.sh" ]]; then
-               copy_with_structure "install.sh" "$APPLET_ARTIFACT_DIR"
-             fi
+              # Pattern 7: Handle schema installation for applets that have install-schema target
+              if just --list 2>/dev/null | grep -q "install-schema"; then
+                echo "Found install-schema target, setting up schema installation..."
+                
+                # Extract id variable from justfile for schema path
+                if [ -f "justfile" ]; then
+                  SCHEMA_ID=$(grep "^id :=" justfile | sed "s/id := '//" | sed "s/'//")
+                  echo "Schema ID found: $SCHEMA_ID"
+                  
+                  # Create schema installation script
+                  cat > "$APPLET_ARTIFACT_DIR/install-schema.sh" << EOF
+#!/bin/bash
+set -euo pipefail
+
+# Schema installation script for \${APPLET_NAME}
+mkdir -p "\$HOME/.config/cosmic/${SCHEMA_ID}/v1/"
+if [ -d "data/schema" ]; then
+  cp data/schema/* "\$HOME/.config/cosmic/${SCHEMA_ID}/v1/"
+  echo "Schema files installed to \$HOME/.config/cosmic/${SCHEMA_ID}/v1/"
+else
+  echo "No data/schema directory found"
+fi
+EOF
+                  chmod +x "$APPLET_ARTIFACT_DIR/install-schema.sh"
+                  echo "Created schema installation script"
+                fi
+              fi
+
+              # Pattern 8: Check for install.sh scripts (like in privacy-indicator)
+              if [[ -f "install.sh" ]]; then
+                copy_with_structure "install.sh" "$APPLET_ARTIFACT_DIR"
+              fi
 
            else
              # Fallback: copy common directories if no justfile
