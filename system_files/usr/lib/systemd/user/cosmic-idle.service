@@ -1,7 +1,6 @@
 [Unit]
 Description=Idling daemon
-# PartOf=graphical-session.target
-After=graphical-session.target
+After=default.target
 
 [Service]
 Environment=WAYLAND_DISPLAY=wayland-1
