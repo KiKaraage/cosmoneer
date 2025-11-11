@@ -6,10 +6,12 @@ on:
   schedule:
   - cron: '0 0 * * 0'  # Weekly on Sunday
   workflow_dispatch:
-  pull_request:
-    paths:
-      - '.github/workflows/applet-management.yml'
     inputs:
+      test_mode:
+        description: 'Run test mode instead of full build'
+        required: false
+        default: 'false'
+        type: boolean
       force_all:
         description: 'Force build all applets'
         required: false
@@ -611,7 +613,7 @@ jobs:
   test-applet-workflow:
     name: Test Applet Workflow
     runs-on: ubuntu-24.04
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_mode == 'true'
     
     steps:
       - name: Checkout Repository
