@@ -10,8 +10,14 @@ set -eoux pipefail
 
 echo "::group:: Configure Portal Services"
 
-# Unmask and enable GTK portal for Niri
-systemctl --user unmask xdg-desktop-portal-gtk.service || true
+# Ensure GTK portal is not masked (build-time mask removal)
+mkdir -p "/etc/systemd/user"
+rm -f "/etc/systemd/user/xdg-desktop-portal-gtk.service" || true
+
+# Enable GTK portal for file chooser in Niri
+mkdir -p "/etc/systemd/user/graphical-session.target.wants"
+ln -sf "/usr/lib/systemd/user/xdg-desktop-portal-gtk.service" \
+    "/etc/systemd/user/graphical-session.target.wants/xdg-desktop-portal-gtk.service" || true
 
 echo "::endgroup::"
 echo "::group:: Configure Niri Session Services"
