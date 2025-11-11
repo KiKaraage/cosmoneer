@@ -69,6 +69,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build/21-desktop-config.sh && \
     /ctx/build/22-desktop-applets.sh && \
     /ctx/build/23-system-files.sh && \
+    /ctx/build/24-niri-services.sh && \
     /ctx/build/30-extras.sh && \
     /ctx/build/99-cleanup.sh && \
     echo "Build scripts completed successfully"
