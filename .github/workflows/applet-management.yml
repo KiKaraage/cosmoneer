@@ -511,19 +511,7 @@ jobs:
                   echo "Schema ID found: $SCHEMA_ID"
                   
                   # Create schema installation script
-                  cat > "$APPLET_ARTIFACT_DIR/install-schema.sh" << EOF
-#!/bin/bash
-set -euo pipefail
-
-# Schema installation script for \${APPLET_NAME}
-mkdir -p "\$HOME/.config/cosmic/${SCHEMA_ID}/v1/"
-if [ -d "data/schema" ]; then
-  cp data/schema/* "\$HOME/.config/cosmic/${SCHEMA_ID}/v1/"
-  echo "Schema files installed to \$HOME/.config/cosmic/${SCHEMA_ID}/v1/"
-else
-  echo "No data/schema directory found"
-fi
-EOF
+                  printf '#!/bin/bash\nset -euo pipefail\n\n# Schema installation script for ${APPLET_NAME}\nmkdir -p "$HOME/.config/cosmic/%s/v1/"\nif [ -d "data/schema" ]; then\n  cp data/schema/* "$HOME/.config/cosmic/%s/v1/"\n  echo "Schema files installed to $HOME/.config/cosmic/%s/v1/"\nelse\n  echo "No data/schema directory found"\nfi\n' "$SCHEMA_ID" "$SCHEMA_ID" "$SCHEMA_ID" > "$APPLET_ARTIFACT_DIR/install-schema.sh"
                   chmod +x "$APPLET_ARTIFACT_DIR/install-schema.sh"
                   echo "Created schema installation script"
                 fi
