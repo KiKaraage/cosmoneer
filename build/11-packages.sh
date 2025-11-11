@@ -74,6 +74,9 @@ echo "::endgroup::"
 echo "Installing wf-recorder for screen recording..."
 dnf5 install -y wf-recorder
 
+echo "Installing setuptools-78.1.1 from thrnciar/setuptools-78.1.1..."
+copr_install_isolated "thrnciar/setuptools-78.1.1" "slurp"
+
 echo "::group:: Docker CE"
 
 echo "Installing Docker CE..."
