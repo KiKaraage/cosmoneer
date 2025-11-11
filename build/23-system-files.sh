@@ -15,8 +15,6 @@ echo "Configuring essential system services..."
 systemctl enable systemd-timesyncd
 systemctl enable systemd-resolved.service
 
-echo "::endgroup::"
-
 # Configure bootc automatic updates
 echo "Configuring automatic updates..."
 sed -i 's|^ExecStart=.*|ExecStart=/usr/bin/bootc update --quiet|' /usr/lib/systemd/system/bootc-fetch-apply-updates.service
@@ -45,6 +43,7 @@ systemctl preset systemd-resolved.service
 # Enable firewalld
 systemctl enable firewalld
 
+echo "::endgroup::"
 echo "::group:: Container Registry Configuration"
 
 # Add container registry configuration
@@ -57,7 +56,6 @@ docker:
 EOF
 
 echo "::endgroup::"
-
 echo "::group:: Portal Configuration"
 
 # Configure xdg-desktop-portal for Niri with GTK fallback
@@ -73,21 +71,14 @@ org.freedesktop.impl.portal.Settings=gtk
 EOF
 
 echo "::endgroup::"
-
 echo "::group:: Copy System Files"
 
 # Copy system files to container
 if [ -d "/ctx/system_files" ]; then
-    echo "Copying system files..."
     rsync -rvK /ctx/system_files/ /
-    echo "System files copied successfully"
-else
-    echo "No system_files directory found, skipping"
 fi
 
 echo "::endgroup::"
-
-
 echo "::group:: Configure User Services"
 
 # Create user preset for COSMIC services (following Zirconium pattern)
@@ -115,12 +106,8 @@ echo "::endgroup::"
 
 echo "::group:: System Configuration Files"
 
-# Create sysusers.d configuration
-echo "Creating sysusers.d configurations..."
+# Create sysusers.d and tmpfiles.d directories
 mkdir -p /usr/lib/sysusers.d
-
-# Create tmpfiles.d configuration
-echo "Creating tmpfiles.d configurations..."
 mkdir -p /usr/lib/tmpfiles.d
 
 # Temporary directories for applications
@@ -134,5 +121,3 @@ d /run/user/1000/cliphist 0700 1000 1000 - -
 EOF
 
 echo "::endgroup::"
-
-echo "System services and configuration completed successfully!"
