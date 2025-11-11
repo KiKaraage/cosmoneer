@@ -10,36 +10,25 @@ set -eoux pipefail
 
 echo "::group:: Configure Portal Services"
 
-# Unmask and enable portal services
+# Unmask and enable GTK portal for Niri
 echo "Unmasking xdg-desktop-portal-gtk service..."
 systemctl --user unmask xdg-desktop-portal-gtk.service || echo "xdg-desktop-portal-gtk.service already unmasked"
 
-# Enable portal services globally for all users
-echo "Enabling portal services globally..."
-# Check if services exist before enabling
-for service in xdg-desktop-portal-cosmic.service xdg-desktop-portal-gtk.service xdg-desktop-portal-gnome.service; do
-    service_file="/usr/lib/systemd/user/${service}"
-    if [ -f "$service_file" ]; then
-        systemctl --global enable "$service" || echo "$service already enabled globally"
-    else
-        echo "$service not found, skipping"
-    fi
-done
+# Enable GTK portal globally for all users
+echo "Enabling GTK portal globally for Niri session..."
+service="xdg-desktop-portal-gtk.service"
+service_file="/usr/lib/systemd/user/${service}"
+if [ -f "$service_file" ]; then
+    systemctl --global enable "$service" || echo "$service already enabled globally"
+else
+    echo "$service not found, skipping"
+fi
 
 echo "::endgroup::"
 
 echo "::group:: Configure Niri Session Services"
 
 # Enable essential services for niri session
-echo "Enabling cosmic-notifications service..."
-if [ -f "/usr/lib/systemd/user/cosmic-notifications.service" ]; then
-    echo "cosmic-notifications.service found, configuring for niri session"
-    # Add to niri session wants
-    mkdir -p "/usr/lib/systemd/user/niri.service.wants"
-    ln -sf "/usr/lib/systemd/user/cosmic-notifications.service" "/usr/lib/systemd/user/niri.service.wants/cosmic-notifications.service" || echo "cosmic-notifications.service already configured"
-else
-    echo "cosmic-notifications.service not found, skipping"
-fi
 
 echo "Checking for waybar service..."
 if [ -f "/usr/lib/systemd/user/waybar.service" ]; then
@@ -61,7 +50,7 @@ else
     echo "cliphist.service not found, skipping"
 fi
 
-echo "Disabling cosmic-idle service (incompatible with current cosmic-settings-daemon)..."
+echo "Disabling cosmic-idle service (not compatible with Niri)..."
 if [ -f "/usr/lib/systemd/user/cosmic-idle.service" ]; then
     echo "cosmic-idle.service found, disabling for niri session"
     # Remove from graphical-session target wants

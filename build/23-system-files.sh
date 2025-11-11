@@ -60,20 +60,17 @@ echo "::endgroup::"
 
 echo "::group:: Portal Configuration"
 
-# Configure xdg-desktop-portal for COSMIC on Niri
-echo "Configuring portals for COSMIC on Niri session..."
+# Configure xdg-desktop-portal for Niri with GTK fallback
+echo "Configuring portals for Niri session..."
 mkdir -p /etc/xdg-desktop-portal
 tee /etc/xdg-desktop-portal/cosmoneer-portals.conf <<'EOF'
 [preferred]
-default=cosmic
-org.freedesktop.impl.portal.FileChooser=cosmic
-org.freedesktop.impl.portal.Screenshot=cosmic
-org.freedesktop.impl.portal.ScreenCast=cosmic
-org.freedesktop.impl.portal.Settings=cosmic
+default=gtk
+org.freedesktop.impl.portal.FileChooser=gtk
+org.freedesktop.impl.portal.Screenshot=gtk
+org.freedesktop.impl.portal.ScreenCast=gtk
+org.freedesktop.impl.portal.Settings=gtk
 EOF
-
-# Update cosmic.portal to work with niri session
-sed -i 's/UseIn=COSMIC/UseIn=COSMIC;niri/' /usr/share/xdg-desktop-portal/portals/cosmic.portal
 
 echo "::endgroup::"
 
