@@ -61,6 +61,4 @@ echo "QT_QPA_PLATFORMTHEME=qt6ct" >> /etc/environment
 echo "Qt6 platform theme configured - Qt6 applications will now use qt6ct for theming"
 echo "::endgroup::"
 
-echo "::endgroup::"
-
 echo "Additional software installation complete!"
