@@ -79,40 +79,38 @@ jobs:
           
           # Calculate Indonesian date (UTC+7) for different scenarios
           CURRENT_HOUR=$(date -u +%H)
+          BUILD_TAG_VALUE=""
           
           if [ "${{ github.event_name }}" = "schedule" ]; then
             # For scheduled builds, always use WIB date (UTC+7)
-            WIB_DATE=$(date -u -d "+7 hours" +%y%m%d)
-            echo "wib_date=$WIB_DATE" >> $GITHUB_OUTPUT
-            echo "build_tag=$WIB_DATE" >> $GITHUB_OUTPUT
-            echo "Scheduled build - Indonesian date (WIB): $WIB_DATE"
+            BUILD_TAG_VALUE=$(date -u -d "+7 hours" +%y%m%d)
+            echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+            echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+            echo "Scheduled build - Indonesian date (WIB): $BUILD_TAG_VALUE"
           elif [ "${{ github.event_name }}" = "push" ]; then
             if [ "$CURRENT_HOUR" -ge 19 ]; then
               # For pushes between 19:00-23:59 UTC, use WIB date (next day)
-              WIB_DATE=$(date -u -d "+7 hours" +%y%m%d)
-              echo "wib_date=$WIB_DATE" >> $GITHUB_OUTPUT
-              echo "build_tag=$WIB_DATE" >> $GITHUB_OUTPUT
-              echo "Push after 19:00 UTC - Indonesian date (WIB): $WIB_DATE"
+              BUILD_TAG_VALUE=$(date -u -d "+7 hours" +%y%m%d)
+              echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+              echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+              echo "Push after 19:00 UTC - Indonesian date (WIB): $BUILD_TAG_VALUE"
             else
               # For other times, use UTC date
-              UTC_DATE=$(date -u +%y%m%d)
-              echo "wib_date=$UTC_DATE" >> $GITHUB_OUTPUT
-              echo "build_tag=$UTC_DATE" >> $GITHUB_OUTPUT
-              echo "Push before 19:00 UTC - UTC date: $UTC_DATE"
+              BUILD_TAG_VALUE=$(date -u +%y%m%d)
+              echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+              echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+              echo "Push before 19:00 UTC - UTC date: $BUILD_TAG_VALUE"
             fi
           else
             # For PR and other events, use UTC date as fallback
-            UTC_DATE=$(date -u +%y%m%d)
-            echo "wib_date=$UTC_DATE" >> $GITHUB_OUTPUT
-            echo "build_tag=$UTC_DATE" >> $GITHUB_OUTPUT
-            echo "PR/other event - UTC date: $UTC_DATE"
+            BUILD_TAG_VALUE=$(date -u +%y%m%d)
+            echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+            echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+            echo "PR/other event - UTC date: $BUILD_TAG_VALUE"
           fi
           
           # Calculate daily build number for push events
           if [ "${{ github.event_name }}" = "push" ]; then
-            # Get today's date in the same format as wib_date for comparison
-            TODAY_DATE=$(echo "${{ steps.date.outputs.wib_date }}")
-            
             # Get all workflow runs for today and count them
             TODAY_RUNS=$(gh run list --repo "${{ github.repository }}" --workflow "build-image.yml" \
               --json databaseId,createdAt,conclusion \
@@ -122,14 +120,14 @@ jobs:
             # Calculate today's build number (current run + 1)
             DAILY_BUILD_NUMBER=$((TODAY_RUNS + 1))
             echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
-            echo "full_tag=$TODAY_DATE.$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
-            echo "Daily build number for $TODAY_DATE: $DAILY_BUILD_NUMBER"
+            echo "full_tag=${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}" >> $GITHUB_OUTPUT
+            echo "Daily build number for $BUILD_TAG_VALUE: $DAILY_BUILD_NUMBER"
           elif [ "${{ github.event_name }}" = "pull_request" ]; then
             # For PR events, prefix with PR for clarity
-            echo "full_tag=PR.${{ steps.date.outputs.build_tag }}" >> $GITHUB_OUTPUT
+            echo "full_tag=PR.${BUILD_TAG_VALUE}" >> $GITHUB_OUTPUT
           else
             # For scheduled/other events, full_tag is the same as build_tag
-            echo "full_tag=${{ steps.date.outputs.build_tag }}" >> $GITHUB_OUTPUT
+            echo "full_tag=${BUILD_TAG_VALUE}" >> $GITHUB_OUTPUT
           fi
 
       # Image metadata for https://artifacthub.io/ - This is optional but is highly recommended so we all can get a index of all the custom images
