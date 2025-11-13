@@ -81,12 +81,16 @@ jobs:
           CURRENT_HOUR=$(date -u +%H)
           BUILD_TAG_VALUE=""
           
+          # Debug: Show current date
+          echo "Current UTC date: $(date -u +%Y-%m-%d)"
+          echo "Current UTC hour: $CURRENT_HOUR"
+          
           if [ "${{ github.event_name }}" = "schedule" ]; then
             # For scheduled builds, always use WIB date (UTC+7)
             BUILD_TAG_VALUE=$(date -u -d "+7 hours" +%y%m%d)
+            echo "Scheduled build - Indonesian date (WIB): $BUILD_TAG_VALUE"
             echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
             echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-            echo "Scheduled build - Indonesian date (WIB): $BUILD_TAG_VALUE"
           elif [ "${{ github.event_name }}" = "push" ]; then
             if [ "$CURRENT_HOUR" -ge 19 ]; then
               # For pushes between 19:00-23:59 UTC, use WIB date (next day)
@@ -115,7 +119,7 @@ jobs:
           
           # Get list of all tags from registry
           echo "Querying registry for existing tags at $IMAGE_PATH"
-          EXISTING_TAGS=$(skopeo list-tags "docker://${IMAGE_PATH}" 2>/dev/null | jq -r '.Tags[]' | grep -E '^[0-9]' | sort -V || echo "")
+          EXISTING_TAGS=$(crane ls "${IMAGE_PATH}" 2>/dev/null | grep -E '^[0-9]' | sort -V || echo "")
           
           if [ "${{ github.event_name }}" = "push" ]; then
             # For push builds: find highest build number for today's date
