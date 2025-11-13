@@ -167,6 +167,24 @@ jobs:
             # For scheduled/other events, full_tag is the same as build_tag
             echo "full_tag=${BUILD_TAG_VALUE}" >> $GITHUB_OUTPUT
           fi
+          
+          # Summary of calculated versions
+          echo ""
+          echo "=== Version Calculation Summary ==="
+          echo "Event: ${{ github.event_name }}"
+          echo "BUILD_TAG_VALUE (date): ${BUILD_TAG_VALUE}"
+          case "${{ github.event_name }}" in
+            push)
+              echo "DAILY_BUILD_NUMBER: ${DAILY_BUILD_NUMBER}"
+              echo "FULL_TAG: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
+              ;;
+            pull_request)
+              echo "FULL_TAG: ${NEXT_BUILD}"
+              ;;
+            *)
+              echo "FULL_TAG: ${BUILD_TAG_VALUE}"
+              ;;
+          esac
 
       # Image metadata for https://artifacthub.io/ - This is optional but is highly recommended so we all can get a index of all the custom images
       # The metadata by itself is not going to do anything, you choose if you want your image to be on ArtifactHub or not.
@@ -181,6 +199,7 @@ jobs:
             type=raw,value=${{ steps.date.outputs.wib_date }},enable=${{ github.event_name == 'schedule' }}
             type=raw,value=${{ steps.date.outputs.wib_date }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' }}
             type=raw,value=latest,enable=${{ github.event_name == 'push' || github.event_name == 'schedule' }}
+            type=raw,value=${{ steps.date.outputs.full_tag }},enable=${{ github.event_name == 'pull_request' }}
             type=sha,enable=${{ github.event_name == 'pull_request' }}
             type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
           labels: |
@@ -290,6 +309,26 @@ jobs:
             APPLET_ARTIFACTS_DIR=./applets-artifacts
             BUILD_IMAGE_TAG=${{ steps.date.outputs.build_tag }}
             BUILD_VERSION=${{ steps.date.outputs.full_tag }}
+      
+      - name: Verify version consistency
+        run: |
+          echo "=== Build Version Consistency Check ==="
+          echo ""
+          echo "Step outputs:"
+          echo "  build_tag (YYMMDD): ${{ steps.date.outputs.build_tag }}"
+          echo "  full_tag (YYMMDD.N): ${{ steps.date.outputs.full_tag }}"
+          echo ""
+          echo "Image tags (should include full_tag):"
+          echo "${{ steps.metadata.outputs.tags }}"
+          echo ""
+          echo "Container label version (should match full_tag):"
+          echo "${{ steps.metadata.outputs.labels }}" | grep "org.opencontainers.image.version"
+          echo ""
+          if [ -z "${{ steps.date.outputs.full_tag }}" ]; then
+            echo "ERROR: full_tag is empty!"
+            exit 1
+          fi
+          echo "✓ Version outputs configured correctly"
 
       # Rechunk (OPTIONAL): Rechunker optimizes container image layers for better resumability and fixes some distribution errors.
       # It doesn't make downloads faster but provides more reliable image distribution.
