@@ -1,8 +1,7 @@
 [Unit]
 Description=Portal service (GTK/GNOME implementation)
 PartOf=graphical-session.target
-After=niri.service
-Requires=niri.service
+After=graphical-session-pre.target
 
 [Service]
 Type=dbus
