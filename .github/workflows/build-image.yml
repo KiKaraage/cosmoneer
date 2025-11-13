@@ -122,7 +122,11 @@ jobs:
             # Calculate today's build number (current run + 1)
             DAILY_BUILD_NUMBER=$((TODAY_RUNS + 1))
             echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
+            echo "full_tag=$TODAY_DATE.$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
             echo "Daily build number for $TODAY_DATE: $DAILY_BUILD_NUMBER"
+          else
+            # For non-push events, full_tag is the same as build_tag
+            echo "full_tag=${{ steps.date.outputs.build_tag }}" >> $GITHUB_OUTPUT
           fi
 
       # Image metadata for https://artifacthub.io/ - This is optional but is highly recommended so we all can get a index of all the custom images
@@ -149,7 +153,7 @@ jobs:
             org.opencontainers.image.title=${{ env.IMAGE_NAME }}
             org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
             org.opencontainers.image.vendor=${{ github.repository_owner }}
-            org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.${{ steps.date.outputs.wib_date }}
+            org.opencontainers.image.version=${{ steps.date.outputs.full_tag }}
             io.artifacthub.package.deprecated=false
             io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
             io.artifacthub.package.license=Apache-2.0
