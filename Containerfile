@@ -11,6 +11,9 @@ COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts
 # Build image tag (YYMMDD or YYMMDD.x format)
 ARG BUILD_IMAGE_TAG=daily
 
+# Full version string for image (YYMMDD or YYMMDD.x or PR.YYMMDD)
+ARG BUILD_VERSION=daily
+
 ###############################################################################
 # PROJECT NAME CONFIGURATION
 ###############################################################################
@@ -65,7 +68,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     fi && \
     echo "Running build scripts..." && \
     /ctx/build/00-base.sh && \
-    UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" /ctx/build/01-image-id.sh && \
+    UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" VERSION="${BUILD_VERSION}" /ctx/build/01-image-id.sh && \
     /ctx/build/10-kernel-hardware.sh && \
     /ctx/build/11-packages.sh && \
     /ctx/build/20-desktop.sh && \

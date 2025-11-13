@@ -13,7 +13,7 @@ DOCUMENTATION_URL="https://github.com/KiKaraage/Cosmoneer"
 SUPPORT_URL="https://github.com/KiKaraage/Cosmoneer/issues"
 BUG_SUPPORT_URL="https://github.com/KiKaraage/Cosmoneer/issues"
 CODE_NAME="Alpha"
-VERSION="${VERSION:-43.$(date +%y%m%d).0}"
+VERSION="${VERSION:-$(date +%y%m%d)}"
 UBLUE_IMAGE_TAG="${UBLUE_IMAGE_TAG:-$(date +%y%m%d)}"
 
 IMAGE_INFO="/usr/share/ublue-os/image-info.json"
@@ -43,7 +43,7 @@ EOF
 
 # OS Release File
 sed -i "s|^VARIANT_ID=.*|VARIANT_ID=$IMAGE_NAME|" /usr/lib/os-release
-sed -i "s|^PRETTY_NAME=.*|PRETTY_NAME=\"${IMAGE_PRETTY_NAME} (Version: ${VERSION})\"|" /usr/lib/os-release
+sed -i "s|^PRETTY_NAME=.*|PRETTY_NAME=\"${IMAGE_PRETTY_NAME} (${VERSION})\"|" /usr/lib/os-release
 sed -i "s|^NAME=.*|NAME=\"$IMAGE_PRETTY_NAME\"|" /usr/lib/os-release
 sed -i "s|^HOME_URL=.*|HOME_URL=\"$HOME_URL\"|" /usr/lib/os-release
 sed -i "s|^DOCUMENTATION_URL=.*|DOCUMENTATION_URL=\"$DOCUMENTATION_URL\"|" /usr/lib/os-release
