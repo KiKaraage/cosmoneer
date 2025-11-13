@@ -234,6 +234,7 @@ jobs:
           oci: true
           build-args: |
             APPLET_ARTIFACTS_DIR=./applets-artifacts
+            BUILD_IMAGE_TAG=${{ steps.date.outputs.wib_date }}
 
       # Rechunk (OPTIONAL): Rechunker optimizes container image layers for better resumability and fixes some distribution errors.
       # It doesn't make downloads faster but provides more reliable image distribution.
