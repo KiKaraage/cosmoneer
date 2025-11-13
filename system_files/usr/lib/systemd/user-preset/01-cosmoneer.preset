@@ -1,5 +1,4 @@
-disable cosmic-idle.service
-disable cosmic-ext-alternative-startup.service
-disable cosmic-ext-bg-theme.service
-enable cliphist.service
+enable cosmic-idle.service
+enable cosmic-ext-alternative-startup.service
+enable cosmic-ext-bg-theme.service
 enable waybar.service

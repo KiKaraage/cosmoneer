@@ -81,26 +81,17 @@ fi
 echo "::endgroup::"
 echo "::group:: Configure User Services"
 
-# Create user preset for COSMIC services (following Zirconium pattern)
-mkdir -p /usr/lib/systemd/user-preset
-tee /usr/lib/systemd/user-preset/01-cosmoneer.preset <<'EOF'
-enable cosmic-idle.service
-enable cosmic-ext-alternative-startup.service
-enable cosmic-ext-bg-theme.service
-enable cliphist.service
-enable waybar.service
-EOF
+# Apply user service presets from system_files
+systemctl preset --global --all
 
-# Uncomment PartOf=graphical-session.target for proper session integration
-sed -i 's/# PartOf=graphical-session.target/PartOf=graphical-session.target/' "/usr/lib/systemd/user/cosmic-idle.service"
-
-# Apply user preset for COSMIC services (following Zirconium pattern)
-systemctl preset --global cosmic-idle.service
-systemctl preset --global cosmic-ext-alternative-startup.service
-systemctl preset --global cosmic-ext-bg-theme.service
-systemctl preset --global cliphist.service
-systemctl preset --global waybar.service
-
+# Configure Niri session services (waybar and cliphist)
+mkdir -p /usr/lib/systemd/user/niri.service.wants
+if [ -f /usr/lib/systemd/user/waybar.service ]; then
+    ln -sf /usr/lib/systemd/user/waybar.service /usr/lib/systemd/user/niri.service.wants/waybar.service
+fi
+if [ -f /usr/lib/systemd/user/cliphist.service ]; then
+    ln -sf /usr/lib/systemd/user/cliphist.service /usr/lib/systemd/user/niri.service.wants/cliphist.service
+fi
 
 echo "::endgroup::"
 
