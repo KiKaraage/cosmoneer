@@ -109,22 +109,56 @@ jobs:
             echo "PR/other event - UTC date: $BUILD_TAG_VALUE"
           fi
           
-          # Calculate daily build number for push events
+          # Query container registry for existing tags and determine next build number
+          REGISTRY="${IMAGE_REGISTRY,,}"
+          IMAGE_PATH="${REGISTRY}/${IMAGE_NAME,,}"
+          
+          # Get list of all tags from registry
+          echo "Querying registry for existing tags at $IMAGE_PATH"
+          EXISTING_TAGS=$(skopeo list-tags "docker://${IMAGE_PATH}" 2>/dev/null | jq -r '.Tags[]' | grep -E '^[0-9]' | sort -V || echo "")
+          
           if [ "${{ github.event_name }}" = "push" ]; then
-            # Get all workflow runs for today and count them
-            TODAY_RUNS=$(gh run list --repo "${{ github.repository }}" --workflow "build-image.yml" \
-              --json databaseId,createdAt,conclusion \
-              --limit 100 \
-              -q "[.[] | select(.conclusion != null) | (.createdAt | split(\"T\")[0] | strptime(\"%Y-%m-%d\") | strftime(\"%y%m%d\"))] | length" 2>/dev/null || echo "0")
+            # For push builds: find highest build number for today's date
+            LATEST_TODAY=$(echo "$EXISTING_TAGS" | grep "^${BUILD_TAG_VALUE}" | tail -1)
             
-            # Calculate today's build number (current run + 1)
-            DAILY_BUILD_NUMBER=$((TODAY_RUNS + 1))
+            if [ -z "$LATEST_TODAY" ]; then
+              # No builds for today yet
+              DAILY_BUILD_NUMBER=1
+            else
+              # Extract build number from latest tag (e.g., "251113.2" -> "2")
+              DAILY_BUILD_NUMBER=$(echo "$LATEST_TODAY" | grep -oE '\.[0-9]+$' | sed 's/^\.//') || DAILY_BUILD_NUMBER=0
+              DAILY_BUILD_NUMBER=$((DAILY_BUILD_NUMBER + 1))
+            fi
+            
             echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
             echo "full_tag=${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}" >> $GITHUB_OUTPUT
-            echo "Daily build number for $BUILD_TAG_VALUE: $DAILY_BUILD_NUMBER"
+            echo "Latest tag for $BUILD_TAG_VALUE: ${LATEST_TODAY:-none}, Next: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
           elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            # For PR events, prefix with PR for clarity
-            echo "full_tag=PR.${BUILD_TAG_VALUE}" >> $GITHUB_OUTPUT
+            # For PR events: increment from the absolute latest tag
+            LATEST_TAG=$(echo "$EXISTING_TAGS" | tail -1)
+            
+            if [ -z "$LATEST_TAG" ]; then
+              # No tags exist yet
+              NEXT_BUILD="${BUILD_TAG_VALUE}.1.PR"
+            else
+              # Extract the base version and build number, increment
+              if [[ "$LATEST_TAG" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+                # Format: YYMMDD.X
+                DATE_PART="${BASH_REMATCH[1]}"
+                BUILD_NUM="${BASH_REMATCH[2]}"
+                NEXT_BUILD_NUM=$((BUILD_NUM + 1))
+                NEXT_BUILD="${DATE_PART}.${NEXT_BUILD_NUM}.PR"
+              elif [[ "$LATEST_TAG" =~ ^([0-9]+)$ ]]; then
+                # Format: YYMMDD (scheduled build)
+                NEXT_BUILD="${LATEST_TAG}.1.PR"
+              else
+                # Fallback
+                NEXT_BUILD="${BUILD_TAG_VALUE}.1.PR"
+              fi
+            fi
+            
+            echo "full_tag=${NEXT_BUILD}" >> $GITHUB_OUTPUT
+            echo "Latest tag: ${LATEST_TAG:-none}, Next PR build: ${NEXT_BUILD}"
           else
             # For scheduled/other events, full_tag is the same as build_tag
             echo "full_tag=${BUILD_TAG_VALUE}" >> $GITHUB_OUTPUT
