@@ -124,8 +124,11 @@ jobs:
             echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
             echo "full_tag=$TODAY_DATE.$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
             echo "Daily build number for $TODAY_DATE: $DAILY_BUILD_NUMBER"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            # For PR events, prefix with PR for clarity
+            echo "full_tag=PR.${{ steps.date.outputs.build_tag }}" >> $GITHUB_OUTPUT
           else
-            # For non-push events, full_tag is the same as build_tag
+            # For scheduled/other events, full_tag is the same as build_tag
             echo "full_tag=${{ steps.date.outputs.build_tag }}" >> $GITHUB_OUTPUT
           fi
 
