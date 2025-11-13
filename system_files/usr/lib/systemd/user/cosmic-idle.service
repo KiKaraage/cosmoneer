@@ -1,12 +1,12 @@
 [Unit]
 Description=Idling daemon
-After=default.target
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
 
 [Service]
 Environment=WAYLAND_DISPLAY=wayland-1
-Environment=XDG_SESSION_TYPE=wayland
 Environment=DISPLAY=:1
-Environment=NIRI_SOCKET=/run/user/%U/niri.wayland-1.sock
 ExecStart=/usr/bin/cosmic-idle
 Restart=on-failure
 RestartSec=1

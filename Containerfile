@@ -67,6 +67,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
         echo "No applet artifacts found, /applets will be empty"; \
     fi && \
     echo "Running build scripts..." && \
+    echo "BUILD_IMAGE_TAG=${BUILD_IMAGE_TAG}" && \
+    echo "BUILD_VERSION=${BUILD_VERSION}" && \
     /ctx/build/00-base.sh && \
     UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" VERSION="${BUILD_VERSION}" /ctx/build/01-image-id.sh && \
     /ctx/build/10-kernel-hardware.sh && \

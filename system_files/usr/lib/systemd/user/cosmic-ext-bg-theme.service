@@ -2,9 +2,13 @@
 Description=COSMIC Background Theme Service
 Documentation=man:cosmic-ext-bg-theme(1)
 PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
 
 [Service]
 Type=simple
+Environment=WAYLAND_DISPLAY=wayland-1
+Environment=DISPLAY=:1
 ExecStart=/usr/bin/cosmic-ext-bg-theme
 Restart=on-failure
 RestartSec=5
