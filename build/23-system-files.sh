@@ -81,8 +81,13 @@ fi
 echo "::endgroup::"
 echo "::group:: Configure User Services"
 
+# Unmask any previously masked services to allow presets
+systemctl unmask --global cosmic-idle.service 2>/dev/null || true
+systemctl unmask --global cosmic-ext-alternative-startup.service 2>/dev/null || true
+systemctl unmask --global cosmic-ext-bg-theme.service 2>/dev/null || true
+
 # Apply user service presets from system_files
-systemctl preset --global --all
+systemctl preset-all --global || true
 
 # Configure Niri session services (waybar and cliphist)
 mkdir -p /usr/lib/systemd/user/niri.service.wants
