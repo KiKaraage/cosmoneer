@@ -14,7 +14,7 @@ SUPPORT_URL="https://github.com/KiKaraage/Cosmoneer/issues"
 BUG_SUPPORT_URL="https://github.com/KiKaraage/Cosmoneer/issues"
 CODE_NAME="Alpha"
 VERSION="${VERSION:-43.$(date +%y%m%d).0}"
-UBLUE_IMAGE_TAG="${UBLUE_IMAGE_TAG:?Error: UBLUE_IMAGE_TAG not set. Must be passed as environment variable.}"
+UBLUE_IMAGE_TAG="${UBLUE_IMAGE_TAG:-$(date +%y%m%d)}"
 
 IMAGE_INFO="/usr/share/ublue-os/image-info.json"
 IMAGE_REF="ostree-image-signed:docker://ghcr.io/$IMAGE_VENDOR/$IMAGE_NAME"
