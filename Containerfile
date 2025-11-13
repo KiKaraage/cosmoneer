@@ -8,6 +8,9 @@ COPY system_files /system_files
 ARG APPLET_ARTIFACTS_DIR=./applets-artifacts
 COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts
 
+# Build image tag (YYMMDD or YYMMDD.x format)
+ARG BUILD_IMAGE_TAG=daily
+
 ###############################################################################
 # PROJECT NAME CONFIGURATION
 ###############################################################################
@@ -62,7 +65,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     fi && \
     echo "Running build scripts..." && \
     /ctx/build/00-base.sh && \
-    /ctx/build/01-image-id.sh && \
+    UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" /ctx/build/01-image-id.sh && \
     /ctx/build/10-kernel-hardware.sh && \
     /ctx/build/11-packages.sh && \
     /ctx/build/20-desktop.sh && \
