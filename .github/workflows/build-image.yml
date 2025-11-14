@@ -6,7 +6,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '00 19 * * *'  # 19:00 / 07:00pm UTC everyday (02:00 WIB next day)
+    - cron: '00 19 * * 1,3,5'  # 19:00 / 07:00pm UTC Mon, Wed, Fri (02:00 WIB next day) - 3x per week
   push:
     branches:
       - main
@@ -52,21 +52,21 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
       # This is optional, but if you see that your builds are way too big for the runners, you can enable this by uncommenting the following lines:
-      # - name: Maximize build space
-      #   uses: ublue-os/remove-unwanted-software@517622d6452028f266b7ba4cc9a123b5f58a6b53 # v7
-      #   with:
-      #     remove-codeql: true
-
-      - name: Mount BTRFS for podman storage
-        id: container-storage-action
-        uses: ublue-os/container-storage-action@911baca08baf30c8654933e9e9723cb399892140 # main
-
-        # Fallback to the remove-unwanted-software-action if github doesn't allocate enough space
-        # See: https://github.com/ublue-os/container-storage-action/pull/11
-        continue-on-error: true 
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@517622d6452028f266b7ba4cc9a123b5f58a6b53 # v7
         with:
-          target-dir: /var/lib/containers
-          mount-opts: compress-force=zstd:2
+          remove-codeql: true
+
+       - name: Mount BTRFS for podman storage
+         id: container-storage-action
+         uses: ublue-os/container-storage-action@911baca08baf30c8654933e9e9723cb399892140 # main
+
+         # Fallback to the remove-unwanted-software-action if github doesn't allocate enough space
+         # See: https://github.com/ublue-os/container-storage-action/pull/11
+         continue-on-error: true 
+         with:
+           target-dir: /var/lib/containers
+           mount-opts: compress-force=zstd:1
 
       - name: Get current date
         id: date
@@ -240,7 +240,8 @@ jobs:
             {"name": "cosmic-ext-applet-clipboard-manager", "url": "https://github.com/cosmic-utils/clipboard-manager"},
             {"name": "cosmic-ext-alternative-startup", "url": "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
             {"name": "cosmic-ext-bg-theme", "url": "https://github.com/wash2/cosmic_ext_bg_theme"},
-            {"name": "wf-recorder-gui", "url": "https://github.com/ali205412/wf-recorder-gui.git"}
+            {"name": "wf-recorder-gui", "url": "https://github.com/ali205412/wf-recorder-gui.git"},
+            {"name": "prtsc-wayland", "url": "https://github.com/Amchik/prtsc-wayland"}
           ]'
           
           echo "Searching for specific applet workflow runs in $GH_REPO"
@@ -293,22 +294,25 @@ jobs:
             mkdir -p ./applets-artifacts
           fi
 
-      - name: Build Image
-        id: build_image
-        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
-        with:
-          containerfiles: |
-            ./Containerfile
-          # Postfix image name with -custom to make it a little more descriptive
-          # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
-          image: ${{ env.IMAGE_NAME }}
-          tags: ${{ steps.metadata.outputs.tags }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          oci: true
-          build-args: |
-            APPLET_ARTIFACTS_DIR=./applets-artifacts
-            BUILD_IMAGE_TAG=${{ steps.date.outputs.build_tag }}
-            BUILD_VERSION=${{ steps.date.outputs.full_tag }}
+       - name: Build Image
+         id: build_image
+         uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
+         with:
+           containerfiles: |
+             ./Containerfile
+           # Postfix image name with -custom to make it a little more descriptive
+           # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
+           image: ${{ env.IMAGE_NAME }}
+           tags: ${{ steps.metadata.outputs.tags }}
+           labels: ${{ steps.metadata.outputs.labels }}
+           oci: true
+           extra-args: |
+             --storage-driver vfs
+             --format oci
+           build-args: |
+             APPLET_ARTIFACTS_DIR=./applets-artifacts
+             BUILD_IMAGE_TAG=${{ steps.date.outputs.build_tag }}
+             BUILD_VERSION=${{ steps.date.outputs.full_tag }}
       
       - name: Verify version consistency
         run: |

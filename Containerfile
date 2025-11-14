@@ -56,6 +56,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     set -e && \
+    # Clean up package cache to save space during build \
+    dnf5 clean all && \
     echo "Setting up applets directory..." && \
     mkdir -p /applets && \
     if [ -d "/ctx/applets-artifacts" ] && [ "$(ls -A /ctx/applets-artifacts 2>/dev/null)" ]; then \
@@ -80,7 +82,10 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build/24-niri-services.sh && \
     /ctx/build/30-extras.sh && \
     /ctx/build/99-cleanup.sh && \
-    echo "Build scripts completed successfully"
+    echo "Build scripts completed successfully" && \
+    # Final cleanup to reduce image size \
+    dnf5 clean all && \
+    rm -rf /var/tmp/* /tmp/* /var/log/*
     
 ### LINTING
 ## Verify final image and contents are correct.
