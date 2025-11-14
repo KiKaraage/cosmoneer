@@ -143,7 +143,7 @@ jobs:
             
             if [ -z "$LATEST_TAG" ]; then
               # No tags exist yet
-              NEXT_BUILD="${BUILD_TAG_VALUE}.1.PR"
+              NEXT_BUILD="${BUILD_TAG_VALUE}.1.pr"
             else
               # Extract the base version and build number, increment
               if [[ "$LATEST_TAG" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
@@ -151,13 +151,13 @@ jobs:
                 DATE_PART="${BASH_REMATCH[1]}"
                 BUILD_NUM="${BASH_REMATCH[2]}"
                 NEXT_BUILD_NUM=$((BUILD_NUM + 1))
-                NEXT_BUILD="${DATE_PART}.${NEXT_BUILD_NUM}.PR"
+                NEXT_BUILD="${DATE_PART}.${NEXT_BUILD_NUM}.pr"
               elif [[ "$LATEST_TAG" =~ ^([0-9]+)$ ]]; then
                 # Format: YYMMDD (scheduled build)
-                NEXT_BUILD="${LATEST_TAG}.1.PR"
+                NEXT_BUILD="${LATEST_TAG}.1.pr"
               else
                 # Fallback
-                NEXT_BUILD="${BUILD_TAG_VALUE}.1.PR"
+                NEXT_BUILD="${BUILD_TAG_VALUE}.1.pr"
               fi
             fi
             
@@ -249,13 +249,13 @@ jobs:
           echo "$APPLET_JSON" | jq -r '.[] | .name' | while read -r applet_name; do
             echo "Looking for workflow run: Build $applet_name"
             
-            # Try applet-management.yml first, then build-applets.yml for backward compatibility
-            run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" --limit 20 --json databaseId,conclusion,name -q ".[] | select(.conclusion == \"success\" and (.name == \"Build $applet_name\")) | .databaseId" | head -1)
+            # Try applet-management.yml first with more lenient matching
+            run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" --limit 50 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
             
             # If not found in applet-management.yml, try build-applets.yml
             if [ -z "$run_id" ]; then
               echo "No successful run found in applet-management.yml, checking build-applets.yml..."
-              run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" --limit 20 --json databaseId,conclusion,name -q ".[] | select(.conclusion == \"success\" and (.name == \"Build $applet_name\")) | .databaseId" | head -1)
+              run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" --limit 50 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
             fi
             
             if [ -n "$run_id" ]; then
