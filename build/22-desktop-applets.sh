@@ -283,25 +283,34 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                         fi
                         ;;
                     "cosmic-ext-bg-theme")
-                        # Install cosmic-ext-bg-theme from artifacts
-                        if [ -f "cosmic-ext-bg-theme" ]; then
-                            install -Dm755 cosmic-ext-bg-theme /usr/bin/cosmic-ext-bg-theme
-                            echo "Installed binary: cosmic-ext-bg-theme"
-                        else
-                            echo "cosmic-ext-bg-theme binary not found in artifacts"
-                        fi
-                        
-                        # Install desktop file if present
-                        if [ -f "res/cosmic.ext.BgTheme.desktop" ]; then
-                            install -Dm644 res/cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
-                            echo "Installed desktop file: cosmic.ext.BgTheme.desktop"
-                        elif [ -f "cosmic.ext.BgTheme.desktop" ]; then
-                            install -Dm644 cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
-                            echo "Installed desktop file: cosmic.ext.BgTheme.desktop"
-                        else
-                            echo "cosmic.ext.BgTheme.desktop not found in artifacts"
-                        fi
-                        ;;
+                         # Install cosmic-ext-bg-theme from artifacts
+                         if [ -f "cosmic-ext-bg-theme" ]; then
+                             install -Dm755 cosmic-ext-bg-theme /usr/bin/cosmic-ext-bg-theme
+                             echo "Installed binary: cosmic-ext-bg-theme"
+                         else
+                             echo "cosmic-ext-bg-theme binary not found in artifacts"
+                         fi
+                         
+                         # Install desktop file if present
+                         if [ -f "res/cosmic.ext.BgTheme.desktop" ]; then
+                             install -Dm644 res/cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
+                             echo "Installed desktop file: cosmic.ext.BgTheme.desktop"
+                         elif [ -f "cosmic.ext.BgTheme.desktop" ]; then
+                             install -Dm644 cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
+                             echo "Installed desktop file: cosmic.ext.BgTheme.desktop"
+                         else
+                             echo "cosmic.ext.BgTheme.desktop not found in artifacts"
+                         fi
+                         ;;
+                    "prtsc-wayland")
+                         # Install prtsc-wayland from artifacts
+                         if [ -f "prtsc-wayland" ]; then
+                             install -Dm755 prtsc-wayland /usr/bin/prtsc-wayland
+                             echo "Installed binary: prtsc-wayland"
+                         else
+                             echo "prtsc-wayland binary not found in artifacts"
+                         fi
+                         ;;
                     *)
                         install -Dm0755 "$binary" "/usr/bin/$binary_name"
                         echo "Installed binary: $binary_name"
