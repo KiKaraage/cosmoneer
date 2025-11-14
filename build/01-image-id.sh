@@ -13,8 +13,18 @@ DOCUMENTATION_URL="https://github.com/KiKaraage/Cosmoneer"
 SUPPORT_URL="https://github.com/KiKaraage/Cosmoneer/issues"
 BUG_SUPPORT_URL="https://github.com/KiKaraage/Cosmoneer/issues"
 CODE_NAME="Alpha"
-VERSION="${VERSION:-$(date +%y%m%d)}"
-UBLUE_IMAGE_TAG="${UBLUE_IMAGE_TAG:-$(date +%y%m%d)}"
+# VERSION should always be passed as build arg from Containerfile
+# If not set, use current date as fallback (should not happen in CI)
+if [[ -z "${VERSION:-}" ]]; then
+  VERSION="$(date +%y%m%d)"
+  echo "WARNING: VERSION not set, using current date: $VERSION" >&2
+fi
+# UBLUE_IMAGE_TAG should always be passed as build arg from Containerfile
+# If not set, use current date as fallback (should not happen in CI)
+if [[ -z "${UBLUE_IMAGE_TAG:-}" ]]; then
+  UBLUE_IMAGE_TAG="$(date +%y%m%d)"
+  echo "WARNING: UBLUE_IMAGE_TAG not set, using current date: $UBLUE_IMAGE_TAG" >&2
+fi
 
 IMAGE_INFO="/usr/share/ublue-os/image-info.json"
 IMAGE_REF="ostree-image-signed:docker://ghcr.io/$IMAGE_VENDOR/$IMAGE_NAME"

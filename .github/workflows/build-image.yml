@@ -143,7 +143,7 @@ jobs:
             
             if [ -z "$LATEST_TAG" ]; then
               # No tags exist yet
-              NEXT_BUILD="${BUILD_TAG_VALUE}.1.PR"
+              NEXT_BUILD="${BUILD_TAG_VALUE}.1.pr"
             else
               # Extract the base version and build number, increment
               if [[ "$LATEST_TAG" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
@@ -151,13 +151,13 @@ jobs:
                 DATE_PART="${BASH_REMATCH[1]}"
                 BUILD_NUM="${BASH_REMATCH[2]}"
                 NEXT_BUILD_NUM=$((BUILD_NUM + 1))
-                NEXT_BUILD="${DATE_PART}.${NEXT_BUILD_NUM}.PR"
+                NEXT_BUILD="${DATE_PART}.${NEXT_BUILD_NUM}.pr"
               elif [[ "$LATEST_TAG" =~ ^([0-9]+)$ ]]; then
                 # Format: YYMMDD (scheduled build)
-                NEXT_BUILD="${LATEST_TAG}.1.PR"
+                NEXT_BUILD="${LATEST_TAG}.1.pr"
               else
                 # Fallback
-                NEXT_BUILD="${BUILD_TAG_VALUE}.1.PR"
+                NEXT_BUILD="${BUILD_TAG_VALUE}.1.pr"
               fi
             fi
             
