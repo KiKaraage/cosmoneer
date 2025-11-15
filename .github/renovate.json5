@@ -30,6 +30,7 @@
       ],
       datasourceTemplate: 'docker',
       versioningTemplate: 'docker',
+      currentValueTemplate: 'latest',
     },
   ],
 
