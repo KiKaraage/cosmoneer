@@ -57,6 +57,14 @@ jobs:
         with:
           remove-codeql: true
 
+      - name: Cache Container Layers
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4
+        with:
+          path: /var/lib/containers
+          key: ${{ runner.os }}-containers-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-containers-
+
       - name: Mount BTRFS for podman storage
         id: container-storage-action
         uses: ublue-os/container-storage-action@911baca08baf30c8654933e9e9723cb399892140 # main
@@ -279,6 +287,18 @@ jobs:
         continue-on-error: true
 
 
+
+      - name: Cache Cargo Dependencies
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            /tmp/cargo
+            /tmp/cargo-target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Copy Artifacts to Build Context
         run: |
