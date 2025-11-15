@@ -3,7 +3,7 @@ name: Check for Applet Updates
 
 on:
   schedule:
-  - cron: '0 0 * * 0'  # Weekly on Sunday
+    - cron: '0 0 * * 0'  # Weekly on Sunday
   workflow_dispatch:
   push:
     branches:
@@ -76,7 +76,7 @@ jobs:
               # Extract applet names from previous file
               PREVIOUS_APPLETS=$(echo "$PREVIOUS_FILE" | grep -A 20 "APPLET_JSON=" | grep "name:" | sed 's/.*name: "\([^"]*\)".*/\1/' | sort | tr '\n' ' ')
               CURRENT_APPLETS=$(echo "${APPLET_LIST}" | jq -r '.[].name' | sort | tr '\n' ' ')
-              
+
               # Find applets that are new (in current but not in previous)
               NEW_APPLETS=""
               for applet in $CURRENT_APPLETS; do
