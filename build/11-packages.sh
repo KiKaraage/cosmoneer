@@ -18,14 +18,12 @@ echo "::group:: Fedora Packages (Bulk Installation)"
 # Base packages from Fedora repos - common to all versions
 FEDORA_PACKAGES=(
     # Development Tools
-    gcc
     make
     python3-pip
     python3-pygit2
     git-credential-libsecret
     
     # Shells & Terminal
-    fish
     zsh
     ugrep
     bat
@@ -44,16 +42,13 @@ FEDORA_PACKAGES=(
     
     # Filesystems & Storage
     gvfs-nfs
-    borgbackup
-    restic
     rclone
-    cryfs
+    chezmoi
     fuse-encfs
     davfs2
     
     # Desktop & Display
     brightnessctl
-    chezmoi
     
 
     

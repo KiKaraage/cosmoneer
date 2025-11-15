@@ -44,10 +44,6 @@ echo "::group:: Install COSMIC Applets"
 echo "Installing common dependencies for applet RPMs..."
 dnf5 install -y glibc openssl-libs || echo "Some dependencies may already be installed"
 
-# Install cosmic-ext-classic-menu from COPR
-echo "Installing cosmic-ext-classic-menu from championpeak87/cosmic-ext-classic-menu COPR..."
-copr_install_isolated "championpeak87/cosmic-ext-classic-menu" cosmic-ext-classic-menu
-echo "cosmic-ext-classic-menu installed from COPR"
 
 # Install cosmic-ext-applet-yt-dlp from GitHub release
 # TEMPORARILY COMMENTED OUT due to dependency issues (nscd, openssl3-libs)
