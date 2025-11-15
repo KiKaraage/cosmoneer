@@ -26,9 +26,3 @@ systemctl enable tailscaled
 
 echo "::endgroup::"
 
-echo "::group:: Configure Qt6 Theme"
-
-dnf5 install -y qt6ct
-echo "QT_QPA_PLATFORMTHEME=qt6ct" >> /etc/environment
-
-echo "::endgroup::"
