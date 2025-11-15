@@ -385,11 +385,11 @@ jobs:
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           oci: true
-           extra-args: |
-             --storage-driver vfs
-             --format oci
-             --layers=true
-             --no-cache
+          extra-args: |
+            --storage-driver vfs
+            --format oci
+            --layers=true
+            --no-cache
           build-args: |
             APPLET_ARTIFACTS_DIR=./applets-artifacts
             BUILD_IMAGE_TAG=${{ steps.date.outputs.build_tag }}
