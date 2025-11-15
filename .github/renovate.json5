@@ -11,9 +11,7 @@
     {
       customType: 'regex',
       description: 'Match container images in Justfile with tag and digest',
-      fileMatch: [
-        '^Justfile$',
-      ],
+      managerFilePatterns: ['^Justfile$'],
       matchStrings: [
         '(?<justName>.+?)\\s:=\\s(?:env\\(.+?,\\s)?["\'](?<packageName>\\S+?):(?<currentValue>\\S+?)@(?<currentDigest>sha256:[a-f0-9]+?)["\']\\)?',
       ],
@@ -22,9 +20,7 @@
     {
       customType: 'regex',
       description: 'Match container images in Justfile run_args without tag or digest',
-      fileMatch: [
-        '^Justfile$',
-      ],
+      managerFilePatterns: ['^Justfile$'],
       matchStrings: [
         'run_args\\+=\\((?<packageName>[a-zA-Z0-9._:/-]+)\\)',
       ],
