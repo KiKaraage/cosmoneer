@@ -121,19 +121,26 @@ jobs:
           sudo rm -rf /var/log/*.log || true
           sudo rm -rf /var/log/journal/* || true
           
+          # Additional aggressive cleanup for maximum space
+          sudo apt-get autoremove -y || true
+          sudo apt-get autoclean || true
+          sudo rm -rf /usr/share/doc/* || true
+          sudo rm -rf /usr/share/man/* || true
+          sudo rm -rf /usr/share/info/* || true
+          sudo rm -rf /var/cache/apt/archives/* || true
+          sudo rm -rf /var/lib/dpkg/info/* || true
+          
           # Show available space after cleanup
           df -h
 
-      - name: Mount BTRFS for podman storage
-        id: container-storage-action
-        uses: ublue-os/container-storage-action@911baca08b30c8654933e9e9723cb399892140 # main
-
-        # Fallback to the remove-unwanted-software-action if github doesn't allocate enough space
-        # See: https://github.com/ublue-os/container-storage-action/pull/11
-        continue-on-error: true
-        with:
-          target-dir: /var/lib/containers
-          mount-opts: compress-force=zstd:1,discard
+      # Skip BTRFS mounting to save space and complexity
+      # - name: Mount BTRFS for podman storage
+      #   id: container-storage-action
+      #   uses: ublue-os/container-storage-action@main
+      #   continue-on-error: true 
+      #   with:
+      #     target-dir: /var/lib/containers
+      #     mount-opts: compress-force=zstd:1,discard
 
       - name: Get current date
         id: date
@@ -385,11 +392,12 @@ jobs:
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           oci: true
-           extra-args: |
-             --storage-driver vfs
-             --format oci
-             --layers=true
-             --no-cache
+          extra-args: |
+            --storage-driver vfs
+            --format oci
+            --layers=false
+            --no-cache
+            --squash
           build-args: |
             APPLET_ARTIFACTS_DIR=./applets-artifacts
             BUILD_IMAGE_TAG=${{ steps.date.outputs.build_tag }}
