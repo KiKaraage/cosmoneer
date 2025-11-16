@@ -372,11 +372,11 @@ jobs:
           containerfiles: |
             ./Containerfile
           # Postfix image name with -custom to make it a little more descriptive
-          # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
+           # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
           image: ${{ env.IMAGE_NAME }}
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
-           oci: true
+          oci: true
           extra-args: |
             --storage-driver overlay
             --format oci
