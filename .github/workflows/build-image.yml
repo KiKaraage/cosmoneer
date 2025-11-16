@@ -59,74 +59,75 @@ jobs:
 
 
 
-       - name: Free additional disk space
-         run: |
-           # Clean package caches
-           sudo apt-get clean
-           sudo rm -rf /var/lib/apt/lists/*
 
-           # Remove large packages that actually exist (based on your build output)
-           sudo apt-get remove -y \
-             azure-cli \
-             firefox* \
-             google-chrome-stable \
-             mysql-* \
-             php* \
-             sphinxsearch \
-             || true
+      - name: Free additional disk space
+        run: |
+          # Clean package caches
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
 
-           # Remove LLVM/Clang toolchains if present
-           sudo apt-get remove -y \
-             clang-* \
-             clang-tidy-* \
-             clang-tools-* \
-             llvm-* \
-             || true
+          # Remove large packages that actually exist (based on your build output)
+          sudo apt-get remove -y \
+            azure-cli \
+            firefox* \
+            google-chrome-stable \
+            mysql-* \
+            php* \
+            sphinxsearch \
+            || true
 
-           # Clean development directories that exist
-           sudo rm -rf /usr/share/dotnet/shared/* || true
-           sudo rm -rf /usr/share/dotnet/sdk/* || true
-           sudo rm -rf /usr/local/lib/android || true
-           sudo rm -rf /opt/ghc || true
-           sudo rm -rf /usr/local/share/boost || true
-           sudo rm -rf /usr/local/lib/node_modules || true
-           sudo rm -rf /usr/share/swift || true
-           sudo rm -rf /usr/share/rust || true
+          # Remove LLVM/Clang toolchains if present
+          sudo apt-get remove -y \
+            clang-* \
+            clang-tidy-* \
+            clang-tools-* \
+            llvm-* \
+            || true
 
-           # Remove more large development tools
-           sudo rm -rf /usr/local/lib/node_modules || true
-           sudo rm -rf /usr/share/swift || true
-           sudo rm -rf /usr/share/rust || true
-           sudo rm -rf /home/runner/.cargo || true
-           sudo rm -rf /home/runner/.npm || true
-           sudo rm -rf /home/runner/.cache || true
+          # Clean development directories that exist
+          sudo rm -rf /usr/share/dotnet/shared/* || true
+          sudo rm -rf /usr/share/dotnet/sdk/* || true
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /usr/local/share/boost || true
+          sudo rm -rf /usr/local/lib/node_modules || true
+          sudo rm -rf /usr/share/swift || true
+          sudo rm -rf /usr/share/rust || true
 
-           # Clean container systems
-           sudo docker system prune -af --volumes || true
-           sudo podman system prune -af || true
+          # Remove more large development tools
+          sudo rm -rf /usr/local/lib/node_modules || true
+          sudo rm -rf /usr/share/swift || true
+          sudo rm -rf /usr/share/rust || true
+          sudo rm -rf /home/runner/.cargo || true
+          sudo rm -rf /home/runner/.npm || true
+          sudo rm -rf /home/runner/.cache || true
 
-           # Clear temporary files
-           sudo rm -rf /tmp/* || true
-           sudo rm -rf /var/tmp/* || true
+          # Clean container systems
+          sudo docker system prune -af --volumes || true
+          sudo podman system prune -af || true
 
-           # Clean logs
-           sudo journalctl --vacuum-time=1d || true
-           sudo rm -rf /var/log/*.log || true
-           sudo rm -rf /var/log/journal/* || true
+          # Clear temporary files
+          sudo rm -rf /tmp/* || true
+          sudo rm -rf /var/tmp/* || true
 
-           # Additional aggressive cleanup for maximum space
-           sudo apt-get autoremove -y || true
-           sudo apt-get autoclean || true
-           sudo rm -rf /usr/share/doc/* || true
-           sudo rm -rf /usr/share/man/* || true
-           sudo rm -rf /usr/share/info/* || true
-           sudo rm -rf /var/cache/apt/archives/* || true
-           sudo rm -rf /var/lib/dpkg/info/* || true
+          # Clean logs
+          sudo journalctl --vacuum-time=1d || true
+          sudo rm -rf /var/log/*.log || true
+          sudo rm -rf /var/log/journal/* || true
 
-           # Show available space after cleanup
-           df -h
-           echo "Container storage space:"
-           df -h /var/lib/containers || echo "Container storage not mounted yet"
+          # Additional aggressive cleanup for maximum space
+          sudo apt-get autoremove -y || true
+          sudo apt-get autoclean || true
+          sudo rm -rf /usr/share/doc/* || true
+          sudo rm -rf /usr/share/man/* || true
+          sudo rm -rf /usr/share/info/* || true
+          sudo rm -rf /var/cache/apt/archives/* || true
+          sudo rm -rf /var/lib/dpkg/info/* || true
+
+          # Show available space after cleanup
+          df -h
+          echo "Container storage space:"
+          df -h /var/lib/containers || echo "Container storage not mounted yet"
 
       - name: Mount BTRFS for podman storage
         id: container-storage-action
