@@ -376,12 +376,12 @@ jobs:
           image: ${{ env.IMAGE_NAME }}
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
-          oci: true
-           extra-args: |
-             --storage-driver overlay
-             --format oci
-             --layers=false
-             --no-cache
+           oci: true
+          extra-args: |
+            --storage-driver overlay
+            --format oci
+            --layers=false
+            --no-cache
           build-args: |
             APPLET_ARTIFACTS_DIR=./applets-artifacts
             BUILD_IMAGE_TAG=${{ steps.date.outputs.build_tag }}
