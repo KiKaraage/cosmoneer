@@ -47,7 +47,6 @@ jobs:
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
           echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
 
-      # These stage versions are pinned by https://github.com/renovatebot/renovate
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
@@ -58,20 +57,15 @@ jobs:
           remove-codeql: true
           remove-large-packages: true
 
-      - name: Cache Container Layers
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4
-        with:
-          path: /var/lib/containers
-          key: ${{ runner.os }}-containers-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-containers-
+
+
 
       - name: Free additional disk space
         run: |
           # Clean package caches
           sudo apt-get clean
           sudo rm -rf /var/lib/apt/lists/*
-          
+
           # Remove large packages that actually exist (based on your build output)
           sudo apt-get remove -y \
             azure-cli \
@@ -81,7 +75,7 @@ jobs:
             php* \
             sphinxsearch \
             || true
-          
+
           # Remove LLVM/Clang toolchains if present
           sudo apt-get remove -y \
             clang-* \
@@ -89,7 +83,7 @@ jobs:
             clang-tools-* \
             llvm-* \
             || true
-          
+
           # Clean development directories that exist
           sudo rm -rf /usr/share/dotnet/shared/* || true
           sudo rm -rf /usr/share/dotnet/sdk/* || true
@@ -99,7 +93,7 @@ jobs:
           sudo rm -rf /usr/local/lib/node_modules || true
           sudo rm -rf /usr/share/swift || true
           sudo rm -rf /usr/share/rust || true
-          
+
           # Remove more large development tools
           sudo rm -rf /usr/local/lib/node_modules || true
           sudo rm -rf /usr/share/swift || true
@@ -107,29 +101,37 @@ jobs:
           sudo rm -rf /home/runner/.cargo || true
           sudo rm -rf /home/runner/.npm || true
           sudo rm -rf /home/runner/.cache || true
-          
+
           # Clean container systems
           sudo docker system prune -af --volumes || true
           sudo podman system prune -af || true
-          
+
           # Clear temporary files
           sudo rm -rf /tmp/* || true
           sudo rm -rf /var/tmp/* || true
-          
+
           # Clean logs
           sudo journalctl --vacuum-time=1d || true
           sudo rm -rf /var/log/*.log || true
           sudo rm -rf /var/log/journal/* || true
-          
+
+          # Additional aggressive cleanup for maximum space
+          sudo apt-get autoremove -y || true
+          sudo apt-get autoclean || true
+          sudo rm -rf /usr/share/doc/* || true
+          sudo rm -rf /usr/share/man/* || true
+          sudo rm -rf /usr/share/info/* || true
+          sudo rm -rf /var/cache/apt/archives/* || true
+          sudo rm -rf /var/lib/dpkg/info/* || true
+
           # Show available space after cleanup
           df -h
+          echo "Container storage space:"
+          df -h /var/lib/containers || echo "Container storage not mounted yet"
 
       - name: Mount BTRFS for podman storage
         id: container-storage-action
-        uses: ublue-os/container-storage-action@911baca08b30c8654933e9e9723cb399892140 # main
-
-        # Fallback to the remove-unwanted-software-action if github doesn't allocate enough space
-        # See: https://github.com/ublue-os/container-storage-action/pull/11
+        uses: ublue-os/container-storage-action@main
         continue-on-error: true
         with:
           target-dir: /var/lib/containers
@@ -347,17 +349,7 @@ jobs:
 
 
 
-      - name: Cache Cargo Dependencies
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            /tmp/cargo
-            /tmp/cargo-target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+
 
       - name: Copy Artifacts to Build Context
         run: |
@@ -380,16 +372,16 @@ jobs:
           containerfiles: |
             ./Containerfile
           # Postfix image name with -custom to make it a little more descriptive
-          # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
+           # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
           image: ${{ env.IMAGE_NAME }}
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           oci: true
-           extra-args: |
-             --storage-driver vfs
-             --format oci
-             --layers=true
-             --no-cache
+          extra-args: |
+            --storage-driver overlay
+            --format oci
+            --layers=false
+            --no-cache
           build-args: |
             APPLET_ARTIFACTS_DIR=./applets-artifacts
             BUILD_IMAGE_TAG=${{ steps.date.outputs.build_tag }}
