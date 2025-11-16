@@ -127,7 +127,7 @@ jobs:
           # Show available space after cleanup
           df -h
 
-       - name: Mount BTRFS for podman storage
+      - name: Mount BTRFS for podman storage
          id: container-storage-action
          uses: ublue-os/container-storage-action@main
          continue-on-error: true
