@@ -502,10 +502,27 @@ jobs:
           echo "Container label version (should match build_tag):"
           echo "${{ steps.metadata.outputs.labels }}" | grep "org.opencontainers.image.version"
             echo ""
+
+          # Verify build_tag is not empty
           if [ -z "${{ steps.date.outputs.build_tag }}" ]; then
             echo "ERROR: build_tag is empty!"
             exit 1
           fi
+
+          # Verify full_tag is included in image tags
+          if ! echo "${{ steps.metadata.outputs.tags }}" | grep -q "${{ steps.date.outputs.full_tag }}"; then
+            echo "ERROR: full_tag '${{ steps.date.outputs.full_tag }}' not found in image tags!"
+            echo "Image tags: ${{ steps.metadata.outputs.tags }}"
+            exit 1
+          fi
+
+          # Verify container label version matches build_tag
+          LABEL_VERSION=$(echo "${{ steps.metadata.outputs.labels }}" | grep "org.opencontainers.image.version" | cut -d'=' -f2)
+          if [ "$LABEL_VERSION" != "${{ steps.date.outputs.build_tag }}" ]; then
+            echo "ERROR: Container label version '$LABEL_VERSION' does not match build_tag '${{ steps.date.outputs.build_tag }}'!"
+            exit 1
+          fi
+
             echo "✓ Version outputs configured correctly"
 
         # Rechunk (OPTIONAL): Rechunker optimizes container image layers for better resumability and fixes some distribution errors.
