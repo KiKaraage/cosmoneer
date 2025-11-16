@@ -48,27 +48,113 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
-      # This is optional, but if you see that your builds are way too big for the runners, you can enable this by uncommenting the following lines:
-      - name: Maximize build space
-        uses: ublue-os/remove-unwanted-software@517622d6452028f266b7ba4cc9a123b5f58a6b53 # v7
-        with:
-          remove-codeql: true
-          remove-large-packages: true
-
-      - name: Free additional disk space
+      # Combined disk space optimization
+      - name: Maximize build space and free disk
         run: |
           # Clean package caches
           sudo apt-get clean
           sudo rm -rf /var/lib/apt/lists/*
 
-          # Remove large packages that actually exist (based on your build output)
+          # Remove large packages that actually exist
            sudo apt-get remove -y \
            azure-cli \
+           dictionaries-common \
+           emacsen-common \
+           firebird3.0* \
            firefox* \
+           freetds-common \
            google-chrome-stable \
+           hunspell-en-us \
+           icu-devtools \
+           imagemagick-6-common \
+           lib32gcc-s1 \
+           lib32stdc++6 \
+           libaom3 \
+           libaspell15 \
+           libc-client2007e \
+           libc6-i386 \
+           libcanberra0t64 \
+           libcgi-* \
+           libclang-common* \
+           libclang-rt-* \
+           libclang1-* \
+           libclone-perl \
+           libdbusmenu-glib4 \
+           libdbusmenu-gtk3-4 \
+           libde265-0 \
+           libenchant-2-2 \
+           libencode-locale-perl \
+           libevent-pthreads-2.1-7t64 \
+           libfbclient2 \
+           libfcgi-* \
+           libfcgi0t64 \
+           libffi-dev \
+           libfftw3-double3 \
+           libgc1 \
+           libgd3 \
+           libhashkit2t64 \
+           libheif-plugin-* \
+           libheif1 \
+           libhtml-parser-perl \
+           libhtml-tagset-perl \
+           libhtml-template-perl \
+           libhttp-date-perl \
+           libhttp-message-perl \
+           libhunspell-1.7-0 \
+           libicu-dev \
+           libio-html-perl \
+           liblldb-* \
+           liblqr-1-0 \
+           liblwp-mediatypes-perl \
+           libmagickcore-6.q16-7t64 \
+           libmagickwand-6.q16-7t64 \
+           libmecab2 \
+           libmemcached11t64 \
+           libncurses-dev \
+           libnorm1t64 \
+           libobjc-13-dev \
+           libobjc4 \
+           libodbc2 \
+           libogg0 \
+           libopenjp2-7 \
+           libpcre2-16-0 \
+           libpcre2-32-0 \
+           libpcre2-dev \
+           libpcre2-posix3 \
+           libpfm4 \
+           libpgm-5.3-0t64 \
+           libprotobuf-lite32t64 \
+           libqdbm14t64 \
+           librabbitmq4 \
+           libraw23t64 \
+           libre2-10 \
+           libsnappy1v5 \
+           libsybdb5 \
+           libtdb1 \
+           libtidy5deb1 \
+           libtimedate-perl \
+           libtommath1 \
+           liburi-perl \
+           libvorbis0a \
+           libvorbisfile3 \
+           libwebpdemux2 \
+           libwebpmux3 \
+           libxml2-dev \
+           libz3-4 \
+           libz3-dev \
+           libzip4t64 \
+           libzmq5 \
+           libzstd-dev \
+           mecab-ipadic \
+           mecab-ipadic-utf8 \
+           mecab-utils \
+           mlock \
            mysql-* \
            php* \
+           shtool \
+           sound-theme-freedesktop \
            sphinxsearch \
+           xul-ext-ubufox \
            || true
 
           # Remove LLVM/Clang toolchains if present
@@ -294,7 +380,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          set -e
+          set +e  # Don't exit on error to allow partial downloads
           mkdir -p /tmp/applet-artifacts
 
           # Get list of applets from check-applet-updates workflow
@@ -313,38 +399,58 @@ jobs:
           ]'
 
           echo "Searching for specific applet workflow runs in $GH_REPO"
+          success_count=0
+          total_count=0
 
           # For each applet, find most recent successful workflow run by name
           echo "$APPLET_JSON" | jq -r '.[] | .name' | while read -r applet_name; do
+          total_count=$((total_count + 1))
           echo "Looking for workflow run: Build $applet_name"
 
           # Try applet-management.yml first with more lenient matching
-          run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" --limit 50 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
+          run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
 
           # If not found in applet-management.yml, try build-applets.yml
           if [ -z "$run_id" ]; then
               echo "No successful run found in applet-management.yml, checking build-applets.yml..."
-              run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" --limit 50 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
+              run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
+          fi
+
+          # If still not found, try any workflow that might contain the applet name
+          if [ -z "$run_id" ]; then
+              echo "No specific run found, checking any workflow with $applet_name..."
+              run_id=$(gh run list --repo "$GH_REPO" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"$applet_name\"))) | .databaseId" | head -1)
           fi
 
           if [ -n "$run_id" ]; then
-              echo "Found successful run $run_id for 'Build $applet_name'"
+              echo "Found successful run $run_id for '$applet_name'"
 
               # Download all artifacts from this specific applet's workflow run
-              echo "Downloading artifacts from 'Build $applet_name' run $run_id"
+              echo "Downloading artifacts from '$applet_name' run $run_id"
               if gh run download --repo "$GH_REPO" "$run_id" --dir "/tmp/applet-artifacts" 2>/dev/null; then
-              echo "Successfully downloaded artifacts for $applet_name"
+              echo "✓ Successfully downloaded artifacts for $applet_name"
+              success_count=$((success_count + 1))
               else
-              echo "No artifacts found for $applet_name in run $run_id"
+              echo "⚠ No artifacts found for $applet_name in run $run_id"
               fi
           else
-              echo "No successful workflow run found for 'Build $applet_name' in either applet-management.yml or build-applets.yml"
+              echo "⚠ No successful workflow run found for '$applet_name'"
           fi
               done
 
+              echo ""
+              echo "=== Download Summary ==="
+              echo "Successfully downloaded: $success_count/$total_count applets"
               echo "Final downloaded artifacts:"
               ls -la /tmp/applet-artifacts/ || echo "No artifacts directory contents"
-              continue-on-error: true
+
+              # Create empty artifacts directory if nothing was downloaded to avoid build failures
+              if [ ! -d "/tmp/applet-artifacts" ] || [ -z "$(ls -A /tmp/applet-artifacts 2>/dev/null)" ]; then
+                echo "Creating empty artifacts directory to avoid build failures"
+                mkdir -p /tmp/applet-artifacts
+                touch /tmp/applet-artifacts/.empty
+              fi
+        continue-on-error: true
 
       - name: Copy Artifacts to Build Context
         run: |
