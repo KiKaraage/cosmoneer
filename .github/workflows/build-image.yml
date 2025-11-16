@@ -58,13 +58,7 @@ jobs:
           remove-codeql: true
           remove-large-packages: true
 
-      - name: Cache Container Layers
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4
-        with:
-          path: /var/lib/containers
-          key: ${{ runner.os }}-containers-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-containers-
+
 
       - name: Free additional disk space
         run: |
@@ -133,14 +127,13 @@ jobs:
           # Show available space after cleanup
           df -h
 
-      # Skip BTRFS mounting to save space and complexity
-      # - name: Mount BTRFS for podman storage
-      #   id: container-storage-action
-      #   uses: ublue-os/container-storage-action@main
-      #   continue-on-error: true 
-      #   with:
-      #     target-dir: /var/lib/containers
-      #     mount-opts: compress-force=zstd:1,discard
+       - name: Mount BTRFS for podman storage
+         id: container-storage-action
+         uses: ublue-os/container-storage-action@main
+         continue-on-error: true
+         with:
+           target-dir: /var/lib/containers
+           mount-opts: compress-force=zstd:1,discard
 
       - name: Get current date
         id: date
@@ -354,17 +347,7 @@ jobs:
 
 
 
-      - name: Cache Cargo Dependencies
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            /tmp/cargo
-            /tmp/cargo-target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+
 
       - name: Copy Artifacts to Build Context
         run: |
