@@ -58,16 +58,19 @@ EOF
 echo "::endgroup::"
 echo "::group:: Portal Configuration"
 
-# Configure xdg-desktop-portal for Niri with GTK fallback
+# Configure xdg-desktop-portal for Niri with COSMIC as primary
 echo "Configuring portals for Niri session..."
 mkdir -p /etc/xdg-desktop-portal
 tee /etc/xdg-desktop-portal/cosmoneer-portals.conf <<'EOF'
 [preferred]
-default=gtk
-org.freedesktop.impl.portal.FileChooser=gtk
-org.freedesktop.impl.portal.Screenshot=gtk
-org.freedesktop.impl.portal.ScreenCast=gtk
-org.freedesktop.impl.portal.Settings=gtk
+default=cosmic;gnome;
+org.freedesktop.impl.portal.Access=cosmic;gnome;
+org.freedesktop.impl.portal.Notification=cosmic;gnome;
+org.freedesktop.impl.portal.Secret=gnome-keyring;
+org.freedesktop.impl.portal.FileChooser=cosmic;gnome;
+org.freedesktop.impl.portal.Screenshot=cosmic;gnome;
+org.freedesktop.impl.portal.Inhibit=cosmic;gnome;
+org.freedesktop.impl.portal.Background=cosmic;gnome;
 EOF
 
 echo "::endgroup::"
@@ -76,6 +79,10 @@ echo "::group:: Copy System Files"
 # Copy system files to container
 if [ -d "/ctx/system_files" ]; then
     rsync -rvK /ctx/system_files/ /
+    # Make the COSMIC portal wrapper executable
+    if [ -f "/usr/libexec/xdg-desktop-portal-cosmic-wrapper" ]; then
+        chmod +x /usr/libexec/xdg-desktop-portal-cosmic-wrapper
+    fi
 fi
 
 echo "::endgroup::"

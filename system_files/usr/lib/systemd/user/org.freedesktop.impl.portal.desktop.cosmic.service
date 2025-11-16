@@ -1,0 +1,15 @@
+[Unit]
+Description=Portal service (COSMIC implementation)
+PartOf=graphical-session.target
+After=graphical-session-pre.target
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.impl.portal.desktop.cosmic
+Environment=GDK_BACKEND=wayland
+Environment=WAYLAND_DISPLAY=$WAYLAND_DISPLAY
+Environment=DISPLAY=$DISPLAY
+ExecStart=/usr/libexec/xdg-desktop-portal-cosmic
+
+[Install]
+WantedBy=graphical-session.target

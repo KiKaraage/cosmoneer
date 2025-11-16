@@ -6,7 +6,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: "00 19 * * 1,3,5" # 19:00 / 07:00pm UTC Mon, Wed, Fri (02:00 WIB next day) - 3x per week
+    - cron: "00 00 * * 1,3,5" # 00:00 UTC Mon, Wed, Fri
   push:
     branches:
       - main
@@ -17,6 +17,15 @@ on:
       - ".github/workflows/build-applet.yml"
       - ".github/workflows/applet-management.yml"
   workflow_dispatch:
+     inputs:
+       build_type:
+         description: 'Build type: latest (scheduled-style) or push (incremental)'
+         required: true
+         default: 'push'
+         type: choice
+         options:
+           - latest
+           - push
 
 env:
   IMAGE_DESC: "A scroller desktop image with COSMIC, Niri and Bluefin goodies together"
@@ -48,168 +57,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
-      # Combined disk space optimization
-      - name: Maximize build space and free disk
-        run: |
-          # Clean package caches
-          sudo apt-get clean
-          sudo rm -rf /var/lib/apt/lists/*
-
-          # Remove large packages that actually exist
-           sudo apt-get remove -y \
-           azure-cli \
-           dictionaries-common \
-           emacsen-common \
-           firebird3.0* \
-           firefox* \
-           freetds-common \
-           google-chrome-stable \
-           hunspell-en-us \
-           icu-devtools \
-           imagemagick-6-common \
-           lib32gcc-s1 \
-           lib32stdc++6 \
-           libaom3 \
-           libaspell15 \
-           libc-client2007e \
-           libc6-i386 \
-           libcanberra0t64 \
-           libcgi-* \
-           libclang-common* \
-           libclang-rt-* \
-           libclang1-* \
-           libclone-perl \
-           libdbusmenu-glib4 \
-           libdbusmenu-gtk3-4 \
-           libde265-0 \
-           libenchant-2-2 \
-           libencode-locale-perl \
-           libevent-pthreads-2.1-7t64 \
-           libfbclient2 \
-           libfcgi-* \
-           libfcgi0t64 \
-           libffi-dev \
-           libfftw3-double3 \
-           libgc1 \
-           libgd3 \
-           libhashkit2t64 \
-           libheif-plugin-* \
-           libheif1 \
-           libhtml-parser-perl \
-           libhtml-tagset-perl \
-           libhtml-template-perl \
-           libhttp-date-perl \
-           libhttp-message-perl \
-           libhunspell-1.7-0 \
-           libicu-dev \
-           libio-html-perl \
-           liblldb-* \
-           liblqr-1-0 \
-           liblwp-mediatypes-perl \
-           libmagickcore-6.q16-7t64 \
-           libmagickwand-6.q16-7t64 \
-           libmecab2 \
-           libmemcached11t64 \
-           libncurses-dev \
-           libnorm1t64 \
-           libobjc-13-dev \
-           libobjc4 \
-           libodbc2 \
-           libogg0 \
-           libopenjp2-7 \
-           libpcre2-16-0 \
-           libpcre2-32-0 \
-           libpcre2-dev \
-           libpcre2-posix3 \
-           libpfm4 \
-           libpgm-5.3-0t64 \
-           libprotobuf-lite32t64 \
-           libqdbm14t64 \
-           librabbitmq4 \
-           libraw23t64 \
-           libre2-10 \
-           libsnappy1v5 \
-           libsybdb5 \
-           libtdb1 \
-           libtidy5deb1 \
-           libtimedate-perl \
-           libtommath1 \
-           liburi-perl \
-           libvorbis0a \
-           libvorbisfile3 \
-           libwebpdemux2 \
-           libwebpmux3 \
-           libxml2-dev \
-           libz3-4 \
-           libz3-dev \
-           libzip4t64 \
-           libzmq5 \
-           libzstd-dev \
-           mecab-ipadic \
-           mecab-ipadic-utf8 \
-           mecab-utils \
-           mlock \
-           mysql-* \
-           php* \
-           shtool \
-           sound-theme-freedesktop \
-           sphinxsearch \
-           xul-ext-ubufox \
-           || true
-
-          # Remove LLVM/Clang toolchains if present
-           sudo apt-get remove -y \
-           clang-* \
-           clang-tidy-* \
-           clang-tools-* \
-           llvm-* \
-           || true
-
-          # Clean development directories that exist
-          sudo rm -rf /usr/share/dotnet/shared/* || true
-          sudo rm -rf /usr/share/dotnet/sdk/* || true
-          sudo rm -rf /usr/local/lib/android || true
-          sudo rm -rf /opt/ghc || true
-          sudo rm -rf /usr/local/share/boost || true
-          sudo rm -rf /usr/local/lib/node_modules || true
-          sudo rm -rf /usr/share/swift || true
-          sudo rm -rf /usr/share/rust || true
-
-          # Remove more large development tools
-          sudo rm -rf /usr/local/lib/node_modules || true
-          sudo rm -rf /usr/share/swift || true
-          sudo rm -rf /usr/share/rust || true
-          sudo rm -rf /home/runner/.cargo || true
-          sudo rm -rf /home/runner/.npm || true
-          sudo rm -rf /home/runner/.cache || true
-
-          # Clean container systems
-          sudo docker system prune -af --volumes || true
-          sudo podman system prune -af || true
-
-          # Clear temporary files
-          sudo rm -rf /tmp/* || true
-          sudo rm -rf /var/tmp/* || true
-
-          # Clean logs
-          sudo journalctl --vacuum-time=1d || true
-          sudo rm -rf /var/log/*.log || true
-          sudo rm -rf /var/log/journal/* || true
-
-          # Additional aggressive cleanup for maximum space
-          sudo apt-get autoremove -y || true
-          sudo apt-get autoclean || true
-          sudo rm -rf /usr/share/doc/* || true
-          sudo rm -rf /usr/share/man/* || true
-          sudo rm -rf /usr/share/info/* || true
-          sudo rm -rf /var/cache/apt/archives/* || true
-          sudo rm -rf /var/lib/dpkg/info/* || true
-
-          # Show available space after cleanup
-          df -h
-          echo "Container storage space:"
-          df -h /var/lib/containers || echo "Container storage not mounted yet"
-
       - name: Mount BTRFS for podman storage
         id: container-storage-action
         uses: ublue-os/container-storage-action@main
@@ -227,117 +74,91 @@ jobs:
           # https://linux.die.net/man/1/date
           echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
 
-          # Calculate Indonesian date (UTC+7) for different scenarios
-          CURRENT_HOUR=$(date -u +%H)
-          BUILD_TAG_VALUE=""
-
-          # Debug: Show current date
-          echo "Current UTC date: $(date -u +%Y-%m-%d)"
-          echo "Current UTC hour: $CURRENT_HOUR"
-
-          if [ "${{ github.event_name }}" = "schedule" ]; then
-          # For scheduled builds, always use WIB date (UTC+7)
-          BUILD_TAG_VALUE=$(date -u -d "+7 hours" +%y%m%d)
-          echo "Scheduled build - Indonesian date (WIB): $BUILD_TAG_VALUE"
-          echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-          echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-              elif [ "${{ github.event_name }}" = "push" ]; then
-          if [ "$CURRENT_HOUR" -ge 19 ]; then
-              # For pushes between 19:00-23:59 UTC, use WIB date (next day)
-              BUILD_TAG_VALUE=$(date -u -d "+7 hours" +%y%m%d)
-              echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-              echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-              echo "Push after 19:00 UTC - Indonesian date (WIB): $BUILD_TAG_VALUE"
-          else
-              # For other times, use UTC date
-              BUILD_TAG_VALUE=$(date -u +%y%m%d)
-              echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-              echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-              echo "Push before 19:00 UTC - UTC date: $BUILD_TAG_VALUE"
-          fi
-              else
-          # For PR and other events, use UTC date as fallback
+          # Use current UTC date for all builds
           BUILD_TAG_VALUE=$(date -u +%y%m%d)
-          echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+          echo "Current UTC date: $(date -u +%Y-%m-%d)"
+          echo "Build tag: $BUILD_TAG_VALUE"
           echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-          echo "PR/other event - UTC date: $BUILD_TAG_VALUE"
-          fi
 
-          # Query container registry for existing tags and determine next build number
-          REGISTRY="${IMAGE_REGISTRY,,}"
-          IMAGE_PATH="${REGISTRY}/${IMAGE_NAME,,}"
+           # Query container registry for existing tags and determine next build number
+           REGISTRY="${IMAGE_REGISTRY,,}"
+           IMAGE_PATH="${REGISTRY}/${IMAGE_NAME,,}"
 
-          # Get list of all tags from registry
-          echo "Querying registry for existing tags at $IMAGE_PATH"
-          EXISTING_TAGS=$(crane ls "${IMAGE_PATH}" 2>/dev/null | grep -E '^[0-9]' | sort -V || echo "")
+           # Get list of all tags from registry
+           echo "Querying registry for existing tags at $IMAGE_PATH"
+           EXISTING_TAGS=$(crane ls "${IMAGE_PATH}" 2>/dev/null | grep -E '^[0-9]' | sort -V || echo "")
 
-          if [ "${{ github.event_name }}" = "push" ]; then
-          # For push builds: find highest build number for today's date
-          LATEST_TODAY=$(echo "$EXISTING_TAGS" | grep "^${BUILD_TAG_VALUE}" | tail -1)
+            # Determine effective build type
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              EFFECTIVE_EVENT="${{ inputs.build_type }}"
+            else
+              EFFECTIVE_EVENT="${{ github.event_name }}"
+            fi
 
-          if [ -z "$LATEST_TODAY" ]; then
-              # No builds for today yet
-              DAILY_BUILD_NUMBER=1
-          else
-              # Extract build number from latest tag (e.g., "251113.2" -> "2")
-              DAILY_BUILD_NUMBER=$(echo "$LATEST_TODAY" | grep -oE '\.[0-9]+$' | sed 's/^\.//') || DAILY_BUILD_NUMBER=0
-              DAILY_BUILD_NUMBER=$((DAILY_BUILD_NUMBER + 1))
-          fi
+            if [ "$EFFECTIVE_EVENT" = "push" ]; then
+           # For push builds: find highest build number for today's date
+           LATEST_TODAY=$(echo "$EXISTING_TAGS" | grep "^${BUILD_TAG_VALUE}" | tail -1)
 
-          echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
-          echo "full_tag=${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}" >> $GITHUB_OUTPUT
-          echo "Latest tag for $BUILD_TAG_VALUE: ${LATEST_TODAY:-none}, Next: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
-              elif [ "${{ github.event_name }}" = "pull_request" ]; then
-          # For PR events: increment from the absolute latest tag
-          LATEST_TAG=$(echo "$EXISTING_TAGS" | tail -1)
+           if [ -z "$LATEST_TODAY" ]; then
+               # No builds for today yet
+               DAILY_BUILD_NUMBER=1
+           else
+               # Extract build number from latest tag (e.g., "251113.2" -> "2")
+               DAILY_BUILD_NUMBER=$(echo "$LATEST_TODAY" | grep -oE '\.[0-9]+$' | sed 's/^\.//') || DAILY_BUILD_NUMBER=0
+               DAILY_BUILD_NUMBER=$((DAILY_BUILD_NUMBER + 1))
+           fi
 
-          if [ -z "$LATEST_TAG" ]; then
-              # No tags exist yet
-              NEXT_BUILD="${BUILD_TAG_VALUE}.1.pr"
-          else
-              # Extract the base version and build number, increment
-              if [[ "$LATEST_TAG" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
-              # Format: YYMMDD.X
-              DATE_PART="${BASH_REMATCH[1]}"
-              BUILD_NUM="${BASH_REMATCH[2]}"
-              NEXT_BUILD_NUM=$((BUILD_NUM + 1))
-              NEXT_BUILD="${DATE_PART}.${NEXT_BUILD_NUM}.pr"
-              elif [[ "$LATEST_TAG" =~ ^([0-9]+)$ ]]; then
-              # Format: YYMMDD (scheduled build)
-              NEXT_BUILD="${LATEST_TAG}.1.pr"
-              else
-              # Fallback
-              NEXT_BUILD="${BUILD_TAG_VALUE}.1.pr"
-              fi
-          fi
+           echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
+           echo "full_tag=${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}" >> $GITHUB_OUTPUT
+           echo "Latest tag for $BUILD_TAG_VALUE: ${LATEST_TODAY:-none}, Next: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
+                elif [ "$EFFECTIVE_EVENT" = "pull_request" ]; then
+           # For PR events: increment from the absolute latest tag
+           LATEST_TAG=$(echo "$EXISTING_TAGS" | tail -1)
 
-          echo "full_tag=${NEXT_BUILD}" >> $GITHUB_OUTPUT
-          echo "Latest tag: ${LATEST_TAG:-none}, Next PR build: ${NEXT_BUILD}"
-              else
-          # For scheduled/other events, full_tag is the same as build_tag
-          echo "full_tag=${BUILD_TAG_VALUE}" >> $GITHUB_OUTPUT
-              fi
+           if [ -z "$LATEST_TAG" ]; then
+               # No tags exist yet
+               NEXT_BUILD="${BUILD_TAG_VALUE}.1.pr"
+           else
+               # Extract the base version and build number, increment
+               if [[ "$LATEST_TAG" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+               # Format: YYMMDD.X
+               DATE_PART="${BASH_REMATCH[1]}"
+               BUILD_NUM="${BASH_REMATCH[2]}"
+               NEXT_BUILD_NUM=$((BUILD_NUM + 1))
+               NEXT_BUILD="${DATE_PART}.${NEXT_BUILD_NUM}.pr"
+               elif [[ "$LATEST_TAG" =~ ^([0-9]+)$ ]]; then
+               # Format: YYMMDD (scheduled build)
+               NEXT_BUILD="${LATEST_TAG}.1.pr"
+               else
+               # Fallback
+               NEXT_BUILD="${BUILD_TAG_VALUE}.1.pr"
+               fi
+           fi
 
-              # Summary of calculated versions
-              echo ""
-              echo "=== Version Calculation Summary ==="
-              echo "Event: ${{ github.event_name }}"
-              echo "BUILD_TAG_VALUE (date): ${BUILD_TAG_VALUE}"
-              case "${{ github.event_name }}" in
-          push)
-              echo "DAILY_BUILD_NUMBER: ${DAILY_BUILD_NUMBER}"
-              echo "FULL_TAG: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
-              echo "VERSION: ${BUILD_TAG_VALUE}"
-              ;;
-          pull_request)
-              echo "FULL_TAG: ${NEXT_BUILD}"
-              echo "VERSION: ${BUILD_TAG_VALUE}"
-              ;;
-          *)
-              echo "FULL_TAG: ${BUILD_TAG_VALUE}"
-              echo "VERSION: ${BUILD_TAG_VALUE}"
-              ;;
-              esac
+           echo "full_tag=${NEXT_BUILD}" >> $GITHUB_OUTPUT
+           echo "Latest tag: ${LATEST_TAG:-none}, Next PR build: ${NEXT_BUILD}"
+               else
+           # For scheduled/other events, full_tag is the same as build_tag
+           echo "full_tag=${BUILD_TAG_VALUE}" >> $GITHUB_OUTPUT
+               fi
+
+                # Summary of calculated versions
+                echo ""
+                echo "=== Version Calculation Summary ==="
+                echo "Event: ${{ github.event_name }} (effective: $EFFECTIVE_EVENT)"
+                echo "BUILD_TAG_VALUE (date): ${BUILD_TAG_VALUE}"
+                case "$EFFECTIVE_EVENT" in
+           push)
+               echo "DAILY_BUILD_NUMBER: ${DAILY_BUILD_NUMBER}"
+               echo "FULL_TAG: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
+               ;;
+           pull_request)
+               echo "FULL_TAG: ${NEXT_BUILD}"
+               ;;
+           *)
+               echo "FULL_TAG: ${BUILD_TAG_VALUE}"
+               ;;
+               esac
 
       # Image metadata for https://artifacthub.io/ - This is optional but is highly recommended so we all can get a index of all the custom images
       # The metadata by itself is not going to do anything, you choose if you want your image to be on ArtifactHub or not.
@@ -345,18 +166,20 @@ jobs:
         uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
         id: metadata
         with:
-          # This generates all the tags for your image, you can add custom tags here too!
-          # Default tags are "$DEFAULT_TAG", "latest", and "daily" based on trigger
-          tags: |
-            type=raw,value=${{ steps.date.outputs.wib_date }},enable=${{ github.event_name == 'schedule' }}
-            type=raw,value=${{ steps.date.outputs.wib_date }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' }}
-            type=raw,value=next,enable=${{ github.event_name == 'push' }}
-            type=raw,value=latest,enable=${{ github.event_name == 'schedule' }}
-            type=raw,value=next,enable=${{ github.event_name == 'schedule' }}
-            type=raw,value=${{ steps.date.outputs.full_tag }},enable=${{ github.event_name == 'pull_request' }}
-            type=sha,enable=${{ github.event_name == 'pull_request' }}
-            type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
-          labels: |
+           # This generates all the tags for your image, you can add custom tags here too!
+           # Scheduled builds get YYMMDD, latest, and next tags
+           # Push builds get YYMMDD.N and next tags
+           # Manual workflow_dispatch can choose build type (latest or push)
+           tags: |
+             type=raw,value=${{ steps.date.outputs.build_tag }},enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
+             type=raw,value=latest,enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
+             type=raw,value=next,enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
+             type=raw,value=${{ steps.date.outputs.build_tag }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'push') }}
+             type=raw,value=next,enable=${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'push') }}
+             type=raw,value=${{ steps.date.outputs.full_tag }},enable=${{ github.event_name == 'pull_request' }}
+             type=sha,enable=${{ github.event_name == 'pull_request' }}
+             type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
+           labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
@@ -372,8 +195,8 @@ jobs:
             io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
             io.artifacthub.package.prerelease=false
             containers.bootc=1
-          sep-tags: " "
-          sep-annotations: " "
+           sep-tags: " "
+           sep-annotations: " "
 
       - name: Download Applet Artifacts
         env:
@@ -486,7 +309,7 @@ jobs:
           build-args: |
             APPLET_ARTIFACTS_DIR=./applets-artifacts
             BUILD_IMAGE_TAG=${{ steps.date.outputs.build_tag }}
-            BUILD_VERSION=${{ steps.date.outputs.build_tag }}
+            BUILD_VERSION=${{ steps.date.outputs.full_tag }}
 
       - name: Verify version consistency
         run: |
@@ -502,10 +325,30 @@ jobs:
           echo "Container label version (should match build_tag):"
           echo "${{ steps.metadata.outputs.labels }}" | grep "org.opencontainers.image.version"
             echo ""
+
+          # Verify build_tag is not empty
           if [ -z "${{ steps.date.outputs.build_tag }}" ]; then
             echo "ERROR: build_tag is empty!"
             exit 1
           fi
+
+          # Verify full_tag is included in image tags
+          if ! echo "${{ steps.metadata.outputs.tags }}" | grep -q "${{ steps.date.outputs.full_tag }}"; then
+            echo "ERROR: full_tag '${{ steps.date.outputs.full_tag }}' not found in image tags!"
+            echo "Image tags: ${{ steps.metadata.outputs.tags }}"
+            exit 1
+          fi
+
+           # Verify container label version matches build_tag
+           LABEL_VERSION=$(echo "${{ steps.metadata.outputs.labels }}" | grep "org.opencontainers.image.version" | cut -d'=' -f2)
+           if [ "$LABEL_VERSION" != "${{ steps.date.outputs.build_tag }}" ]; then
+             echo "ERROR: Container label version '$LABEL_VERSION' does not match build_tag '${{ steps.date.outputs.build_tag }}'!"
+             exit 1
+           fi
+
+           # Verify OS name will use full_tag (BUILD_VERSION now uses full_tag)
+           echo "✓ OS name will display: Cosmoneer (${{ steps.date.outputs.full_tag }})"
+
             echo "✓ Version outputs configured correctly"
 
         # Rechunk (OPTIONAL): Rechunker optimizes container image layers for better resumability and fixes some distribution errors.
