@@ -17,15 +17,15 @@ on:
       - ".github/workflows/build-applet.yml"
       - ".github/workflows/applet-management.yml"
   workflow_dispatch:
-     inputs:
-       build_type:
-         description: 'Build type: latest (scheduled-style) or push (incremental)'
-         required: true
-         default: 'push'
-         type: choice
-         options:
-           - latest
-           - push
+    inputs:
+      build_type:
+        description: "Build type: latest (scheduled-style) or push (incremental)"
+        required: true
+        default: "push"
+        type: choice
+        options:
+          - latest
+          - push
 
 env:
   IMAGE_DESC: "A scroller desktop image with COSMIC, Niri and Bluefin goodies together"
@@ -54,15 +54,15 @@ jobs:
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
           echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
 
-       - name: Checkout
-         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
-       - name: Install crane
-         run: |
-           # Install crane for registry operations
-           curl -sL "https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz" | tar -xz -C /usr/local/bin crane
+      - name: Install crane
+        run: |
+          # Install crane for registry operations
+          curl -sL "https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz" | tar -xz -C /usr/local/bin crane
 
-       - name: Mount BTRFS for podman storage
+      - name: Mount BTRFS for podman storage
         id: container-storage-action
         uses: ublue-os/container-storage-action@main
         continue-on-error: true
@@ -181,20 +181,20 @@ jobs:
         uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
         id: metadata
         with:
-           # This generates all the tags for your image, you can add custom tags here too!
-           # Scheduled builds get YYMMDD, latest, and next tags
-           # Push builds get YYMMDD.N and next tags
-           # Manual workflow_dispatch can choose build type (latest or push)
-           tags: |
-             type=raw,value=${{ steps.date.outputs.build_tag }},enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
-             type=raw,value=latest,enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
-             type=raw,value=next,enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
-             type=raw,value=${{ steps.date.outputs.build_tag }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'push') }}
-             type=raw,value=next,enable=${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'push') }}
-             type=raw,value=${{ steps.date.outputs.full_tag }},enable=${{ github.event_name == 'pull_request' }}
-             type=sha,enable=${{ github.event_name == 'pull_request' }}
-             type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
-           labels: |
+          # This generates all the tags for your image, you can add custom tags here too!
+          # Scheduled builds get YYMMDD, latest, and next tags
+          # Push builds get YYMMDD.N and next tags
+          # Manual workflow_dispatch can choose build type (latest or push)
+          tags: |
+            type=raw,value=${{ steps.date.outputs.build_tag }},enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
+            type=raw,value=latest,enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
+            type=raw,value=next,enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
+            type=raw,value=${{ steps.date.outputs.build_tag }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'push') }}
+            type=raw,value=next,enable=${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'push') }}
+            type=raw,value=${{ steps.date.outputs.full_tag }},enable=${{ github.event_name == 'pull_request' }}
+            type=sha,enable=${{ github.event_name == 'pull_request' }}
+            type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
+          labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
@@ -210,8 +210,8 @@ jobs:
             io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
             io.artifacthub.package.prerelease=false
             containers.bootc=1
-           sep-tags: " "
-           sep-annotations: " "
+          sep-tags: " "
+          sep-annotations: " "
 
       - name: Download Applet Artifacts
         env:
