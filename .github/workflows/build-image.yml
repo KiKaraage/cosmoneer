@@ -128,12 +128,12 @@ jobs:
           df -h
 
       - name: Mount BTRFS for podman storage
-         id: container-storage-action
-         uses: ublue-os/container-storage-action@main
-         continue-on-error: true
-         with:
-           target-dir: /var/lib/containers
-           mount-opts: compress-force=zstd:1,discard
+        id: container-storage-action
+        uses: ublue-os/container-storage-action@main
+        continue-on-error: true
+        with:
+          target-dir: /var/lib/containers
+          mount-opts: compress-force=zstd:1,discard
 
       - name: Get current date
         id: date
