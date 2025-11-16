@@ -6,25 +6,25 @@ on:
     branches:
       - main
   schedule:
-    - cron: '00 19 * * 1,3,5'  # 19:00 / 07:00pm UTC Mon, Wed, Fri (02:00 WIB next day) - 3x per week
+    - cron: "00 19 * * 1,3,5" # 19:00 / 07:00pm UTC Mon, Wed, Fri (02:00 WIB next day) - 3x per week
   push:
     branches:
       - main
     paths-ignore:
-      - '**/*.md'
-      - '.github/assets/*.*'
-      - '.github/workflows/check-applet-updates.yml'
-      - '.github/workflows/build-applet.yml'
-      - '.github/workflows/applet-management.yml'
+      - "**/*.md"
+      - ".github/assets/*.*"
+      - ".github/workflows/check-applet-updates.yml"
+      - ".github/workflows/build-applet.yml"
+      - ".github/workflows/applet-management.yml"
   workflow_dispatch:
 
 env:
   IMAGE_DESC: "A scroller desktop image with COSMIC, Niri and Bluefin goodies together"
   IMAGE_KEYWORDS: "bootc,ublue,universal-blue,cosmic,niri,scrolling-wm,scroller,tiling-wm,cosmoneer"
-  IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/120078124?s=200&v=4"  # Put your own image here for a fancy profile on https://artifacthub.io/!
-  IMAGE_NAME: "${{ github.event.repository.name }}"  # output image name, usually same as repo name
-  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
-  DEFAULT_TAG: "latest"  # Default tag for scheduled builds
+  IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/120078124?s=200&v=4" # Put your own image here for a fancy profile on https://artifacthub.io/!
+  IMAGE_NAME: "${{ github.event.repository.name }}" # output image name, usually same as repo name
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}" # do not edit
+  DEFAULT_TAG: "latest" # Default tag for scheduled builds
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
@@ -39,474 +39,467 @@ jobs:
       packages: write
       id-token: write
     steps:
-    - name: Prepare environment
-      run: |
-         # Lowercase the image uri
-         echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
-         echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
+      - name: Prepare environment
+        run: |
+          # Lowercase the image uri
+          echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
+          echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
 
-    - name: Checkout
-      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
-    # This is optional, but if you see that your builds are way too big for the runners, you can enable this by uncommenting the following lines:
-    - name: Maximize build space
-      uses: ublue-os/remove-unwanted-software@517622d6452028f266b7ba4cc9a123b5f58a6b53 # v7
-      with:
+      # This is optional, but if you see that your builds are way too big for the runners, you can enable this by uncommenting the following lines:
+      - name: Maximize build space
+        uses: ublue-os/remove-unwanted-software@517622d6452028f266b7ba4cc9a123b5f58a6b53 # v7
+        with:
           remove-codeql: true
           remove-large-packages: true
 
+      - name: Free additional disk space
+        run: |
+          # Clean package caches
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
 
+          # Remove large packages that actually exist (based on your build output)
+           sudo apt-get remove -y \
+           azure-cli \
+           firefox* \
+           google-chrome-stable \
+           mysql-* \
+           php* \
+           sphinxsearch \
+           || true
 
+          # Remove LLVM/Clang toolchains if present
+           sudo apt-get remove -y \
+           clang-* \
+           clang-tidy-* \
+           clang-tools-* \
+           llvm-* \
+           || true
 
-    - name: Free additional disk space
-      run: |
-         # Clean package caches
-         sudo apt-get clean
-         sudo rm -rf /var/lib/apt/lists/*
+          # Clean development directories that exist
+          sudo rm -rf /usr/share/dotnet/shared/* || true
+          sudo rm -rf /usr/share/dotnet/sdk/* || true
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /usr/local/share/boost || true
+          sudo rm -rf /usr/local/lib/node_modules || true
+          sudo rm -rf /usr/share/swift || true
+          sudo rm -rf /usr/share/rust || true
 
-         # Remove large packages that actually exist (based on your build output)
-         sudo apt-get remove -y \
-      azure-cli \
-      firefox* \
-      google-chrome-stable \
-      mysql-* \
-      php* \
-      sphinxsearch \
-      || true
+          # Remove more large development tools
+          sudo rm -rf /usr/local/lib/node_modules || true
+          sudo rm -rf /usr/share/swift || true
+          sudo rm -rf /usr/share/rust || true
+          sudo rm -rf /home/runner/.cargo || true
+          sudo rm -rf /home/runner/.npm || true
+          sudo rm -rf /home/runner/.cache || true
 
-         # Remove LLVM/Clang toolchains if present
-         sudo apt-get remove -y \
-      clang-* \
-      clang-tidy-* \
-      clang-tools-* \
-      llvm-* \
-      || true
+          # Clean container systems
+          sudo docker system prune -af --volumes || true
+          sudo podman system prune -af || true
 
-         # Clean development directories that exist
-         sudo rm -rf /usr/share/dotnet/shared/* || true
-         sudo rm -rf /usr/share/dotnet/sdk/* || true
-         sudo rm -rf /usr/local/lib/android || true
-         sudo rm -rf /opt/ghc || true
-         sudo rm -rf /usr/local/share/boost || true
-         sudo rm -rf /usr/local/lib/node_modules || true
-         sudo rm -rf /usr/share/swift || true
-         sudo rm -rf /usr/share/rust || true
+          # Clear temporary files
+          sudo rm -rf /tmp/* || true
+          sudo rm -rf /var/tmp/* || true
 
-         # Remove more large development tools
-         sudo rm -rf /usr/local/lib/node_modules || true
-         sudo rm -rf /usr/share/swift || true
-         sudo rm -rf /usr/share/rust || true
-         sudo rm -rf /home/runner/.cargo || true
-         sudo rm -rf /home/runner/.npm || true
-         sudo rm -rf /home/runner/.cache || true
+          # Clean logs
+          sudo journalctl --vacuum-time=1d || true
+          sudo rm -rf /var/log/*.log || true
+          sudo rm -rf /var/log/journal/* || true
 
-         # Clean container systems
-         sudo docker system prune -af --volumes || true
-         sudo podman system prune -af || true
+          # Additional aggressive cleanup for maximum space
+          sudo apt-get autoremove -y || true
+          sudo apt-get autoclean || true
+          sudo rm -rf /usr/share/doc/* || true
+          sudo rm -rf /usr/share/man/* || true
+          sudo rm -rf /usr/share/info/* || true
+          sudo rm -rf /var/cache/apt/archives/* || true
+          sudo rm -rf /var/lib/dpkg/info/* || true
 
-         # Clear temporary files
-         sudo rm -rf /tmp/* || true
-         sudo rm -rf /var/tmp/* || true
-
-         # Clean logs
-         sudo journalctl --vacuum-time=1d || true
-         sudo rm -rf /var/log/*.log || true
-         sudo rm -rf /var/log/journal/* || true
-
-         # Additional aggressive cleanup for maximum space
-         sudo apt-get autoremove -y || true
-         sudo apt-get autoclean || true
-         sudo rm -rf /usr/share/doc/* || true
-         sudo rm -rf /usr/share/man/* || true
-         sudo rm -rf /usr/share/info/* || true
-         sudo rm -rf /var/cache/apt/archives/* || true
-         sudo rm -rf /var/lib/dpkg/info/* || true
-
-         # Show available space after cleanup
-         df -h
-         echo "Container storage space:"
-         df -h /var/lib/containers || echo "Container storage not mounted yet"
+          # Show available space after cleanup
+          df -h
+          echo "Container storage space:"
+          df -h /var/lib/containers || echo "Container storage not mounted yet"
 
       - name: Mount BTRFS for podman storage
-          id: container-storage-action
-          uses: ublue-os/container-storage-action@main
-          continue-on-error: true
-          with:
-         target-dir: /var/lib/containers
-         mount-opts: compress-force=zstd:1,discard
+        id: container-storage-action
+        uses: ublue-os/container-storage-action@main
+        continue-on-error: true
+        with:
+          target-dir: /var/lib/containers
+          mount-opts: compress-force=zstd:1,discard
 
       - name: Get current date
-          id: date
-          run: |
-         # This generates a timestamp like what is defined on the ArtifactHub documentation
-         # E.G: 2022-02-08T15:38:15Z'
-         # https://artifacthub.io/docs/topics/repositories/container-images/
-         # https://linux.die.net/man/1/date
-         echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
+        id: date
+        run: |
+          # This generates a timestamp like what is defined on the ArtifactHub documentation
+          # E.G: 2022-02-08T15:38:15Z'
+          # https://artifacthub.io/docs/topics/repositories/container-images/
+          # https://linux.die.net/man/1/date
+          echo "date=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)" >> $GITHUB_OUTPUT
 
-         # Calculate Indonesian date (UTC+7) for different scenarios
-         CURRENT_HOUR=$(date -u +%H)
-         BUILD_TAG_VALUE=""
+          # Calculate Indonesian date (UTC+7) for different scenarios
+          CURRENT_HOUR=$(date -u +%H)
+          BUILD_TAG_VALUE=""
 
-         # Debug: Show current date
-         echo "Current UTC date: $(date -u +%Y-%m-%d)"
-         echo "Current UTC hour: $CURRENT_HOUR"
+          # Debug: Show current date
+          echo "Current UTC date: $(date -u +%Y-%m-%d)"
+          echo "Current UTC hour: $CURRENT_HOUR"
 
-         if [ "${{ github.event_name }}" = "schedule" ]; then
-      # For scheduled builds, always use WIB date (UTC+7)
-      BUILD_TAG_VALUE=$(date -u -d "+7 hours" +%y%m%d)
-      echo "Scheduled build - Indonesian date (WIB): $BUILD_TAG_VALUE"
-      echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-      echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-         elif [ "${{ github.event_name }}" = "push" ]; then
-      if [ "$CURRENT_HOUR" -ge 19 ]; then
-          # For pushes between 19:00-23:59 UTC, use WIB date (next day)
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+          # For scheduled builds, always use WIB date (UTC+7)
           BUILD_TAG_VALUE=$(date -u -d "+7 hours" +%y%m%d)
+          echo "Scheduled build - Indonesian date (WIB): $BUILD_TAG_VALUE"
           echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
           echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-          echo "Push after 19:00 UTC - Indonesian date (WIB): $BUILD_TAG_VALUE"
-      else
-          # For other times, use UTC date
+              elif [ "${{ github.event_name }}" = "push" ]; then
+          if [ "$CURRENT_HOUR" -ge 19 ]; then
+              # For pushes between 19:00-23:59 UTC, use WIB date (next day)
+              BUILD_TAG_VALUE=$(date -u -d "+7 hours" +%y%m%d)
+              echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+              echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+              echo "Push after 19:00 UTC - Indonesian date (WIB): $BUILD_TAG_VALUE"
+          else
+              # For other times, use UTC date
+              BUILD_TAG_VALUE=$(date -u +%y%m%d)
+              echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+              echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
+              echo "Push before 19:00 UTC - UTC date: $BUILD_TAG_VALUE"
+          fi
+              else
+          # For PR and other events, use UTC date as fallback
           BUILD_TAG_VALUE=$(date -u +%y%m%d)
           echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
           echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-          echo "Push before 19:00 UTC - UTC date: $BUILD_TAG_VALUE"
-      fi
-         else
-      # For PR and other events, use UTC date as fallback
-      BUILD_TAG_VALUE=$(date -u +%y%m%d)
-      echo "wib_date=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-      echo "build_tag=$BUILD_TAG_VALUE" >> $GITHUB_OUTPUT
-      echo "PR/other event - UTC date: $BUILD_TAG_VALUE"
-         fi
-
-         # Query container registry for existing tags and determine next build number
-         REGISTRY="${IMAGE_REGISTRY,,}"
-         IMAGE_PATH="${REGISTRY}/${IMAGE_NAME,,}"
-
-         # Get list of all tags from registry
-         echo "Querying registry for existing tags at $IMAGE_PATH"
-         EXISTING_TAGS=$(crane ls "${IMAGE_PATH}" 2>/dev/null | grep -E '^[0-9]' | sort -V || echo "")
-
-         if [ "${{ github.event_name }}" = "push" ]; then
-      # For push builds: find highest build number for today's date
-      LATEST_TODAY=$(echo "$EXISTING_TAGS" | grep "^${BUILD_TAG_VALUE}" | tail -1)
-
-      if [ -z "$LATEST_TODAY" ]; then
-          # No builds for today yet
-          DAILY_BUILD_NUMBER=1
-      else
-          # Extract build number from latest tag (e.g., "251113.2" -> "2")
-          DAILY_BUILD_NUMBER=$(echo "$LATEST_TODAY" | grep -oE '\.[0-9]+$' | sed 's/^\.//') || DAILY_BUILD_NUMBER=0
-          DAILY_BUILD_NUMBER=$((DAILY_BUILD_NUMBER + 1))
-      fi
-
-      echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
-      echo "full_tag=${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}" >> $GITHUB_OUTPUT
-      echo "Latest tag for $BUILD_TAG_VALUE: ${LATEST_TODAY:-none}, Next: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
-         elif [ "${{ github.event_name }}" = "pull_request" ]; then
-      # For PR events: increment from the absolute latest tag
-      LATEST_TAG=$(echo "$EXISTING_TAGS" | tail -1)
-
-      if [ -z "$LATEST_TAG" ]; then
-          # No tags exist yet
-          NEXT_BUILD="${BUILD_TAG_VALUE}.1.pr"
-      else
-          # Extract the base version and build number, increment
-          if [[ "$LATEST_TAG" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
-         # Format: YYMMDD.X
-         DATE_PART="${BASH_REMATCH[1]}"
-         BUILD_NUM="${BASH_REMATCH[2]}"
-         NEXT_BUILD_NUM=$((BUILD_NUM + 1))
-         NEXT_BUILD="${DATE_PART}.${NEXT_BUILD_NUM}.pr"
-          elif [[ "$LATEST_TAG" =~ ^([0-9]+)$ ]]; then
-         # Format: YYMMDD (scheduled build)
-         NEXT_BUILD="${LATEST_TAG}.1.pr"
-          else
-         # Fallback
-         NEXT_BUILD="${BUILD_TAG_VALUE}.1.pr"
+          echo "PR/other event - UTC date: $BUILD_TAG_VALUE"
           fi
-      fi
 
-      echo "full_tag=${NEXT_BUILD}" >> $GITHUB_OUTPUT
-      echo "Latest tag: ${LATEST_TAG:-none}, Next PR build: ${NEXT_BUILD}"
-         else
-      # For scheduled/other events, full_tag is the same as build_tag
-      echo "full_tag=${BUILD_TAG_VALUE}" >> $GITHUB_OUTPUT
-         fi
+          # Query container registry for existing tags and determine next build number
+          REGISTRY="${IMAGE_REGISTRY,,}"
+          IMAGE_PATH="${REGISTRY}/${IMAGE_NAME,,}"
 
-         # Summary of calculated versions
-         echo ""
-         echo "=== Version Calculation Summary ==="
-         echo "Event: ${{ github.event_name }}"
-         echo "BUILD_TAG_VALUE (date): ${BUILD_TAG_VALUE}"
-         case "${{ github.event_name }}" in
-      push)
-          echo "DAILY_BUILD_NUMBER: ${DAILY_BUILD_NUMBER}"
-          echo "FULL_TAG: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
-          echo "VERSION: ${BUILD_TAG_VALUE}"
-          ;;
-      pull_request)
-          echo "FULL_TAG: ${NEXT_BUILD}"
-          echo "VERSION: ${BUILD_TAG_VALUE}"
-          ;;
-      *)
-          echo "FULL_TAG: ${BUILD_TAG_VALUE}"
-          echo "VERSION: ${BUILD_TAG_VALUE}"
-          ;;
-         esac
+          # Get list of all tags from registry
+          echo "Querying registry for existing tags at $IMAGE_PATH"
+          EXISTING_TAGS=$(crane ls "${IMAGE_PATH}" 2>/dev/null | grep -E '^[0-9]' | sort -V || echo "")
+
+          if [ "${{ github.event_name }}" = "push" ]; then
+          # For push builds: find highest build number for today's date
+          LATEST_TODAY=$(echo "$EXISTING_TAGS" | grep "^${BUILD_TAG_VALUE}" | tail -1)
+
+          if [ -z "$LATEST_TODAY" ]; then
+              # No builds for today yet
+              DAILY_BUILD_NUMBER=1
+          else
+              # Extract build number from latest tag (e.g., "251113.2" -> "2")
+              DAILY_BUILD_NUMBER=$(echo "$LATEST_TODAY" | grep -oE '\.[0-9]+$' | sed 's/^\.//') || DAILY_BUILD_NUMBER=0
+              DAILY_BUILD_NUMBER=$((DAILY_BUILD_NUMBER + 1))
+          fi
+
+          echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "full_tag=${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}" >> $GITHUB_OUTPUT
+          echo "Latest tag for $BUILD_TAG_VALUE: ${LATEST_TODAY:-none}, Next: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
+              elif [ "${{ github.event_name }}" = "pull_request" ]; then
+          # For PR events: increment from the absolute latest tag
+          LATEST_TAG=$(echo "$EXISTING_TAGS" | tail -1)
+
+          if [ -z "$LATEST_TAG" ]; then
+              # No tags exist yet
+              NEXT_BUILD="${BUILD_TAG_VALUE}.1.pr"
+          else
+              # Extract the base version and build number, increment
+              if [[ "$LATEST_TAG" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+              # Format: YYMMDD.X
+              DATE_PART="${BASH_REMATCH[1]}"
+              BUILD_NUM="${BASH_REMATCH[2]}"
+              NEXT_BUILD_NUM=$((BUILD_NUM + 1))
+              NEXT_BUILD="${DATE_PART}.${NEXT_BUILD_NUM}.pr"
+              elif [[ "$LATEST_TAG" =~ ^([0-9]+)$ ]]; then
+              # Format: YYMMDD (scheduled build)
+              NEXT_BUILD="${LATEST_TAG}.1.pr"
+              else
+              # Fallback
+              NEXT_BUILD="${BUILD_TAG_VALUE}.1.pr"
+              fi
+          fi
+
+          echo "full_tag=${NEXT_BUILD}" >> $GITHUB_OUTPUT
+          echo "Latest tag: ${LATEST_TAG:-none}, Next PR build: ${NEXT_BUILD}"
+              else
+          # For scheduled/other events, full_tag is the same as build_tag
+          echo "full_tag=${BUILD_TAG_VALUE}" >> $GITHUB_OUTPUT
+              fi
+
+              # Summary of calculated versions
+              echo ""
+              echo "=== Version Calculation Summary ==="
+              echo "Event: ${{ github.event_name }}"
+              echo "BUILD_TAG_VALUE (date): ${BUILD_TAG_VALUE}"
+              case "${{ github.event_name }}" in
+          push)
+              echo "DAILY_BUILD_NUMBER: ${DAILY_BUILD_NUMBER}"
+              echo "FULL_TAG: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
+              echo "VERSION: ${BUILD_TAG_VALUE}"
+              ;;
+          pull_request)
+              echo "FULL_TAG: ${NEXT_BUILD}"
+              echo "VERSION: ${BUILD_TAG_VALUE}"
+              ;;
+          *)
+              echo "FULL_TAG: ${BUILD_TAG_VALUE}"
+              echo "VERSION: ${BUILD_TAG_VALUE}"
+              ;;
+              esac
 
       # Image metadata for https://artifacthub.io/ - This is optional but is highly recommended so we all can get a index of all the custom images
       # The metadata by itself is not going to do anything, you choose if you want your image to be on ArtifactHub or not.
       - name: Image Metadata
-          uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
-          id: metadata
-          with:
-         # This generates all the tags for your image, you can add custom tags here too!
-         # Default tags are "$DEFAULT_TAG", "latest", and "daily" based on trigger
-      tags: |
-          type=raw,value=${{ steps.date.outputs.wib_date }},enable=${{ github.event_name == 'schedule' }}
-          type=raw,value=${{ steps.date.outputs.wib_date }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' }}
-          type=raw,value=next,enable=${{ github.event_name == 'push' }}
-          type=raw,value=latest,enable=${{ github.event_name == 'schedule' }}
-          type=raw,value=next,enable=${{ github.event_name == 'schedule' }}
-          type=raw,value=${{ steps.date.outputs.full_tag }},enable=${{ github.event_name == 'pull_request' }}
-          type=sha,enable=${{ github.event_name == 'pull_request' }}
-          type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
-      labels: |
-         io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
-         org.opencontainers.image.created=${{ steps.date.outputs.date }}
-         org.opencontainers.image.description=${{ env.IMAGE_DESC }}
-         org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
-         org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/${{ github.sha }}/Containerfile
-         org.opencontainers.image.title=${{ env.IMAGE_NAME }}
-         org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
-         org.opencontainers.image.vendor=${{ github.repository_owner }}
-         org.opencontainers.image.version=${{ steps.date.outputs.build_tag }}
-         io.artifacthub.package.deprecated=false
-         io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
-         io.artifacthub.package.license=Apache-2.0
-         io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
-         io.artifacthub.package.prerelease=false
-         containers.bootc=1
-      sep-tags: " "
-      sep-annotations: " "
+        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
+        id: metadata
+        with:
+          # This generates all the tags for your image, you can add custom tags here too!
+          # Default tags are "$DEFAULT_TAG", "latest", and "daily" based on trigger
+          tags: |
+            type=raw,value=${{ steps.date.outputs.wib_date }},enable=${{ github.event_name == 'schedule' }}
+            type=raw,value=${{ steps.date.outputs.wib_date }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' }}
+            type=raw,value=next,enable=${{ github.event_name == 'push' }}
+            type=raw,value=latest,enable=${{ github.event_name == 'schedule' }}
+            type=raw,value=next,enable=${{ github.event_name == 'schedule' }}
+            type=raw,value=${{ steps.date.outputs.full_tag }},enable=${{ github.event_name == 'pull_request' }}
+            type=sha,enable=${{ github.event_name == 'pull_request' }}
+            type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
+          labels: |
+            io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
+            org.opencontainers.image.created=${{ steps.date.outputs.date }}
+            org.opencontainers.image.description=${{ env.IMAGE_DESC }}
+            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
+            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/${{ github.sha }}/Containerfile
+            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+            org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
+            org.opencontainers.image.vendor=${{ github.repository_owner }}
+            org.opencontainers.image.version=${{ steps.date.outputs.build_tag }}
+            io.artifacthub.package.deprecated=false
+            io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
+            io.artifacthub.package.license=Apache-2.0
+            io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
+            io.artifacthub.package.prerelease=false
+            containers.bootc=1
+          sep-tags: " "
+          sep-annotations: " "
 
       - name: Download Applet Artifacts
-          env:
-         GH_TOKEN: ${{ github.token }}
-         GH_REPO: ${{ github.repository }}
-          run: |
-         set -e
-         mkdir -p /tmp/applet-artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -e
+          mkdir -p /tmp/applet-artifacts
 
-         # Get list of applets from check-applet-updates workflow
-         APPLET_JSON='[
-      {"name": "cosmic-ext-applet-emoji-selector", "url": "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"},
-      {"name": "cosmic-ext-applet-vitals", "url": "https://github.com/Coinio/cosmic-ext-applet-vitals.git"},
-      {"name": "cosmic-applet-music-player", "url": "https://github.com/Ebbo/cosmic-applet-music-player.git"},
-      {"name": "cosmic-ext-applet-caffeine", "url": "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
-      {"name": "cosmic-connect-applet", "url": "https://github.com/cosmic-utils/cosmic-connect-applet.git"},
-      {"name": "cosmic-ext-applet-ollama", "url": "https://github.com/cosmic-utils/cosmic-ext-applet-ollama"},
-      {"name": "cosmic-ext-applet-clipboard-manager", "url": "https://github.com/cosmic-utils/clipboard-manager"},
-      {"name": "cosmic-ext-alternative-startup", "url": "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
-      {"name": "cosmic-ext-bg-theme", "url": "https://github.com/wash2/cosmic_ext_bg_theme"},
-      {"name": "wf-recorder-gui", "url": "https://github.com/ali205412/wf-recorder-gui.git"},
-      {"name": "prtsc-wayland", "url": "https://github.com/Amchik/prtsc-wayland"}
-         ]'
+          # Get list of applets from check-applet-updates workflow
+          APPLET_JSON='[
+            {"name": "cosmic-ext-applet-emoji-selector", "url": "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"},
+            {"name": "cosmic-ext-applet-vitals", "url": "https://github.com/Coinio/cosmic-ext-applet-vitals.git"},
+            {"name": "cosmic-applet-music-player", "url": "https://github.com/Ebbo/cosmic-applet-music-player.git"},
+            {"name": "cosmic-ext-applet-caffeine", "url": "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
+            {"name": "cosmic-connect-applet", "url": "https://github.com/cosmic-utils/cosmic-connect-applet.git"},
+            {"name": "cosmic-ext-applet-ollama", "url": "https://github.com/cosmic-utils/cosmic-ext-applet-ollama"},
+            {"name": "cosmic-ext-applet-clipboard-manager", "url": "https://github.com/cosmic-utils/clipboard-manager"},
+            {"name": "cosmic-ext-alternative-startup", "url": "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
+            {"name": "cosmic-ext-bg-theme", "url": "https://github.com/wash2/cosmic_ext_bg_theme"},
+            {"name": "wf-recorder-gui", "url": "https://github.com/ali205412/wf-recorder-gui.git"},
+            {"name": "prtsc-wayland", "url": "https://github.com/Amchik/prtsc-wayland"}
+          ]'
 
-         echo "Searching for specific applet workflow runs in $GH_REPO"
+          echo "Searching for specific applet workflow runs in $GH_REPO"
 
-         # For each applet, find most recent successful workflow run by name
-         echo "$APPLET_JSON" | jq -r '.[] | .name' | while read -r applet_name; do
-      echo "Looking for workflow run: Build $applet_name"
+          # For each applet, find most recent successful workflow run by name
+          echo "$APPLET_JSON" | jq -r '.[] | .name' | while read -r applet_name; do
+          echo "Looking for workflow run: Build $applet_name"
 
-      # Try applet-management.yml first with more lenient matching
-      run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" --limit 50 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
+          # Try applet-management.yml first with more lenient matching
+          run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" --limit 50 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
 
-      # If not found in applet-management.yml, try build-applets.yml
-      if [ -z "$run_id" ]; then
-          echo "No successful run found in applet-management.yml, checking build-applets.yml..."
-          run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" --limit 50 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
-      fi
-
-      if [ -n "$run_id" ]; then
-          echo "Found successful run $run_id for 'Build $applet_name'"
-
-          # Download all artifacts from this specific applet's workflow run
-          echo "Downloading artifacts from 'Build $applet_name' run $run_id"
-          if gh run download --repo "$GH_REPO" "$run_id" --dir "/tmp/applet-artifacts" 2>/dev/null; then
-         echo "Successfully downloaded artifacts for $applet_name"
-          else
-         echo "No artifacts found for $applet_name in run $run_id"
+          # If not found in applet-management.yml, try build-applets.yml
+          if [ -z "$run_id" ]; then
+              echo "No successful run found in applet-management.yml, checking build-applets.yml..."
+              run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" --limit 50 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
           fi
-      else
-          echo "No successful workflow run found for 'Build $applet_name' in either applet-management.yml or build-applets.yml"
-      fi
-         done
 
-         echo "Final downloaded artifacts:"
-         ls -la /tmp/applet-artifacts/ || echo "No artifacts directory contents"
-          continue-on-error: true
+          if [ -n "$run_id" ]; then
+              echo "Found successful run $run_id for 'Build $applet_name'"
 
+              # Download all artifacts from this specific applet's workflow run
+              echo "Downloading artifacts from 'Build $applet_name' run $run_id"
+              if gh run download --repo "$GH_REPO" "$run_id" --dir "/tmp/applet-artifacts" 2>/dev/null; then
+              echo "Successfully downloaded artifacts for $applet_name"
+              else
+              echo "No artifacts found for $applet_name in run $run_id"
+              fi
+          else
+              echo "No successful workflow run found for 'Build $applet_name' in either applet-management.yml or build-applets.yml"
+          fi
+              done
 
-
-
+              echo "Final downloaded artifacts:"
+              ls -la /tmp/applet-artifacts/ || echo "No artifacts directory contents"
+              continue-on-error: true
 
       - name: Copy Artifacts to Build Context
-          run: |
-         # Copy artifacts to the repository directory so they're available to the Containerfile
-         if [ -d "/tmp/applet-artifacts" ] && [ "$(ls -A /tmp/applet-artifacts 2>/dev/null)" ]; then
-      echo "Copying artifacts to build context..."
-      mkdir -p ./applets-artifacts
-      cp -r /tmp/applet-artifacts/* ./applets-artifacts/
-      echo "Artifacts copied to build context:"
-      ls -la ./applets-artifacts/
-         else
-      echo "No artifacts to copy"
-      mkdir -p ./applets-artifacts
-         fi
+        run: |
+          # Copy artifacts to the repository directory so they're available to the Containerfile
+          if [ -d "/tmp/applet-artifacts" ] && [ "$(ls -A /tmp/applet-artifacts 2>/dev/null)" ]; then
+            echo "Copying artifacts to build context..."
+            mkdir -p ./applets-artifacts
+            cp -r /tmp/applet-artifacts/* ./applets-artifacts/
+            echo "Artifacts copied to build context:"
+            ls -la ./applets-artifacts/
+                else
+            echo "No artifacts to copy"
+            mkdir -p ./applets-artifacts
+          fi
 
-    - name: Build Image
-          id: build_image
-          uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
-          with:
-         containerfiles: |
-      ./Containerfile
-         # Postfix image name with -custom to make it a little more descriptive
-         # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
-         image: ${{ env.IMAGE_NAME }}
-         tags: ${{ steps.metadata.outputs.tags }}
-         labels: ${{ steps.metadata.outputs.labels }}
-         oci: true
-         extra-args: |
-      --storage-driver overlay
-      --format oci
-      --layers=false
-      --no-cache
+      - name: Build Image
+        id: build_image
+        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
+        with:
+          containerfiles: |
+            ./Containerfile
+          # Postfix image name with -custom to make it a little more descriptive
+          # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          oci: true
+          extra-args: |
+            --storage-driver overlay
+            --format oci
+            --layers=false
+            --no-cache
           build-args: |
-         APPLET_ARTIFACTS_DIR=./applets-artifacts
-         BUILD_IMAGE_TAG=${{ steps.date.outputs.build_tag }}
-         BUILD_VERSION=${{ steps.date.outputs.build_tag }}
+            APPLET_ARTIFACTS_DIR=./applets-artifacts
+            BUILD_IMAGE_TAG=${{ steps.date.outputs.build_tag }}
+            BUILD_VERSION=${{ steps.date.outputs.build_tag }}
 
       - name: Verify version consistency
-          run: |
-         echo "=== Build Version Consistency Check ==="
-         echo ""
-         echo "Step outputs:"
-         echo "  build_tag (YYMMDD): ${{ steps.date.outputs.build_tag }}"
-         echo "  full_tag (YYMMDD.N): ${{ steps.date.outputs.full_tag }}"
-         echo ""
-         echo "Image tags (should include full_tag):"
-         echo "${{ steps.metadata.outputs.tags }}"
-         echo ""
+        run: |
+          echo "=== Build Version Consistency Check ==="
+          echo ""
+          echo "Step outputs:"
+          echo "  build_tag (YYMMDD): ${{ steps.date.outputs.build_tag }}"
+          echo "  full_tag (YYMMDD.N): ${{ steps.date.outputs.full_tag }}"
+          echo ""
+          echo "Image tags (should include full_tag):"
+          echo "${{ steps.metadata.outputs.tags }}"
+          echo ""
           echo "Container label version (should match build_tag):"
           echo "${{ steps.metadata.outputs.labels }}" | grep "org.opencontainers.image.version"
-         echo ""
+            echo ""
           if [ -z "${{ steps.date.outputs.build_tag }}" ]; then
-         echo "ERROR: build_tag is empty!"
-         exit 1
+            echo "ERROR: build_tag is empty!"
+            exit 1
           fi
-         echo "✓ Version outputs configured correctly"
+            echo "✓ Version outputs configured correctly"
 
-      # Rechunk (OPTIONAL): Rechunker optimizes container image layers for better resumability and fixes some distribution errors.
-      # It doesn't make downloads faster but provides more reliable image distribution.
-      # To enable rechunking:
-      #   1. Uncomment the "Run Rechunker" step below
-      #   2. Uncomment the "Load in podman and tag" step below
-      #   3. Comment out or remove the "Tag for registry" step that follows this section
-      # Documentation: https://github.com/hhd-dev/rechunk
+        # Rechunk (OPTIONAL): Rechunker optimizes container image layers for better resumability and fixes some distribution errors.
+        # It doesn't make downloads faster but provides more reliable image distribution.
+        # To enable rechunking:
+        #   1. Uncomment the "Run Rechunker" step below
+        #   2. Uncomment the "Load in podman and tag" step below
+        #   3. Comment out or remove the "Tag for registry" step that follows this section
+        # Documentation: https://github.com/hhd-dev/rechunk
 
-      # - name: Run Rechunker
-      #   id: rechunk
-      #   uses: hhd-dev/rechunk@5fbe1d3a639615d2548d83bc888360de6267b1a2 # v1.2.4
-      #   with:
-      #     rechunk: 'ghcr.io/hhd-dev/rechunk:v1.2.4'
-      #     ref: "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-      #     prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-      #     version: "${{ env.DEFAULT_TAG }}"
-      #     labels: |
-      #       io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
-      #       org.opencontainers.image.created=${{ steps.date.outputs.date }}
-      #       org.opencontainers.image.description=${{ env.IMAGE_DESC }}
-      #       org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
-      #       org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/${{ github.sha }}/Containerfile
-      #       org.opencontainers.image.title=${{ env.IMAGE_NAME }}
-      #       org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
-      #       org.opencontainers.image.vendor=${{ github.repository_owner }}
-      #       org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYMMDD'}}
-      #       io.artifacthub.package.deprecated=false
-      #       io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
-      #       io.artifacthub.package.license=Apache-2.0
-      #       io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
-      #       io.artifacthub.package.prerelease=false
-      #       containers.bootc=1
+        # - name: Run Rechunker
+        #   id: rechunk
+        #   uses: hhd-dev/rechunk@5fbe1d3a639615d2548d83bc888360de6267b1a2 # v1.2.4
+        #   with:
+        #     rechunk: 'ghcr.io/hhd-dev/rechunk:v1.2.4'
+        #     ref: "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+        #     prev-ref: "${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+        #     version: "${{ env.DEFAULT_TAG }}"
+        #     labels: |
+        #       io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
+        #       org.opencontainers.image.created=${{ steps.date.outputs.date }}
+        #       org.opencontainers.image.description=${{ env.IMAGE_DESC }}
+        #       org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
+        #       org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/${{ github.sha }}/Containerfile
+        #       org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+        #       org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
+        #       org.opencontainers.image.vendor=${{ github.repository_owner }}
+        #       org.opencontainers.image.version=${{ env.DEFAULT_TAG }}.{{date 'YYMMDD'}}
+        #       io.artifacthub.package.deprecated=false
+        #       io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
+        #       io.artifacthub.package.license=Apache-2.0
+        #       io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
+        #       io.artifacthub.package.prerelease=false
+        #       containers.bootc=1
 
-      # - name: Load in podman and tag
-      #   run: |
-      #     IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
-      #     sudo rm -rf ${{ steps.rechunk.outputs.output }}
-      #     for tag in ${{ steps.metadata.outputs.tags }}; do
-      #       podman tag $IMAGE ${{ env.IMAGE_NAME }}:$tag
-      #     done
+        # - name: Load in podman and tag
+        #   run: |
+        #     IMAGE=$(podman pull ${{ steps.rechunk.outputs.ref }})
+        #     sudo rm -rf ${{ steps.rechunk.outputs.output }}
+        #     for tag in ${{ steps.metadata.outputs.tags }}; do
+        #       podman tag $IMAGE ${{ env.IMAGE_NAME }}:$tag
+        #     done
 
       # Tag for registry (remove this step if using rechunker above)
       - name: Tag for registry
-          run: |
-         # Get the first tag from metadata outputs to use as the source
-         first_tag=$(echo "${{ steps.metadata.outputs.tags }}" | awk '{print $1}')
-         echo "First tag: $first_tag"
-         echo "All tags: ${{ steps.metadata.outputs.tags }}"
-         for tag in ${{ steps.metadata.outputs.tags }}; do
-      podman tag ${{ env.IMAGE_NAME }}:$first_tag ${{ env.IMAGE_NAME }}:$tag
-         done
+        run: |
+          # Get the first tag from metadata outputs to use as the source
+          first_tag=$(echo "${{ steps.metadata.outputs.tags }}" | awk '{print $1}')
+          echo "First tag: $first_tag"
+          echo "All tags: ${{ steps.metadata.outputs.tags }}"
+          for tag in ${{ steps.metadata.outputs.tags }}; do
+          podman tag ${{ env.IMAGE_NAME }}:$first_tag ${{ env.IMAGE_NAME }}:$tag
+          done
 
-      # SBOM (OPTIONAL): Software Bill of Materials generation using Syft
-      # Creates a detailed inventory of all software components in the image for supply chain security.
-      # To enable:
-      #   1. Uncomment the "Setup Syft" step below
-      #   2. Uncomment the "Generate SBOM" step below
-      #   3. If using image signing, also uncomment the "Add SBOM Attestation" step further down
-      # Documentation: https://github.com/anchore/syft
+        # SBOM (OPTIONAL): Software Bill of Materials generation using Syft
+        # Creates a detailed inventory of all software components in the image for supply chain security.
+        # To enable:
+        #   1. Uncomment the "Setup Syft" step below
+        #   2. Uncomment the "Generate SBOM" step below
+        #   3. If using image signing, also uncomment the "Add SBOM Attestation" step further down
+        # Documentation: https://github.com/anchore/syft
 
-      # - name: Setup Syft
-      #   id: setup-syft
-      #   uses: anchore/sbom-action/download-syft@8e94d75ddd33f69f691467e42275782e4bfefe84 # v0.20.9
-      #   with:
-      #     syft-version: v1.20.0
-      #
-      # - name: Generate SBOM
-      #   id: generate-sbom
-      #   env:
-      #     IMAGE: ${{ env.IMAGE_NAME }}
-      #     DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
-      #     SYFT_CMD: ${{ steps.setup-syft.outputs.cmd }}
-      #   run: |
-      #     OUTPUT_PATH="$(mktemp -d)/sbom.json"
-      #     export SYFT_PARALLELISM=$(($(nproc)*2))
-      #     $SYFT_CMD ${IMAGE}:${DEFAULT_TAG} -o spdx-json=${OUTPUT_PATH}
-      #     echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
+        # - name: Setup Syft
+        #   id: setup-syft
+        #   uses: anchore/sbom-action/download-syft@8e94d75ddd33f69f691467e42275782e4bfefe84 # v0.20.9
+        #   with:
+        #     syft-version: v1.20.0
+        #
+        # - name: Generate SBOM
+        #   id: generate-sbom
+        #   env:
+        #     IMAGE: ${{ env.IMAGE_NAME }}
+        #     DEFAULT_TAG: ${{ env.DEFAULT_TAG }}
+        #     SYFT_CMD: ${{ steps.setup-syft.outputs.cmd }}
+        #   run: |
+        #     OUTPUT_PATH="$(mktemp -d)/sbom.json"
+        #     export SYFT_PARALLELISM=$(($(nproc)*2))
+        #     $SYFT_CMD ${IMAGE}:${DEFAULT_TAG} -o spdx-json=${OUTPUT_PATH}
+        #     echo "OUTPUT_PATH=${OUTPUT_PATH}" >> $GITHUB_OUTPUT
 
-      # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
-      # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work
+        # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
+        # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work
       - name: Login to GitHub Container Registry
-          uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
-          if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-          with:
-         registry: ghcr.io
-         username: ${{ github.actor }}
-         password: ${{ secrets.GITHUB_TOKEN }}
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push To GHCR
-          uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
-          if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-          id: push
-          env:
-         REGISTRY_USER: ${{ github.actor }}
-         REGISTRY_PASSWORD: ${{ github.token }}
-          with:
-         registry: ${{ env.IMAGE_REGISTRY }}
-         image: ${{ env.IMAGE_NAME }}
-         tags: ${{ steps.metadata.outputs.tags }}
-         username: ${{ env.REGISTRY_USER }}
-         password: ${{ env.REGISTRY_PASSWORD }}
+        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        id: push
+        env:
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_PASSWORD: ${{ github.token }}
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          username: ${{ env.REGISTRY_USER }}
+          password: ${{ env.REGISTRY_PASSWORD }}
