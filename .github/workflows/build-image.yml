@@ -86,8 +86,13 @@ jobs:
 
             # Get list of all tags from registry
             echo "Querying registry for existing tags at $IMAGE_PATH"
-            EXISTING_TAGS=$(crane ls "${IMAGE_PATH}" 2>/dev/null | grep -E '^[0-9]' | sort -V || echo "")
-            echo "Found existing tags: $EXISTING_TAGS"
+            echo "Authenticating crane..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | crane auth login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "Running: crane ls \"${IMAGE_PATH}\""
+            CRANE_OUTPUT=$(crane ls "${IMAGE_PATH}" 2>&1 || echo "CRANE_FAILED")
+            echo "Crane raw output: $CRANE_OUTPUT"
+            EXISTING_TAGS=$(echo "$CRANE_OUTPUT" | grep -E '^[0-9]' | sort -V || echo "")
+            echo "Filtered existing tags: $EXISTING_TAGS"
 
             # Determine effective build type
             if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
