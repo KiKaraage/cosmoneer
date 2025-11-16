@@ -17,15 +17,15 @@ on:
       - ".github/workflows/build-applet.yml"
       - ".github/workflows/applet-management.yml"
   workflow_dispatch:
-     inputs:
-       build_type:
-         description: 'Build type: latest (scheduled-style) or push (incremental)'
-         required: true
-         default: 'push'
-         type: choice
-         options:
-           - latest
-           - push
+    inputs:
+      build_type:
+        description: "Build type: latest (scheduled-style) or push (incremental)"
+        required: true
+        default: "push"
+        type: choice
+        options:
+          - latest
+          - push
 
 env:
   IMAGE_DESC: "A scroller desktop image with COSMIC, Niri and Bluefin goodies together"
@@ -57,6 +57,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
+      - name: Install crane
+        run: |
+          # Install crane for registry operations
+          curl -sL "https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz" | tar -xz -C /usr/local/bin crane
+
       - name: Mount BTRFS for podman storage
         id: container-storage-action
         uses: ublue-os/container-storage-action@main
@@ -84,9 +89,15 @@ jobs:
            REGISTRY="${IMAGE_REGISTRY,,}"
            IMAGE_PATH="${REGISTRY}/${IMAGE_NAME,,}"
 
-           # Get list of all tags from registry
-           echo "Querying registry for existing tags at $IMAGE_PATH"
-           EXISTING_TAGS=$(crane ls "${IMAGE_PATH}" 2>/dev/null | grep -E '^[0-9]' | sort -V || echo "")
+            # Get list of all tags from registry
+            echo "Querying registry for existing tags at $IMAGE_PATH"
+            echo "Authenticating crane..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | crane auth login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "Running: crane ls \"${IMAGE_PATH}\""
+            CRANE_OUTPUT=$(crane ls "${IMAGE_PATH}" 2>&1 || echo "CRANE_FAILED")
+            echo "Crane raw output: $CRANE_OUTPUT"
+            EXISTING_TAGS=$(echo "$CRANE_OUTPUT" | grep -E '^[0-9]{6}(\.[0-9]+)?(\.pr)?$' | sort -V || echo "")
+            echo "Filtered existing tags: $EXISTING_TAGS"
 
             # Determine effective build type
             if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -96,21 +107,25 @@ jobs:
             fi
 
             if [ "$EFFECTIVE_EVENT" = "push" ]; then
-           # For push builds: find highest build number for today's date
-           LATEST_TODAY=$(echo "$EXISTING_TAGS" | grep "^${BUILD_TAG_VALUE}" | tail -1)
+            # For push builds: find highest build number for today's date
+            LATEST_TODAY=$(echo "$EXISTING_TAGS" | grep "^${BUILD_TAG_VALUE}" | tail -1)
+            echo "Latest existing tag for $BUILD_TAG_VALUE: ${LATEST_TODAY:-none}"
 
-           if [ -z "$LATEST_TODAY" ]; then
-               # No builds for today yet
-               DAILY_BUILD_NUMBER=1
-           else
-               # Extract build number from latest tag (e.g., "251113.2" -> "2")
-               DAILY_BUILD_NUMBER=$(echo "$LATEST_TODAY" | grep -oE '\.[0-9]+$' | sed 's/^\.//') || DAILY_BUILD_NUMBER=0
-               DAILY_BUILD_NUMBER=$((DAILY_BUILD_NUMBER + 1))
-           fi
+            if [ -z "$LATEST_TODAY" ]; then
+                # No builds for today yet
+                DAILY_BUILD_NUMBER=1
+                echo "No existing builds for $BUILD_TAG_VALUE, starting with 1"
+            else
+                # Extract build number from latest tag (e.g., "251113.2" -> "2")
+                DAILY_BUILD_NUMBER=$(echo "$LATEST_TODAY" | grep -oE '\.[0-9]+$' | sed 's/^\.//') || DAILY_BUILD_NUMBER=0
+                echo "Extracted build number from $LATEST_TODAY: $DAILY_BUILD_NUMBER"
+                DAILY_BUILD_NUMBER=$((DAILY_BUILD_NUMBER + 1))
+                echo "Incremented to: $DAILY_BUILD_NUMBER"
+            fi
 
-           echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
-           echo "full_tag=${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}" >> $GITHUB_OUTPUT
-           echo "Latest tag for $BUILD_TAG_VALUE: ${LATEST_TODAY:-none}, Next: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
+            echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
+            echo "full_tag=${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}" >> $GITHUB_OUTPUT
+            echo "Final tag: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
                 elif [ "$EFFECTIVE_EVENT" = "pull_request" ]; then
            # For PR events: increment from the absolute latest tag
            LATEST_TAG=$(echo "$EXISTING_TAGS" | tail -1)
@@ -166,20 +181,20 @@ jobs:
         uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5
         id: metadata
         with:
-           # This generates all the tags for your image, you can add custom tags here too!
-           # Scheduled builds get YYMMDD, latest, and next tags
-           # Push builds get YYMMDD.N and next tags
-           # Manual workflow_dispatch can choose build type (latest or push)
-           tags: |
-             type=raw,value=${{ steps.date.outputs.build_tag }},enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
-             type=raw,value=latest,enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
-             type=raw,value=next,enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
-             type=raw,value=${{ steps.date.outputs.build_tag }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'push') }}
-             type=raw,value=next,enable=${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'push') }}
-             type=raw,value=${{ steps.date.outputs.full_tag }},enable=${{ github.event_name == 'pull_request' }}
-             type=sha,enable=${{ github.event_name == 'pull_request' }}
-             type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
-           labels: |
+          # This generates all the tags for your image, you can add custom tags here too!
+          # Scheduled builds get YYMMDD, latest, and next tags
+          # Push builds get YYMMDD.N and next tags
+          # Manual workflow_dispatch can choose build type (latest or push)
+          tags: |
+            type=raw,value=${{ steps.date.outputs.build_tag }},enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
+            type=raw,value=latest,enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
+            type=raw,value=next,enable=${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'latest') }}
+            type=raw,value=${{ steps.date.outputs.build_tag }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'push') }}
+            type=raw,value=next,enable=${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.build_type == 'push') }}
+            type=raw,value=${{ steps.date.outputs.full_tag }},enable=${{ github.event_name == 'pull_request' }}
+            type=sha,enable=${{ github.event_name == 'pull_request' }}
+            type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
+          labels: |
             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
             org.opencontainers.image.created=${{ steps.date.outputs.date }}
             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
@@ -195,8 +210,8 @@ jobs:
             io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
             io.artifacthub.package.prerelease=false
             containers.bootc=1
-           sep-tags: " "
-           sep-annotations: " "
+          sep-tags: " "
+          sep-annotations: " "
 
       - name: Download Applet Artifacts
         env:
