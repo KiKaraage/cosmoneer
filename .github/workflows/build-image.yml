@@ -24,7 +24,7 @@ env:
   IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/120078124?s=200&v=4"  # Put your own image here for a fancy profile on https://artifacthub.io/!
   IMAGE_NAME: "${{ github.event.repository.name }}"  # output image name, usually same as repo name
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
-  DEFAULT_TAG: "daily"  # Default tag, with 'latest' for pushes and 'daily' for scheduled builds
+  DEFAULT_TAG: "latest"  # Default tag for scheduled builds
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}-${{ inputs.brand_name}}-${{ inputs.stream_name }}
@@ -34,12 +34,10 @@ jobs:
   build_push:
     name: Build and push image
     runs-on: ubuntu-24.04
-
     permissions:
       contents: read
       packages: write
       id-token: write
-
     steps:
       - name: Prepare environment
         run: |
@@ -246,12 +244,15 @@ jobs:
             push)
               echo "DAILY_BUILD_NUMBER: ${DAILY_BUILD_NUMBER}"
               echo "FULL_TAG: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
+              echo "VERSION: ${BUILD_TAG_VALUE}"
               ;;
             pull_request)
               echo "FULL_TAG: ${NEXT_BUILD}"
+              echo "VERSION: ${BUILD_TAG_VALUE}"
               ;;
             *)
               echo "FULL_TAG: ${BUILD_TAG_VALUE}"
+              echo "VERSION: ${BUILD_TAG_VALUE}"
               ;;
           esac
 
@@ -263,32 +264,33 @@ jobs:
         with:
           # This generates all the tags for your image, you can add custom tags here too!
           # Default tags are "$DEFAULT_TAG", "latest", and "daily" based on trigger
-          tags: |
-            type=raw,value=${{ env.DEFAULT_TAG }},enable=${{ github.event_name == 'schedule' }}
-            type=raw,value=${{ steps.date.outputs.wib_date }},enable=${{ github.event_name == 'schedule' }}
-            type=raw,value=${{ steps.date.outputs.wib_date }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' }}
-            type=raw,value=latest,enable=${{ github.event_name == 'push' || github.event_name == 'schedule' }}
-            type=raw,value=${{ steps.date.outputs.full_tag }},enable=${{ github.event_name == 'pull_request' }}
-            type=sha,enable=${{ github.event_name == 'pull_request' }}
-            type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
-          labels: |
-            io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
-            org.opencontainers.image.created=${{ steps.date.outputs.date }}
-            org.opencontainers.image.description=${{ env.IMAGE_DESC }}
-            org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
-            org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/${{ github.sha }}/Containerfile
-            org.opencontainers.image.title=${{ env.IMAGE_NAME }}
-            org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
-            org.opencontainers.image.vendor=${{ github.repository_owner }}
-            org.opencontainers.image.version=${{ steps.date.outputs.full_tag }}
-            io.artifacthub.package.deprecated=false
-            io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
-            io.artifacthub.package.license=Apache-2.0
-            io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
-            io.artifacthub.package.prerelease=false
-            containers.bootc=1
-          sep-tags: " "
-          sep-annotations: " "
+            tags: |
+              type=raw,value=${{ steps.date.outputs.wib_date }},enable=${{ github.event_name == 'schedule' }}
+              type=raw,value=${{ steps.date.outputs.wib_date }}.${{ steps.date.outputs.daily_build_number }},enable=${{ github.event_name == 'push' }}
+              type=raw,value=next,enable=${{ github.event_name == 'push' }}
+              type=raw,value=latest,enable=${{ github.event_name == 'schedule' }}
+              type=raw,value=next,enable=${{ github.event_name == 'schedule' }}
+              type=raw,value=${{ steps.date.outputs.full_tag }},enable=${{ github.event_name == 'pull_request' }}
+              type=sha,enable=${{ github.event_name == 'pull_request' }}
+              type=ref,event=pr,enable=${{ github.event_name == 'pull_request' }}
+            labels: |
+             io.artifacthub.package.readme-url=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
+             org.opencontainers.image.created=${{ steps.date.outputs.date }}
+             org.opencontainers.image.description=${{ env.IMAGE_DESC }}
+             org.opencontainers.image.documentation=https://raw.githubusercontent.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/${{ github.sha }}/README.md
+             org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/blob/${{ github.sha }}/Containerfile
+             org.opencontainers.image.title=${{ env.IMAGE_NAME }}
+             org.opencontainers.image.url=https://github.com/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}/tree/${{ github.sha }}
+             org.opencontainers.image.vendor=${{ github.repository_owner }}
+             org.opencontainers.image.version=${{ steps.date.outputs.build_tag }}
+             io.artifacthub.package.deprecated=false
+             io.artifacthub.package.keywords=${{ env.IMAGE_KEYWORDS }}
+             io.artifacthub.package.license=Apache-2.0
+             io.artifacthub.package.logo-url=${{ env.IMAGE_LOGO_URL }}
+             io.artifacthub.package.prerelease=false
+             containers.bootc=1
+            sep-tags: " "
+            sep-annotations: " "
 
       - name: Download Applet Artifacts
         env:
@@ -365,14 +367,14 @@ jobs:
             mkdir -p ./applets-artifacts
           fi
 
-      - name: Build Image
+       - name: Build Image
         id: build_image
         uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
         with:
           containerfiles: |
             ./Containerfile
           # Postfix image name with -custom to make it a little more descriptive
-           # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
+          # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
           image: ${{ env.IMAGE_NAME }}
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
@@ -382,10 +384,10 @@ jobs:
             --format oci
             --layers=false
             --no-cache
-          build-args: |
-            APPLET_ARTIFACTS_DIR=./applets-artifacts
-            BUILD_IMAGE_TAG=${{ steps.date.outputs.build_tag }}
-            BUILD_VERSION=${{ steps.date.outputs.full_tag }}
+           build-args: |
+             APPLET_ARTIFACTS_DIR=./applets-artifacts
+             BUILD_IMAGE_TAG=${{ steps.date.outputs.build_tag }}
+             BUILD_VERSION=${{ steps.date.outputs.build_tag }}
 
       - name: Verify version consistency
         run: |
@@ -398,13 +400,13 @@ jobs:
           echo "Image tags (should include full_tag):"
           echo "${{ steps.metadata.outputs.tags }}"
           echo ""
-          echo "Container label version (should match full_tag):"
-          echo "${{ steps.metadata.outputs.labels }}" | grep "org.opencontainers.image.version"
+           echo "Container label version (should match build_tag):"
+           echo "${{ steps.metadata.outputs.labels }}" | grep "org.opencontainers.image.version"
           echo ""
-          if [ -z "${{ steps.date.outputs.full_tag }}" ]; then
-            echo "ERROR: full_tag is empty!"
-            exit 1
-          fi
+           if [ -z "${{ steps.date.outputs.build_tag }}" ]; then
+             echo "ERROR: build_tag is empty!"
+             exit 1
+           fi
           echo "✓ Version outputs configured correctly"
 
       # Rechunk (OPTIONAL): Rechunker optimizes container image layers for better resumability and fixes some distribution errors.
