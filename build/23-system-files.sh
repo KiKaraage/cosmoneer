@@ -76,13 +76,25 @@ EOF
 echo "::endgroup::"
 echo "::group:: Copy System Files"
 
+# Create COSMIC portal wrapper script
+echo "Creating COSMIC portal wrapper script..."
+tee /usr/libexec/xdg-desktop-portal-cosmic-wrapper <<'EOF'
+#!/usr/bin/env bash
+# Wrapper script for xdg-desktop-portal-cosmic to ensure proper environment
+
+# Export environment variables needed for Wayland
+export GDK_BACKEND=wayland
+export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0}
+export DISPLAY=${DISPLAY:-:0}
+
+# Execute the actual portal
+exec /usr/libexec/xdg-desktop-portal-cosmic
+EOF
+chmod +x /usr/libexec/xdg-desktop-portal-cosmic-wrapper
+
 # Copy system files to container
 if [ -d "/ctx/system_files" ]; then
     rsync -rvK /ctx/system_files/ /
-    # Make the COSMIC portal wrapper executable
-    if [ -f "/usr/libexec/xdg-desktop-portal-cosmic-wrapper" ]; then
-        chmod +x /usr/libexec/xdg-desktop-portal-cosmic-wrapper
-    fi
 fi
 
 echo "::endgroup::"

@@ -84,9 +84,10 @@ jobs:
            REGISTRY="${IMAGE_REGISTRY,,}"
            IMAGE_PATH="${REGISTRY}/${IMAGE_NAME,,}"
 
-           # Get list of all tags from registry
-           echo "Querying registry for existing tags at $IMAGE_PATH"
-           EXISTING_TAGS=$(crane ls "${IMAGE_PATH}" 2>/dev/null | grep -E '^[0-9]' | sort -V || echo "")
+            # Get list of all tags from registry
+            echo "Querying registry for existing tags at $IMAGE_PATH"
+            EXISTING_TAGS=$(crane ls "${IMAGE_PATH}" 2>/dev/null | grep -E '^[0-9]' | sort -V || echo "")
+            echo "Found existing tags: $EXISTING_TAGS"
 
             # Determine effective build type
             if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -96,21 +97,25 @@ jobs:
             fi
 
             if [ "$EFFECTIVE_EVENT" = "push" ]; then
-           # For push builds: find highest build number for today's date
-           LATEST_TODAY=$(echo "$EXISTING_TAGS" | grep "^${BUILD_TAG_VALUE}" | tail -1)
+            # For push builds: find highest build number for today's date
+            LATEST_TODAY=$(echo "$EXISTING_TAGS" | grep "^${BUILD_TAG_VALUE}" | tail -1)
+            echo "Latest existing tag for $BUILD_TAG_VALUE: ${LATEST_TODAY:-none}"
 
-           if [ -z "$LATEST_TODAY" ]; then
-               # No builds for today yet
-               DAILY_BUILD_NUMBER=1
-           else
-               # Extract build number from latest tag (e.g., "251113.2" -> "2")
-               DAILY_BUILD_NUMBER=$(echo "$LATEST_TODAY" | grep -oE '\.[0-9]+$' | sed 's/^\.//') || DAILY_BUILD_NUMBER=0
-               DAILY_BUILD_NUMBER=$((DAILY_BUILD_NUMBER + 1))
-           fi
+            if [ -z "$LATEST_TODAY" ]; then
+                # No builds for today yet
+                DAILY_BUILD_NUMBER=1
+                echo "No existing builds for $BUILD_TAG_VALUE, starting with 1"
+            else
+                # Extract build number from latest tag (e.g., "251113.2" -> "2")
+                DAILY_BUILD_NUMBER=$(echo "$LATEST_TODAY" | grep -oE '\.[0-9]+$' | sed 's/^\.//') || DAILY_BUILD_NUMBER=0
+                echo "Extracted build number from $LATEST_TODAY: $DAILY_BUILD_NUMBER"
+                DAILY_BUILD_NUMBER=$((DAILY_BUILD_NUMBER + 1))
+                echo "Incremented to: $DAILY_BUILD_NUMBER"
+            fi
 
-           echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
-           echo "full_tag=${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}" >> $GITHUB_OUTPUT
-           echo "Latest tag for $BUILD_TAG_VALUE: ${LATEST_TODAY:-none}, Next: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
+            echo "daily_build_number=$DAILY_BUILD_NUMBER" >> $GITHUB_OUTPUT
+            echo "full_tag=${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}" >> $GITHUB_OUTPUT
+            echo "Final tag: ${BUILD_TAG_VALUE}.${DAILY_BUILD_NUMBER}"
                 elif [ "$EFFECTIVE_EVENT" = "pull_request" ]; then
            # For PR events: increment from the absolute latest tag
            LATEST_TAG=$(echo "$EXISTING_TAGS" | tail -1)
