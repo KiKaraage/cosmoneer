@@ -68,22 +68,18 @@ echo "::group:: Configure User Services"
 
 # Unmask any previously masked services to allow presets
 systemctl unmask --global cosmic-idle.service 2>/dev/null || true
-systemctl unmask --global cosmic-ext-alternative-startup.service 2>/dev/null || true
 systemctl unmask --global cosmic-ext-bg-theme.service 2>/dev/null || true
 
 # Apply user service presets from system_files
 systemctl preset-all --global || true
 
-# Configure Niri session services (waybar, cliphist, and cosmic-ext-alternative-startup)
+# Configure Niri session services (waybar and cliphist)
 mkdir -p /usr/lib/systemd/user/niri.service.wants
 if [ -f /usr/lib/systemd/user/waybar.service ]; then
     ln -sf /usr/lib/systemd/user/waybar.service /usr/lib/systemd/user/niri.service.wants/waybar.service
 fi
 if [ -f /usr/lib/systemd/user/cliphist.service ]; then
     ln -sf /usr/lib/systemd/user/cliphist.service /usr/lib/systemd/user/niri.service.wants/cliphist.service
-fi
-if [ -f /usr/lib/systemd/user/cosmic-ext-alternative-startup.service ]; then
-    ln -sf /usr/lib/systemd/user/cosmic-ext-alternative-startup.service /usr/lib/systemd/user/niri.service.wants/cosmic-ext-alternative-startup.service
 fi
 
 echo "::endgroup::"
