@@ -6,32 +6,31 @@ on:
   workflow_dispatch:
     inputs:
       test_mode:
-        description: 'Run test mode instead of full build'
+        description: "Run test mode instead of full build"
         required: false
-        default: 'false'
+        default: false
         type: boolean
       force_all:
-        description: 'Force build all applets'
+        description: "Force build all applets"
         required: false
-        default: 'false'
+        default: false
         type: boolean
       applet_name:
-        description: 'Specific applet to build (optional)'
+        description: "Specific applet to build (optional)"
         required: false
         type: choice
         options:
-          - ''
-          - 'cosmic-ext-applet-emoji-selector'
-          - 'cosmic-ext-applet-vitals'
-          - 'cosmic-applet-music-player'
-          - 'cosmic-ext-applet-caffeine'
-          - 'cosmic-connect-applet'
-          - 'cosmic-ext-applet-clipboard-manager'
-          - 'cosmic-ext-applet-ollama'
-          - 'cosmic-ext-alternative-startup'
-          - 'cosmic-ext-bg-theme'
-          - 'wf-recorder-gui'
-          - 'prtsc-wayland'
+          - "cosmic-ext-applet-emoji-selector"
+          - "cosmic-ext-applet-vitals"
+          - "cosmic-applet-music-player"
+          - "cosmic-ext-applet-caffeine"
+          - "cosmic-connect-applet"
+          - "cosmic-ext-applet-clipboard-manager"
+          - "cosmic-ext-applet-ollama"
+          - "cosmic-ext-alternative-startup"
+          - "cosmic-ext-bg-theme"
+          - "wf-recorder-gui"
+          - "prtsc-wayland"
 
 permissions:
   contents: write
@@ -42,7 +41,6 @@ jobs:
     name: Check for Updates
     runs-on: ubuntu-24.04
     if: github.event_name != 'pull_request'
-
 
     outputs:
       applets_to_build: ${{ steps.check_applets.outputs.applets_to_build }}
@@ -157,8 +155,6 @@ jobs:
           commit_message: "ci(applets): Update applet versions"
           file_pattern: "build/applet-versions.json"
           push_options: --force-with-lease
-
-
 
   build-applets:
     name: Build ${{ matrix.applet.name }}
@@ -901,4 +897,3 @@ jobs:
           rm -rf /tmp/cosmic-ext-applet-clipboard-manager
           rm -rf /tmp/cargo /tmp/cargo-target
           echo "✅ Cleanup completed"
-

@@ -56,41 +56,7 @@ docker:
 EOF
 
 echo "::endgroup::"
-echo "::group:: Portal Configuration"
-
-# Configure xdg-desktop-portal for Niri with COSMIC as primary
-echo "Configuring portals for Niri session..."
-mkdir -p /etc/xdg-desktop-portal
-tee /etc/xdg-desktop-portal/cosmoneer-portals.conf <<'EOF'
-[preferred]
-default=cosmic;gnome;
-org.freedesktop.impl.portal.Access=cosmic;gnome;
-org.freedesktop.impl.portal.Notification=cosmic;gnome;
-org.freedesktop.impl.portal.Secret=gnome-keyring;
-org.freedesktop.impl.portal.FileChooser=cosmic;gnome;
-org.freedesktop.impl.portal.Screenshot=cosmic;gnome;
-org.freedesktop.impl.portal.Inhibit=cosmic;gnome;
-org.freedesktop.impl.portal.Background=cosmic;gnome;
-EOF
-
-echo "::endgroup::"
 echo "::group:: Copy System Files"
-
-# Create COSMIC portal wrapper script
-echo "Creating COSMIC portal wrapper script..."
-tee /usr/libexec/xdg-desktop-portal-cosmic-wrapper <<'EOF'
-#!/usr/bin/env bash
-# Wrapper script for xdg-desktop-portal-cosmic to ensure proper environment
-
-# Export environment variables needed for Wayland
-export GDK_BACKEND=wayland
-export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-0}
-export DISPLAY=${DISPLAY:-:0}
-
-# Execute the actual portal
-exec /usr/libexec/xdg-desktop-portal-cosmic
-EOF
-chmod +x /usr/libexec/xdg-desktop-portal-cosmic-wrapper
 
 # Copy system files to container
 if [ -d "/ctx/system_files" ]; then
@@ -102,7 +68,7 @@ echo "::group:: Configure User Services"
 
 # Unmask any previously masked services to allow presets
 systemctl unmask --global cosmic-idle.service 2>/dev/null || true
-systemctl unmask --global cosmic-ext-alternative-startup.service 2>/dev/null || true
+# systemctl unmask --global cosmic-ext-alternative-startup.service 2>/dev/null || true
 systemctl unmask --global cosmic-ext-bg-theme.service 2>/dev/null || true
 
 # Apply user service presets from system_files
