@@ -76,66 +76,62 @@ COSMICDESKTOP
 echo "Display manager configured"
 echo "::endgroup::"
 
-echo "::group:: Install cosmic-ext-alternative-startup for Niri"
-
 # Check if binary exists in applets artifacts
-if [ -d "/applets/cosmic-ext-alternative-startup" ]; then
+# if [ -d "/applets/cosmic-ext-alternative-startup" ]; then
     # Look for the binary in the directory
-    BINARY_PATH=""
-    if [ -f "/applets/cosmic-ext-alternative-startup/cosmic-ext-alternative-startup" ]; then
-        BINARY_PATH="/applets/cosmic-ext-alternative-startup/cosmic-ext-alternative-startup"
-    else
+#     BINARY_PATH=""
+#     if [ -f "/applets/cosmic-ext-alternative-startup/cosmic-ext-alternative-startup" ]; then
+#         BINARY_PATH="/applets/cosmic-ext-alternative-startup/cosmic-ext-alternative-startup"
+#     else
         # Find any executable binary in the directory
-        BINARY_PATH=$(find "/applets/cosmic-ext-alternative-startup" -name "cosmic-ext-alternative-startup" -type f -executable | head -1)
-    fi
-    
-    if [ -n "$BINARY_PATH" ]; then
-        echo "Found cosmic-ext-alternative-startup binary in artifacts, installing..."
-        install -Dm755 "$BINARY_PATH" /usr/bin/cosmic-ext-alternative-startup
-        echo "cosmic-ext-alternative-startup installed from artifacts: $BINARY_PATH"
-    else
-        echo "cosmic-ext-alternative-startup binary not found in artifacts directory, building from source..."
-        BUILD_ALTERNATIVE_STARTUP=true
-    fi
-elif [ -f "/applets/cosmic-ext-alternative-startup" ]; then
-    echo "Found cosmic-ext-alternative-startup binary as file in artifacts, installing..."
-    install -Dm755 /applets/cosmic-ext-alternative-startup /usr/bin/cosmic-ext-alternative-startup
-    echo "cosmic-ext-alternative-startup installed from artifacts"
-else
-    echo "cosmic-ext-alternative-startup binary not found in artifacts, building from source..."
-    BUILD_ALTERNATIVE_STARTUP=true
-fi
+#         BINARY_PATH=$(find "/applets/cosmic-ext-alternative-startup" -name "cosmic-ext-alternative-startup" -type f -executable | head -1)
+#     fi
 
-if [ "${BUILD_ALTERNATIVE_STARTUP:-false}" = "true" ]; then
+#     if [ -n "$BINARY_PATH" ]; then
+#         echo "Found cosmic-ext-alternative-startup binary in artifacts, installing..."
+#         install -Dm755 "$BINARY_PATH" /usr/bin/cosmic-ext-alternative-startup
+#         echo "cosmic-ext-alternative-startup installed from artifacts: $BINARY_PATH"
+#     else
+#         echo "cosmic-ext-alternative-startup binary not found in artifacts directory, building from source..."
+#         BUILD_ALTERNATIVE_STARTUP=true
+#     fi
+# elif [ -f "/applets/cosmic-ext-alternative-startup" ]; then
+#     echo "Found cosmic-ext-alternative-startup binary as file in artifacts, installing..."
+#     install -Dm755 /applets/cosmic-ext-alternative-startup /usr/bin/cosmic-ext-alternative-startup
+#     echo "cosmic-ext-alternative-startup installed from artifacts"
+# else
+#     echo "cosmic-ext-alternative-startup binary not found in artifacts, building from source..."
+#     BUILD_ALTERNATIVE_STARTUP=true
+# fi
+
+# if [ "${BUILD_ALTERNATIVE_STARTUP:-false}" = "true" ]; then
     # Install dependencies for building
-    dnf5 install -y \
-        cargo \
-        rust \
-        libxkbcommon-devel \
-        wayland-devel
+#     dnf5 install -y \
+#         cargo \
+#         rust \
+#         libxkbcommon-devel \
+#         wayland-devel
 
     # Clone and build cosmic-ext-alternative-startup
-    cd /tmp
-    git clone --depth 1 https://github.com/Drakulix/cosmic-ext-alternative-startup.git
-    cd cosmic-ext-alternative-startup
+#     cd /tmp
+#     git clone --depth 1 https://github.com/Drakulix/cosmic-ext-alternative-startup.git
+#     cd cosmic-ext-alternative-startup
 
     # Build the project
-    export CARGO_HOME="/tmp/cargo"
-    export CARGO_TARGET_DIR="/tmp/cargo-target"
-    mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
-    cargo build --release
+#     export CARGO_HOME="/tmp/cargo"
+#     export CARGO_TARGET_DIR="/tmp/cargo-target"
+#     mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
+#     cargo build --release
 
     # Install the binary
-    install -Dm755 "$CARGO_TARGET_DIR/release/cosmic-ext-alternative-startup" /usr/bin/cosmic-ext-alternative-startup
+#     install -Dm755 "$CARGO_TARGET_DIR/release/cosmic-ext-alternative-startup" /usr/bin/cosmic-ext-alternative-startup
 
-    echo "cosmic-ext-alternative-startup built and installed"
-    
+#     echo "cosmic-ext-alternative-startup built and installed"
+
     # Cleanup build artifacts
-    cd /
-    rm -rf /tmp/cosmic-ext-alternative-startup /tmp/cargo /tmp/cargo-target
-fi
-
-echo "::endgroup::"
+#     cd /
+#     rm -rf /tmp/cosmic-ext-alternative-startup /tmp/cargo /tmp/cargo-target
+# fi
 
 echo "::group:: Install cosmic-ext-bg-theme"
 
@@ -149,12 +145,12 @@ if [ -d "/applets/cosmic-ext-bg-theme" ]; then
         # Find any executable binary in the directory
         BINARY_PATH=$(find "/applets/cosmic-ext-bg-theme" -name "cosmic-ext-bg-theme" -type f -executable | head -1)
     fi
-    
+
     if [ -n "$BINARY_PATH" ]; then
         echo "Found cosmic-ext-bg-theme binary in artifacts, installing..."
         install -Dm755 "$BINARY_PATH" /usr/bin/cosmic-ext-bg-theme
         echo "cosmic-ext-bg-theme installed from artifacts: $BINARY_PATH"
-        
+
         # Install desktop file if present
         if [ -f "/applets/cosmic-ext-bg-theme/res/cosmic.ext.BgTheme.desktop" ]; then
             install -Dm644 "/applets/cosmic-ext-bg-theme/res/cosmic.ext.BgTheme.desktop" /usr/share/applications/cosmic.ext.BgTheme.desktop
@@ -202,7 +198,7 @@ if [ "${BUILD_BG_THEME:-false}" = "true" ]; then
     install -Dm644 res/cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
 
     echo "cosmic-ext-bg-theme built and installed"
-    
+
     # Cleanup build artifacts
     cd /
     rm -rf /tmp/cosmic_ext_bg_theme /tmp/cargo /tmp/cargo-target
@@ -212,21 +208,11 @@ echo "::endgroup::"
 
 echo "::group:: Install Niri Session Files"
 
-# Clone the cosmic-ext-extra-sessions repo for Niri configuration
-cd /tmp
-git clone --depth 1 https://github.com/Drakulix/cosmic-ext-extra-sessions.git
-cd cosmic-ext-extra-sessions/niri
+# Note: Niri session files (start script and desktop file) are now maintained
+# in system_files/ and installed via rsync in 23-system-files.sh
+# This ensures we use our custom environment setup.
 
-# Install start-cosmic-ext-niri script
-install -Dm755 start-cosmic-ext-niri /usr/bin/start-cosmic-ext-niri
-
-# Update session file to use installed path
-sed -i 's|/usr/local/bin/start-cosmic-ext-niri|/usr/bin/start-cosmic-ext-niri|' cosmic-ext-niri.desktop
-
-# Install cosmic-ext-niri.desktop session file
-install -Dm644 cosmic-ext-niri.desktop /usr/share/wayland-sessions/cosmic-ext-niri.desktop
-
-echo "Niri session files installed"
+echo "Niri session files will be installed from system_files"
 echo "::endgroup::"
 
 echo "::group:: Add COSMIC Flatpak Remote"
