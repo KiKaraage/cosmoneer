@@ -8,6 +8,7 @@ set -eoux pipefail
 # This script installs additional software from dnf5 and external RPM sources
 ###############################################################################
 
+# shellcheck source=/dev/null
 source /ctx/build/copr-helpers.sh
 
 echo "::group:: Install Hardware and Networking Packages"
