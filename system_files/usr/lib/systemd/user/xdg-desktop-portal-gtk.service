@@ -7,6 +7,7 @@ After=graphical-session-pre.target
 Type=dbus
 BusName=org.freedesktop.impl.portal.desktop.gtk
 Environment=GDK_BACKEND=wayland
+Environment=XDG_SESSION_TYPE=wayland
 ExecStart=/usr/libexec/xdg-desktop-portal-gtk
 
 [Install]

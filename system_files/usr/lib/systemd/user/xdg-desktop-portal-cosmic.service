@@ -8,6 +8,7 @@ Requisite=graphical-session.target
 Type=dbus
 BusName=org.freedesktop.impl.portal.desktop.cosmic
 Environment=GDK_BACKEND=wayland
+Environment=XDG_SESSION_TYPE=wayland
 ExecStart=/usr/libexec/xdg-desktop-portal-cosmic
 Restart=on-failure
 RestartSec=1
