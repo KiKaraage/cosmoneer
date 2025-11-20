@@ -13,12 +13,13 @@ DOCUMENTATION_URL="https://github.com/KiKaraage/Cosmoneer"
 SUPPORT_URL="https://github.com/KiKaraage/Cosmoneer/issues"
 BUG_SUPPORT_URL="https://github.com/KiKaraage/Cosmoneer/issues"
 CODE_NAME="Alpha"
-# VERSION should always be passed as build arg from Containerfile
+# BUILD_VERSION should always be passed as build arg from Containerfile
 # If not set, use current date as fallback (should not happen in CI)
-if [[ -z "${VERSION:-}" ]]; then
-  VERSION="$(date +%y%m%d)"
-  echo "WARNING: VERSION not set, using current date: $VERSION" >&2
+if [[ -z "${BUILD_VERSION:-}" ]]; then
+  BUILD_VERSION="$(date +%y%m%d)"
+  echo "WARNING: BUILD_VERSION not set, using current date: $BUILD_VERSION" >&2
 fi
+VERSION="${BUILD_VERSION}"
 # UBLUE_IMAGE_TAG should always be passed as build arg from Containerfile
 # If not set, use current date as fallback (should not happen in CI)
 if [[ -z "${UBLUE_IMAGE_TAG:-}" ]]; then
