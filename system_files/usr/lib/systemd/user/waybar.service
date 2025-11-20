@@ -4,7 +4,6 @@ PartOf=graphical-session.target
 After=graphical-session.target
 
 [Service]
-Environment=WAYLAND_DISPLAY=wayland-1
 Environment=XDG_SESSION_TYPE=wayland
 ExecStart=/usr/bin/waybar
 Restart=on-failure
