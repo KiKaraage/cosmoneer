@@ -23,6 +23,10 @@ ARG BUILD_VERSION=daily
 # Base Image
 FROM ghcr.io/ublue-os/base-main:43
 
+# Re-declare ARGs for this stage
+ARG BUILD_IMAGE_TAG=daily
+ARG BUILD_VERSION=daily
+
 # Image metadata to override base image description
 LABEL org.opencontainers.image.description="A scroller desktop image with COSMIC, Niri and Bluefin goodies together"
 
