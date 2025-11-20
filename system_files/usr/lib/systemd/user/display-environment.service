@@ -1,0 +1,31 @@
+[Unit]
+Description=Import display environment and restart portals
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c '
+    # Wait for Wayland display to be available
+    timeout=30
+    while [ $timeout -gt 0 ]; do
+        if [ -n "$WAYLAND_DISPLAY" ] && [ -e "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" ]; then
+            # Import environment to systemd
+            systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_SESSION_TYPE XDG_CURRENT_DESKTOP 2>/dev/null || true
+            
+            # Restart portal services that may have failed
+            systemctl --user restart xdg-desktop-portal-gtk.service 2>/dev/null || true
+            systemctl --user restart xdg-desktop-portal-cosmic.service 2>/dev/null || true
+            
+            exit 0
+        fi
+        sleep 0.1
+        timeout=$((timeout - 1))
+    done
+    exit 1
+'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=graphical-session.target
