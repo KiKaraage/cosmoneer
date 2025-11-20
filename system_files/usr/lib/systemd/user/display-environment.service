@@ -6,7 +6,7 @@ Requisite=graphical-session.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'sleep 3; if [ "$(loginctl show-session 2 2>/dev/null | grep "^Desktop=" | cut -d= -f2)" = "niri" ]; then WAYLAND_DISPLAY=wayland-1; DISPLAY=:1; XDG_CURRENT_DESKTOP=niri; XDG_SESSION_TYPE=wayland; systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true; systemctl --user restart xdg-desktop-portal-gtk.service 2>/dev/null || true; systemctl --user restart xdg-desktop-portal-cosmic.service 2>/dev/null || true; else systemctl --user restart xdg-desktop-portal-gtk.service 2>/dev/null || true; systemctl --user restart xdg-desktop-portal-cosmic.service 2>/dev/null || true; fi'
+ExecStart=/bin/sh -c 'sleep 3; WAYLAND_DISPLAY=wayland-1; DISPLAY=:1; XDG_CURRENT_DESKTOP=niri; XDG_SESSION_TYPE=wayland; systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true; systemctl --user restart xdg-desktop-portal-gtk.service 2>/dev/null || true; systemctl --user restart xdg-desktop-portal-cosmic.service 2>/dev/null || true'
 RemainAfterExit=yes
 
 [Install]
