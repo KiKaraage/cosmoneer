@@ -7,8 +7,7 @@ Requisite=graphical-session.target
 
 [Service]
 Type=simple
-Environment=WAYLAND_DISPLAY=wayland-1
-Environment=DISPLAY=:1
+Environment=XDG_SESSION_TYPE=wayland
 ExecStart=/usr/bin/cosmic-ext-bg-theme
 Restart=on-failure
 RestartSec=5

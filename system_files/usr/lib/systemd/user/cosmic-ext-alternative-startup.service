@@ -5,8 +5,7 @@ After=graphical-session.target
 Requisite=graphical-session.target
 
 [Service]
-Environment=WAYLAND_DISPLAY=wayland-1
-Environment=DISPLAY=:1
+Environment=XDG_SESSION_TYPE=wayland
 ExecStart=/usr/bin/cosmic-ext-alternative-startup
 Restart=on-failure
 RestartSec=1

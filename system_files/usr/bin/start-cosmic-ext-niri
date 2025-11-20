@@ -5,8 +5,8 @@ set -e
 # From: https://people.debian.org/~mpitt/systemd.conf-2016-graphical-session.pdf
 
 # Set explicit Wayland display to ensure consistency between session and systemd services
-export WAYLAND_DISPLAY=wayland-1
-export DISPLAY=:1
+# export WAYLAND_DISPLAY=wayland-1
+# export DISPLAY=:1
 
 if command -v systemctl >/dev/null; then
     # robustness: if the previous graphical session left some failed units,
@@ -45,7 +45,7 @@ export QT_ENABLE_HIGHDPI_SCALING=1
 if command -v systemctl >/dev/null; then
     # set environment variables for new units started by user service manager
     # Crucial: Import WAYLAND_DISPLAY so portal services can find the socket
-    systemctl --user import-environment XDG_SESSION_TYPE XDG_CURRENT_DESKTOP WAYLAND_DISPLAY DISPLAY
+    systemctl --user import-environment XDG_SESSION_TYPE XDG_CURRENT_DESKTOP
 fi
 
 # Run cosmic-session
