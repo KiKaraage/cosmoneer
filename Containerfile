@@ -86,7 +86,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     echo "BUILD_VERSION=${BUILD_VERSION}" && \
     # Run build scripts with cleanup and disk space reporting \
     /ctx/build/00-base.sh && report_disk_space "After 00-base.sh" && \
-     UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" /ctx/build/01-image-id.sh && report_disk_space "After 01-image-id.sh" && \
+     BUILD_VERSION="${BUILD_VERSION}" UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" /ctx/build/01-image-id.sh && report_disk_space "After 01-image-id.sh" && \
     dnf5 clean all && rm -rf /var/cache/dnf/* || true && report_disk_space "After cleanup (base scripts)" && \
     /ctx/build/10-kernel-hardware.sh && report_disk_space "After 10-kernel-hardware.sh" && \
     /ctx/build/11-packages.sh && report_disk_space "After 11-packages.sh" && \
