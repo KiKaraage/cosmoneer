@@ -49,6 +49,10 @@ FEDORA_PACKAGES=(
     davfs2
     jmtpfs
     
+    # Security & Keyring
+    gnome-keyring
+    gnome-keyring-pam
+
     # Desktop & Display
     brightnessctl
     nautilus

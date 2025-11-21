@@ -76,6 +76,17 @@ COSMICDESKTOP
 echo "Display manager configured"
 echo "::endgroup::"
 
+echo "::group:: Enable GNOME Keyring Services"
+
+# Enable GNOME Keyring services globally for all users
+systemctl enable --global gnome-keyring-daemon.socket
+systemctl enable --global gnome-keyring-daemon.service
+
+echo "GNOME Keyring services enabled globally"
+echo "::endgroup::"
+
+echo "::group:: Install cosmic-ext-alternative-startup"
+
 # Check if binary exists in applets artifacts
 if [ -d "/applets/cosmic-ext-alternative-startup" ]; then
     # Look for the binary in the directory
@@ -133,6 +144,8 @@ if [ -d "/applets/cosmic-ext-alternative-startup" ]; then
     cd /
     rm -rf /tmp/cosmic-ext-alternative-startup /tmp/cargo /tmp/cargo-target
 fi
+
+echo "::endgroup::"
 
 echo "::group:: Install cosmic-ext-bg-theme"
 
@@ -207,18 +220,9 @@ fi
 
 echo "::endgroup::"
 
-echo "::group:: Install Niri Session Files"
-
-# Note: Niri session files (start script and desktop file) are now maintained
-# in system_files/ and installed via rsync in 23-system-files.sh
-# This ensures we use our custom environment setup.
-
-echo "Niri session files will be installed from system_files"
-echo "::endgroup::"
-
 echo "::group:: Add COSMIC Flatpak Remote"
 
-# Add COSMIC Flatpak remote
+# Add COSMIC Flatpak remote for applets in COSMIC Store
 flatpak remote-add --if-not-exists --system cosmic https://apt.pop-os.org/cosmic/cosmic.flatpakrepo
 
 echo "COSMIC Flatpak remote configured"
