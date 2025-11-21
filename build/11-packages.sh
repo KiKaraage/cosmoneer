@@ -22,14 +22,14 @@ FEDORA_PACKAGES=(
     python3-pip
     python3-pygit2
     git-credential-libsecret
-    
+
     # Shells & Terminal
     zsh
     ugrep
     bat
     atuin
     zoxide
-    
+
     # System Utilities
     gum
     zenity
@@ -39,18 +39,24 @@ FEDORA_PACKAGES=(
     ddcutil
     evtest
     input-remapper
-    
+
     # Filesystems & Storage
     gvfs-nfs
+    gvfs-mtp
     rclone
     chezmoi
     fuse-encfs
     davfs2
+    jmtpfs
     
+    # Security & Keyring
+    gnome-keyring
+    gnome-keyring-pam
+
     # Desktop & Display
     brightnessctl
     nautilus
-    xdg-desktop-portal-wlr
+    swayidle
     
     # Additional Packages
     ibus-mozc
@@ -160,7 +166,7 @@ echo "::group:: Configure ublue-brew"
 echo "Configuring ublue-brew integration..."
 
 # Fix critical symlink issue for ublue-brew
-# The brew-setup.service doesn't create the essential symlink from 
+# The brew-setup.service doesn't create the essential symlink from
 # /home/linuxbrew/.linuxbrew to /var/home/linuxbrew/.linuxbrew
 echo "Adding symlink fix to brew-setup.service..."
 if [ -f "/usr/lib/systemd/system/brew-setup.service" ]; then

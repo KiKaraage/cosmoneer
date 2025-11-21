@@ -1,0 +1,20 @@
+[Unit]
+Description=Idle manager for Wayland compositors
+Documentation=man:swayidle(1)
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+
+[Service]
+Type=simple
+Environment=XDG_SESSION_TYPE=wayland
+ExecStart=/usr/bin/swayidle -w \
+    timeout 600 'loginctl lock-session' \
+    timeout 1800 'systemctl suspend' \
+    before-sleep 'loginctl lock-session' \
+    after-resume 'niri msg action power-on-monitors'
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical-session.target
