@@ -6,7 +6,7 @@ Requisite=graphical-session.target
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'sleep 3; export WAYLAND_DISPLAY=wayland-1; export DISPLAY=:1; export XDG_CURRENT_DESKTOP=niri; export XDG_SESSION_TYPE=wayland; systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true; sleep 2; systemctl --user restart xdg-desktop-portal-gtk.service 2>/dev/null || true; systemctl --user restart xdg-desktop-portal-cosmic.service 2>/dev/null || true; sleep 2; systemctl --user restart xdg-desktop-portal.service 2>/dev/null || true'
+ExecStart=/bin/sh -c 'sleep 3; export WAYLAND_DISPLAY=wayland-1; export DISPLAY=:1; export XDG_CURRENT_DESKTOP=niri; export XDG_SESSION_TYPE=wayland; systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true; sleep 2; /usr/lib/systemd/user/setup-portals.sh'
 RemainAfterExit=yes
 
 [Install]
