@@ -1,4 +1,4 @@
-enable cosmic-idle.service
+enable swayidle.service
 enable cosmic-ext-bg-theme.service
 enable cosmic-ext-alternative-startup.service
 enable waybar.service
