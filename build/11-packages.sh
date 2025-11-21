@@ -42,10 +42,12 @@ FEDORA_PACKAGES=(
 
     # Filesystems & Storage
     gvfs-nfs
+    gvfs-mtp
     rclone
     chezmoi
     fuse-encfs
     davfs2
+    jmtpfs
     
     # Desktop & Display
     brightnessctl
