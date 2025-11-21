@@ -50,6 +50,7 @@ FEDORA_PACKAGES=(
     # Desktop & Display
     brightnessctl
     nautilus
+    xdg-desktop-portal-wlr
     
     # Additional Packages
     ibus-mozc
