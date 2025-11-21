@@ -58,13 +58,14 @@ setup_portals() {
             systemctl --user disable xdg-desktop-portal-gnome.service 2>/dev/null || true
             ;;
         "Niri")
-            echo "Using Niri (GNOME) portal configuration"
+            echo "Using Niri (wlr) portal configuration"
             if [ -f "$portal_config_dir/niri-portals.conf" ]; then
                 cp "$portal_config_dir/niri-portals.conf" "$user_config"
             fi
-            # Enable GNOME portal service
-            systemctl --user enable xdg-desktop-portal-gnome.service 2>/dev/null || true
+            # Enable wlr portal service
+            systemctl --user enable xdg-desktop-portal-wlr.service 2>/dev/null || true
             systemctl --user disable xdg-desktop-portal-cosmic.service 2>/dev/null || true
+            systemctl --user disable xdg-desktop-portal-gnome.service 2>/dev/null || true
             ;;
         *)
             echo "Unknown desktop '$desktop', using default GNOME configuration"
