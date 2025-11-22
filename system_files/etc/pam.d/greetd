@@ -1,0 +1,5 @@
+#%PAM-1.0
+auth       include      cosmic-greeter
+account    include      cosmic-greeter
+password   include      cosmic-greeter
+session    include      cosmic-greeter
