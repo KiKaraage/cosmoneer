@@ -33,7 +33,7 @@ LABEL org.opencontainers.image.description="A scroller desktop image with COSMIC
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest
 # FROM ghcr.io/ublue-os/bluefin-nvidia:stable
-# 
+#
 # ... and so on, here are more base images
 # Universal Blue Images: https://github.com/orgs/ublue-os/packages
 # Fedora base image: quay.io/fedora/fedora-bootc:41
@@ -99,14 +99,13 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build/21-desktop-config.sh && report_disk_space "After 21-desktop-config.sh" && \
     /ctx/build/22-desktop-applets.sh && report_disk_space "After 22-desktop-applets.sh" && \
     /ctx/build/23-system-files.sh && report_disk_space "After 23-system-files.sh" && \
-    /ctx/build/30-extras.sh && report_disk_space "After 30-extras.sh" && \
     /ctx/build/99-cleanup.sh && report_disk_space "After 99-cleanup.sh" && \
     echo "Build scripts completed successfully" && \
     # Final aggressive cleanup to reduce image size \
     dnf5 clean all && \
     rm -rf /var/tmp/* /tmp/* /var/log/* /var/cache/dnf/* /usr/share/doc/* /usr/share/man/* /usr/share/info/* || true && \
     report_disk_space "Final state after all cleanup"
-    
+
 ### LINTING
 ## Verify final image and contents are correct.
 RUN echo "Running container lint..." && \
