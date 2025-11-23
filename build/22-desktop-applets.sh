@@ -67,20 +67,30 @@ dnf5 install -y glibc openssl-libs || echo "Some dependencies may already be ins
 
 # Install cosmic-ext-applet-privacy-indicator from GitHub release
 echo "Installing cosmic-ext-applet-privacy-indicator from GitHub release..."
-LATEST_RELEASE=$(curl -s https://api.github.com/repos/D-Brox/cosmic-ext-applet-privacy-indicator/releases/latest | grep -o '"tag_name": "[^"]*' | sed 's/"tag_name": "//')
-if [ -n "$LATEST_RELEASE" ]; then
-    echo "Latest release: $LATEST_RELEASE"
-    RPM_URL="https://github.com/D-Brox/cosmic-ext-applet-privacy-indicator/releases/download/$LATEST_RELEASE/cosmic-ext-applet-privacy-indicator-0.1.2-1.x86_64.rpm"
-    echo "Downloading RPM from: $RPM_URL"
-    if curl -L -o cosmic-ext-applet-privacy-indicator.rpm "$RPM_URL"; then
-        dnf5 install -y cosmic-ext-applet-privacy-indicator.rpm
-        echo "cosmic-ext-applet-privacy-indicator installed successfully"
-        rm -f cosmic-ext-applet-privacy-indicator.rpm
-    else
-        echo "Failed to download cosmic-ext-applet-privacy-indicator RPM"
-    fi
+
+# Check if curl is available
+if ! command -v curl >/dev/null 2>&1; then
+    echo "curl not available, skipping cosmic-ext-applet-privacy-indicator installation"
 else
-    echo "Failed to fetch latest release information for cosmic-ext-applet-privacy-indicator"
+    # Get the latest release assets
+    RELEASE_API_URL="https://api.github.com/repos/D-Brox/cosmic-ext-applet-privacy-indicator/releases/latest"
+    echo "Fetching latest release assets from: $RELEASE_API_URL"
+    
+    # Find the first x86_64 RPM in the latest release assets
+    RPM_URL=$(curl -s "$RELEASE_API_URL" | grep -o '"browser_download_url": "[^"]*x86_64\.rpm"' | sed 's/"browser_download_url": "//;s/"$//' | head -1)
+    
+    if [ -n "$RPM_URL" ]; then
+        echo "Found x86_64 RPM: $RPM_URL"
+        if curl -L -f -o cosmic-ext-applet-privacy-indicator.rpm "$RPM_URL"; then
+            dnf5 install -y cosmic-ext-applet-privacy-indicator.rpm
+            echo "cosmic-ext-applet-privacy-indicator installed successfully"
+            rm -f cosmic-ext-applet-privacy-indicator.rpm
+        else
+            echo "Failed to download cosmic-ext-applet-privacy-indicator RPM, continuing without it"
+        fi
+    else
+        echo "No x86_64 RPM found in latest release assets, continuing without it"
+    fi
 fi
 
 # Install applets from artifacts if they exist
