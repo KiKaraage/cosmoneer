@@ -43,7 +43,7 @@ else
     echo "Fetching latest Waveterm release assets from: $RELEASE_API_URL"
     
     # Find the first x86_64 RPM in the latest release assets
-    RPM_URL=$(curl -s "$RELEASE_API_URL" | grep -o '"browser_download_url": "[^"]*waveterm-linux-x86_64[^"]*\.rpm[^"]*"' | sed 's/"browser_download_url": "//' | head -1)
+    RPM_URL=$(curl -s "$RELEASE_API_URL" | grep -o '"browser_download_url": "[^"]*waveterm-linux-x86_64[^"]*\.rpm"' | sed 's/"browser_download_url": "//' | head -1)
     
     if [ -n "$RPM_URL" ]; then
         echo "Found Waveterm x86_64 RPM: $RPM_URL"
