@@ -2,7 +2,7 @@
 auth       optional   pam_shells.so
 auth       optional   pam_nologin.so
 auth       sufficient pam_fprintd.so
-auth       required   pam_unix.so try_first_pass
+auth       required   pam_unix.so
 auth       optional   pam_gnome_keyring.so
 auth       optional   pam_permit.so
 
