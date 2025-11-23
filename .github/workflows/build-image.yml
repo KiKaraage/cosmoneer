@@ -59,8 +59,6 @@ jobs:
 
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6 # v8?
-        with:
-          remove-codeql: true
 
       - name: Install crane
         run: |
