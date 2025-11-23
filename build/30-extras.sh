@@ -60,23 +60,21 @@ else
             # Try manual extraction and installation to avoid cpio issues
             echo "Extracting RPM manually to avoid cpio conflicts..."
             mkdir -p /tmp/waveterm-extract
-            cd /tmp/waveterm-extract
             
             # Extract RPM contents
-            if rpm2cpio ../waveterm.rpm | cpio -idm 2>/dev/null; then
+            if rpm2cpio waveterm.rpm | (cd /tmp/waveterm-extract && cpio -idm) 2>/dev/null; then
                 echo "RPM extracted successfully, copying files..."
                 # Copy files to their destinations
-                cp -r opt/* /opt/ 2>/dev/null || true
-                cp -r usr/* /usr/ 2>/dev/null || true
+                cp -r /tmp/waveterm-extract/opt/* /opt/ 2>/dev/null || true
+                cp -r /tmp/waveterm-extract/usr/* /usr/ 2>/dev/null || true
                 
                 # Register the package in RPM database
-                cd /
-                rpm -i --justdb ../waveterm.rpm 2>/dev/null || true
+                rpm -i --justdb waveterm.rpm 2>/dev/null || true
                 
                 echo "Manual installation completed"
             else
                 echo "Manual extraction failed, trying standard rpm install..."
-                rpm -ivh --force --nodeps ../waveterm.rpm || echo "Warning: All installation methods failed"
+                rpm -ivh --force --nodeps waveterm.rpm || echo "Warning: All installation methods failed"
             fi
             
             # Cleanup
