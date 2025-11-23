@@ -48,6 +48,11 @@ else
     if [ -n "$RPM_URL" ]; then
         echo "Found Waveterm x86_64 RPM: $RPM_URL"
         if curl -L -f -o waveterm.rpm "$RPM_URL"; then
+            # Clean up existing installation to prevent conflicts (only if it exists)
+            if [ -d "/opt/Wave" ]; then
+                echo "Removing existing /opt/Wave directory..."
+                rm -rf /opt/Wave || echo "Warning: Failed to remove /opt/Wave, continuing anyway"
+            fi
             dnf5 install -y waveterm.rpm
             echo "Waveterm installed successfully"
             rm -f waveterm.rpm
