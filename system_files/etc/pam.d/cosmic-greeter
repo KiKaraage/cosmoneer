@@ -2,9 +2,9 @@
 auth       optional   pam_shells.so
 auth       optional   pam_nologin.so
 auth       sufficient pam_fprintd.so
-auth       sufficient pam_unix.so try_first_pass
-auth       optional   pam_permit.so
+auth       required   pam_unix.so try_first_pass
 auth       optional   pam_gnome_keyring.so
+auth       optional   pam_permit.so
 
 account    optional   pam_nologin.so
 account    required   pam_unix.so
