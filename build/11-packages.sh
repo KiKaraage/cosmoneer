@@ -40,6 +40,15 @@ FEDORA_PACKAGES=(
     evtest
     input-remapper
 
+    # Hardware & Networking
+    igt-gpu-tools
+    switcheroo-control
+    foo2zjs
+    ifuse
+    tailscale
+    iwd
+    waypipe
+
     # Filesystems & Storage
     gvfs-nfs
     gvfs-mtp
@@ -48,7 +57,7 @@ FEDORA_PACKAGES=(
     fuse-encfs
     davfs2
     jmtpfs
-    
+
     # Security & Keyring
     gnome-keyring
     gnome-keyring-pam
@@ -57,7 +66,7 @@ FEDORA_PACKAGES=(
     brightnessctl
     nautilus
     swayidle
-    
+
     # Additional Packages
     ibus-mozc
     libxcrypt-compat
@@ -65,6 +74,12 @@ FEDORA_PACKAGES=(
     usbip
     openssh-askpass
     oddjob-mkhomedir
+
+    # Others
+    msedit
+    fontawesome-fonts
+    fontawesome-fonts-web
+    adwaita-icon-theme
 )
 
 # Install all Fedora packages (bulk - safe from COPR injection)
@@ -105,6 +120,8 @@ systemctl preset docker.service docker.socket
 cat > /usr/lib/sysusers.d/docker.conf <<'EOF'
 g docker -
 EOF
+
+systemctl enable --global tailscaled
 
 echo "::endgroup::"
 
@@ -155,9 +172,8 @@ copr_install_isolated "ublue-os/packages" \
     "ublue-os-udev-rules" \
     "ublue-bling"
 
-# Install cliphist from zirconium COPR (if available)
-echo "Installing cliphist from zirconium packages..."
-copr_install_isolated "zirconium/packages" "cliphist" || echo "cliphist not available, skipping"
+copr_install_isolated "trixieua/morewaita-icon-theme" "morewaita-icon-theme"
+copr_install_isolated "zirconium/packages" "cliphist"
 
 echo "::endgroup::"
 
