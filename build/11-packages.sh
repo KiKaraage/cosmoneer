@@ -188,10 +188,13 @@ echo "Configuring ublue-brew integration..."
 echo "Adding symlink fix to brew-setup.service..."
 
 cat > /usr/lib/tmpfiles.d/brew-symlink.conf <<'EOF'
-# Create the essential symlink for Homebrew on boot
+# Create the essential directories for Homebrew on boot
 d /home 0755 - - -
 d /var/home 0755 - - -
-L /home/linuxbrew/.linuxbrew - - - - /var/home/linuxbrew/.linuxbrew
+d /home/linuxbrew 0755 - - -
+
+# Create the essential symlink for Homebrew on boot
+L+ /home/linuxbrew/.linuxbrew - - - - /var/home/linuxbrew/.linuxbrew
 EOF
 
 # Create environment file to add brew to PATH
