@@ -69,6 +69,7 @@ echo "::group:: Configure User Services"
 # Unmask any previously masked services to allow presets
 systemctl unmask --global cosmic-ext-alternative-startup.service 2>/dev/null || true
 systemctl unmask --global cosmic-ext-bg-theme.service 2>/dev/null || true
+# systemctl unmask --global cosmic-ext-alternative-startup.service 2>/dev/null || true
 
 # Apply user service presets from system_files
 systemctl preset-all --global || true
