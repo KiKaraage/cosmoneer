@@ -77,11 +77,6 @@ systemctl preset-all --global || true
 # Configure Niri session services
 mkdir -p /usr/lib/systemd/user/niri.service.wants
 
-# Core session manager
-if [ -f /usr/lib/systemd/user/cosmic-session.service ]; then
-    ln -sf /usr/lib/systemd/user/cosmic-session.service /usr/lib/systemd/user/niri.service.wants/cosmic-session.service
-fi
-
 # COSMIC components
 if [ -f /usr/lib/systemd/user/cosmic-ext-alternative-startup.service ]; then
     ln -sf /usr/lib/systemd/user/cosmic-ext-alternative-startup.service /usr/lib/systemd/user/niri.service.wants/cosmic-ext-alternative-startup.service
