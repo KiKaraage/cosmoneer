@@ -180,24 +180,33 @@ echo "::group:: Configure ublue-brew"
 echo "Configuring ublue-brew integration..."
 
 # Fix critical symlink issue for ublue-brew
+# Create tmpfiles entry to ensure symlink is created on boot
 # The brew-setup.service doesn't create the essential symlink from
 # /home/linuxbrew/.linuxbrew to /var/home/linuxbrew/.linuxbrew
 echo "Adding symlink fix to brew-setup.service..."
-if [ -f "/usr/lib/systemd/system/brew-setup.service" ]; then
-    # Create a drop-in to add the symlink fix
-    mkdir -p /usr/lib/systemd/system/brew-setup.service.d
-    cat > /usr/lib/systemd/system/brew-setup.service.d/symlink-fix.conf <<'EOF'
-[Service]
-ExecStartPost=/usr/bin/ln -sf /var/home/linuxbrew/.linuxbrew /home/linuxbrew/.linuxbrew
-EOF
-    echo "Symlink fix added to brew-setup.service"
-else
-    echo "Warning: brew-setup.service not found, symlink fix skipped"
-fi
 
-# Enable ublue-brew services
-echo "Enabling ublue-brew services..."
-systemctl enable brew-setup.service || echo "brew-setup.service already enabled or not found"
+cat > /usr/lib/tmpfiles.d/brew-symlink.conf <<'EOF'
+# Create the essential directories for Homebrew on boot
+d /home 0755 - - -
+d /var/home 0755 - - -
+d /home/linuxbrew 0755 - - -
+
+# Create the essential symlink for Homebrew on boot
+L+ /home/linuxbrew/.linuxbrew - - - - /var/home/linuxbrew/.linuxbrew
+EOF
+
+# Create environment file to add brew to PATH
+cat > /etc/profile.d/brew.sh <<'EOF'
+# Homebrew environment setup
+if [ -d "/home/linuxbrew/.linuxbrew" ]; then
+    export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+    export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
+    export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
+fi
+EOF
+
+# Enable uupd.timer (brew-setup.service is already enabled by ublue-brew package)
+echo "Enabling uupd.timer..."
 systemctl enable uupd.timer || echo "uupd.timer already enabled or not found"
 
 # Configure uupd to disable distrobox module (following Zirconium pattern)
