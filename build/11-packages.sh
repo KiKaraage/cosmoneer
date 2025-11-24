@@ -185,17 +185,24 @@ echo "Configuring ublue-brew integration..."
 # The brew-setup.service doesn't create the essential symlink from
 # /home/linuxbrew/.linuxbrew to /var/home/linuxbrew/.linuxbrew
 echo "Adding symlink fix to brew-setup.service..."
-if [ -f "/usr/lib/systemd/system/brew-setup.service" ]; then
-    # Create a drop-in to add the symlink fix
-    mkdir -p /usr/lib/systemd/system/brew-setup.service.d
-    cat > /usr/lib/systemd/system/brew-setup.service.d/symlink-fix.conf <<'EOF'
-[Service]
-ExecStartPost=/usr/bin/ln -sf /var/home/linuxbrew/.linuxbrew /home/linuxbrew/.linuxbrew
+
+# Create tmpfiles entry to ensure symlink is created on boot
+cat > /usr/lib/tmpfiles.d/brew-symlink.conf <<'EOF'
+# Create the essential symlink for Homebrew on boot
+d /home 0755 - - -
+d /var/home 0755 - - -
+L /home/linuxbrew/.linuxbrew - - - - /var/home/linuxbrew/.linuxbrew
 EOF
-    echo "Symlink fix added to brew-setup.service"
-else
-    echo "Warning: brew-setup.service not found, symlink fix skipped"
+
+# Create environment file to add brew to PATH
+cat > /etc/profile.d/brew.sh <<'EOF'
+# Homebrew environment setup
+if [ -d "/home/linuxbrew/.linuxbrew" ]; then
+    export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+    export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
+    export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
 fi
+EOF
 
 # Enable ublue-brew services
 echo "Enabling ublue-brew services..."
