@@ -121,8 +121,6 @@ cat > /usr/lib/sysusers.d/docker.conf <<'EOF'
 g docker -
 EOF
 
-systemctl enable --global tailscaled
-
 echo "::endgroup::"
 
 echo "::group:: Package Exclusions"
@@ -214,5 +212,8 @@ sed -Ei "s/secure_path = (.*)/secure_path = \1:\/home\/linuxbrew\/.linuxbrew\/bi
 
 echo "ublue-brew configured successfully"
 echo "::endgroup::"
+
+echo "Enable Tailscale daemon service"
+systemctl enable tailscaled || echo "Can't enable Tailscale daemon service"
 
 echo "System packages, CLI tools, and COPR packages installation complete!"
