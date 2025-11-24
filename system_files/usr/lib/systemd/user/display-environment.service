@@ -3,10 +3,11 @@ Description=Import display environment and restart portals
 PartOf=graphical-session.target
 After=graphical-session.target
 Requisite=graphical-session.target
+Wants=xdg-desktop-portal-gnome.service
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'sleep 3; export WAYLAND_DISPLAY=wayland-1; export DISPLAY=:1; export XDG_SESSION_TYPE=wayland; systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true; sleep 2; /usr/lib/systemd/user/setup-portals.sh'
+ExecStart=/bin/sh -c 'sleep 3; export WAYLAND_DISPLAY=wayland-1; export DISPLAY=:1; export XDG_SESSION_TYPE=wayland; systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true; sleep 2; /usr/lib/systemd/user/setup-portals.sh "$XDG_CURRENT_DESKTOP"'
 RemainAfterExit=yes
 
 [Install]

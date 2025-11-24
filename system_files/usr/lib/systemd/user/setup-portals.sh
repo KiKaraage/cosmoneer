@@ -36,6 +36,13 @@ detect_compositor() {
     fi
     
     # Method 3: Fallback to environment variables
+    # Handle COSMIC+Niri case - if both are present, prioritize Niri for portal config
+    if [ -n "${XDG_CURRENT_DESKTOP:-}" ] && [ -n "${XDG_SESSION_DESKTOP:-}" ]; then
+        if echo "$XDG_CURRENT_DESKTOP" | grep -qi "cosmic" && echo "$XDG_SESSION_DESKTOP" | grep -qi "niri"; then
+            echo "Niri"
+            return 0
+        fi
+    fi
     echo "${XDG_CURRENT_DESKTOP:-${XDG_SESSION_DESKTOP:-Niri}}"
 }
 
@@ -58,14 +65,13 @@ setup_portals() {
             systemctl --user disable xdg-desktop-portal-gnome.service 2>/dev/null || true
             ;;
         "Niri")
-            echo "Using Niri (wlr) portal configuration"
+            echo "Using Niri (GNOME) portal configuration"
             if [ -f "$portal_config_dir/niri-portals.conf" ]; then
                 cp "$portal_config_dir/niri-portals.conf" "$user_config"
             fi
-            # Enable wlr portal service
-            systemctl --user enable xdg-desktop-portal-wlr.service 2>/dev/null || true
+            # Enable GNOME portal service for Niri
+            systemctl --user enable xdg-desktop-portal-gnome.service 2>/dev/null || true
             systemctl --user disable xdg-desktop-portal-cosmic.service 2>/dev/null || true
-            systemctl --user disable xdg-desktop-portal-gnome.service 2>/dev/null || true
             ;;
         *)
             echo "Unknown desktop '$desktop', using default GNOME configuration"
