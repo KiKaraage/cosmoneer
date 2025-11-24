@@ -180,7 +180,11 @@ echo "::group:: Configure ublue-brew"
 echo "Configuring ublue-brew integration..."
 
 # Make sure essential directories exist
-mkdir -p /home/linuxbrew /var/home/linuxbrew
+# Create parent directories first to avoid issues when creating specific user directories
+mkdir -p /var/home
+mkdir -p /home
+mkdir -p /var/home/linuxbrew
+mkdir -p /home/linuxbrew
 chown 1000:1000 /var/home/linuxbrew
 
 # Ensure the homebrew tarball exists (this should be part of the package)
