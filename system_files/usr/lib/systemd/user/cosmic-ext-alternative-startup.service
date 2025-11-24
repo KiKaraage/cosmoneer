@@ -6,9 +6,6 @@ ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
 
 [Service]
 Type=simple
-Environment=XDG_SESSION_TYPE=wayland
-Environment=COSMIC_SESSION_SOCK=%t/cosmic-session.sock
-ExecStartPre=/bin/bash -c 'mkdir -p %t && [ -S %t/cosmic-session.sock ] || ln -sf $NIRI_SOCKET %t/cosmic-session.sock || true'
 ExecStart=/usr/bin/cosmic-ext-alternative-startup
 Restart=on-failure
 RestartSec=10
