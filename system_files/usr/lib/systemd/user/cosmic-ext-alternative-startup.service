@@ -5,10 +5,11 @@ After=graphical-session.target
 ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
 
 [Service]
+Type=simple
 Environment=XDG_SESSION_TYPE=wayland
 ExecStart=/usr/bin/cosmic-ext-alternative-startup
 Restart=on-failure
-RestartSec=5
+RestartSec=10
 
 [Install]
 WantedBy=graphical-session.target
