@@ -2,8 +2,10 @@
 Description=COSMIC Background Theme Service
 Documentation=man:cosmic-ext-bg-theme(1)
 PartOf=graphical-session.target
-After=graphical-session.target
+After=graphical-session.target display-environment.service xdg-desktop-portal.service
 Requisite=graphical-session.target
+Wants=xdg-desktop-portal.service
+ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
 
 [Service]
 Type=simple
