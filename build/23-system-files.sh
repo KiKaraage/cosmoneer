@@ -74,10 +74,28 @@ systemctl unmask --global cosmic-ext-bg-theme.service 2>/dev/null || true
 # Apply user service presets from system_files
 systemctl preset-all --global || true
 
-# Configure Niri session services (waybar and cliphist)
+# Configure Niri session services
 mkdir -p /usr/lib/systemd/user/niri.service.wants
+
+# Core session manager
+if [ -f /usr/lib/systemd/user/cosmic-session.service ]; then
+    ln -sf /usr/lib/systemd/user/cosmic-session.service /usr/lib/systemd/user/niri.service.wants/cosmic-session.service
+fi
+
+# COSMIC components
+if [ -f /usr/lib/systemd/user/cosmic-ext-alternative-startup.service ]; then
+    ln -sf /usr/lib/systemd/user/cosmic-ext-alternative-startup.service /usr/lib/systemd/user/niri.service.wants/cosmic-ext-alternative-startup.service
+fi
+if [ -f /usr/lib/systemd/user/cosmic-ext-bg-theme.service ]; then
+    ln -sf /usr/lib/systemd/user/cosmic-ext-bg-theme.service /usr/lib/systemd/user/niri.service.wants/cosmic-ext-bg-theme.service
+fi
+
+# Niri utilities
 if [ -f /usr/lib/systemd/user/waybar.service ]; then
     ln -sf /usr/lib/systemd/user/waybar.service /usr/lib/systemd/user/niri.service.wants/waybar.service
+fi
+if [ -f /usr/lib/systemd/user/swayidle.service ]; then
+    ln -sf /usr/lib/systemd/user/swayidle.service /usr/lib/systemd/user/niri.service.wants/swayidle.service
 fi
 if [ -f /usr/lib/systemd/user/cliphist.service ]; then
     ln -sf /usr/lib/systemd/user/cliphist.service /usr/lib/systemd/user/niri.service.wants/cliphist.service
