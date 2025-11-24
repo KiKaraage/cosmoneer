@@ -1,8 +1,8 @@
 [Unit]
 Description=COSMIC Alternative Startup Service
 PartOf=graphical-session.target
-After=graphical-session.target display-environment.service cosmic-session.target
-Requisite=graphical-session.target
+After=cosmic-session.service display-environment.service
+Requisite=cosmic-session.service
 Wants=display-environment.service
 ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
 
