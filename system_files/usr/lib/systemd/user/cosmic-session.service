@@ -1,16 +1,15 @@
 [Unit]
 Description=COSMIC Session Manager
 Documentation=man:cosmic-session(1)
-BindsTo=graphical-session.target
-After=graphical-session-pre.target
-Before=graphical-session.target
+PartOf=graphical-session.target
+After=graphical-session.target
 ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
 
 [Service]
-Type=notify
-ExecStart=/usr/bin/cosmic-session niri
+Type=simple
+ExecStart=/usr/bin/cosmic-session
 Restart=on-failure
 RestartSec=5
 
 [Install]
-WantedBy=graphical-session-pre.target
+WantedBy=graphical-session.target

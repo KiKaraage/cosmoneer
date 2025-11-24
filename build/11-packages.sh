@@ -80,6 +80,7 @@ FEDORA_PACKAGES=(
     fontawesome-fonts
     fontawesome-fonts-web
     adwaita-icon-theme
+    wf-recorder
 )
 
 # Install all Fedora packages (bulk - safe from COPR injection)
@@ -88,11 +89,16 @@ dnf5 -y install --skip-unavailable "${FEDORA_PACKAGES[@]}"
 
 echo "::endgroup::"
 
-echo "Installing wf-recorder for screen recording..."
-dnf5 install -y wf-recorder
+echo "::group:: Install 3rd-party COPR packages"
 
-echo "Installing slurp from thrnciar/setuptools-78.1.1..."
+echo "Installing Morewaita icon theme..."
+copr_install_isolated "trixieua/morewaita-icon-theme" "morewaita-icon-theme"
+echo "Installing cliphist..."
+copr_install_isolated "zirconium/packages" "cliphist"
+echo "Installing slurp..."
 copr_install_isolated "thrnciar/setuptools-78.1.1" "slurp"
+
+echo "::endgroup::"
 
 echo "::group:: Docker CE"
 
@@ -169,9 +175,6 @@ copr_install_isolated "ublue-os/packages" \
     "uupd" \
     "ublue-os-udev-rules" \
     "ublue-bling"
-
-copr_install_isolated "trixieua/morewaita-icon-theme" "morewaita-icon-theme"
-copr_install_isolated "zirconium/packages" "cliphist"
 
 echo "::endgroup::"
 

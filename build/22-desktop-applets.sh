@@ -1,42 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# COPR Helper Functions (inlined from copr-helpers.sh)
-copr_install_isolated() {
-    local copr_name="$1"
-    shift
-    local packages=("$@")
-
-    if [[ ${#packages[@]} -eq 0 ]]; then
-        echo "ERROR: No packages specified for copr_install_isolated"
-        return 1
-    fi
-
-    repo_id="copr:copr.fedorainfracloud.org:${copr_name//\//:}"
-
-    echo "Installing ${packages[*]} from COPR $copr_name (isolated)"
-
-    dnf5 -y copr enable "$copr_name"
-    dnf5 -y copr disable "$copr_name"
-    dnf5 -y install --enablerepo="$repo_id" "${packages[@]}"
-
-    echo "Installed ${packages[*]} from $copr_name"
-}
-
-# Error handling function
-handle_error() {
-    local exit_code=$?
-    local line_number=$1
-    echo "Error occurred in script at line $line_number with exit code $exit_code"
-    echo "Current applet being processed: ${applet_name:-unknown}"
-    echo "Current working directory: $(pwd)"
-    echo "Directory contents:"
-    find . -maxdepth 2 -type f | head -20 || true
-    exit $exit_code
-}
-
-# Set up error trap
-trap 'handle_error $LINENO' ERR
+# Source helper functions
+# shellcheck source=/dev/null
+source /ctx/build/copr-helpers.sh
 
 echo "::group:: Install COSMIC Applets"
 
