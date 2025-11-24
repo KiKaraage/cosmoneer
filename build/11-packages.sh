@@ -179,34 +179,22 @@ echo "::group:: Configure ublue-brew"
 
 echo "Configuring ublue-brew integration..."
 
-# Fix critical symlink issue for ublue-brew
-# Create tmpfiles entry to ensure symlink is created on boot
-# The brew-setup.service doesn't create the essential symlink from
-# /home/linuxbrew/.linuxbrew to /var/home/linuxbrew/.linuxbrew
-echo "Adding symlink fix to brew-setup.service..."
+# Make sure essential directories exist
+mkdir -p /home/linuxbrew /var/home/linuxbrew
+chown 1000:1000 /var/home/linuxbrew
 
-cat > /usr/lib/tmpfiles.d/brew-symlink.conf <<'EOF'
-# Create the essential directories for Homebrew on boot
-d /home 0755 - - -
-d /var/home 0755 - - -
-d /home/linuxbrew 0755 - - -
-
-# Create the essential symlink for Homebrew on boot
-L+ /home/linuxbrew/.linuxbrew - - - - /var/home/linuxbrew/.linuxbrew
-EOF
-
-# Create environment file to add brew to PATH
-cat > /etc/profile.d/brew.sh <<'EOF'
-# Homebrew environment setup
-if [ -d "/home/linuxbrew/.linuxbrew" ]; then
-    export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-    export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
-    export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
+# Ensure the homebrew tarball exists (this should be part of the package)
+if [ ! -f "/usr/share/homebrew.tar.zst" ]; then
+    echo "Error: /usr/share/homebrew.tar.zst not found"
+    exit 1
 fi
-EOF
 
-# Enable uupd.timer (brew-setup.service is already enabled by ublue-brew package)
-echo "Enabling uupd.timer..."
+# Ensure the marker file does not exist so the service will run (this is part of service conditions)
+rm -f /etc/.linuxbrew
+
+# Enable services
+echo "Enabling brew-setup and uupd services..."
+systemctl enable brew-setup.service || echo "brew-setup.service already enabled"
 systemctl enable uupd.timer || echo "uupd.timer already enabled or not found"
 
 # Configure uupd to disable distrobox module (following Zirconium pattern)
@@ -216,10 +204,40 @@ if [ -f "/usr/lib/systemd/system/uupd.service" ]; then
     echo "uupd configured to disable distrobox module"
 fi
 
-# Add brew path to sudoers for system-wide access
+# Create environment file to add brew to PATH (still needed since service doesn't do this)
+cat > /etc/profile.d/brew.sh <<'EOF'
+# Homebrew environment setup
+if [ -d "/home/linuxbrew/.linuxbrew" ]; then
+    export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+    export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
+    export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
+fi
+EOF
+
+# Add brew path to sudoers for system-wide access (still needed)
 sed -Ei "s/secure_path = (.*)/secure_path = \1:\/home\/linuxbrew\/.linuxbrew\/bin/" /etc/sudoers
 
 echo "ublue-brew configured successfully"
+echo "::endgroup::"
+
+echo "::group:: Verify Brew Installation Post-Configuration"
+
+# Check that brew-setup service is enabled
+if systemctl is-enabled brew-setup.service 2>/dev/null; then
+    echo "✓ brew-setup.service is enabled"
+else
+    echo "⚠ brew-setup.service is not enabled"
+fi
+
+# Check if homebrew tarball exists
+if [ -f "/usr/share/homebrew.tar.zst" ]; then
+    echo "✓ homebrew.tar.zst exists"
+else
+    echo "⚠ homebrew.tar.zst does not exist"
+fi
+
+# The actual symlink will be created when the system boots for the first time
+echo "Note: Symlink /home/linuxbrew/.linuxbrew will be created by brew-setup.service at first boot"
 echo "::endgroup::"
 
 echo "Enable Tailscale daemon service"
