@@ -78,9 +78,17 @@ echo "::endgroup::"
 
 echo "::group:: Enable GNOME Keyring Services"
 
-# Enable GNOME Keyring services globally for all users
-systemctl enable gnome-keyring-daemon.socket || echo "Failed to enable gnome-keyring-daemon.socket"
-systemctl enable gnome-keyring-daemon.service || echo "Failed to enable gnome-keyring-daemon.service"
+# Create user preset to enable GNOME Keyring for all users
+mkdir -p /etc/systemd/user-preset.d
+cat > /etc/systemd/user-preset.d/00-gnome-keyring.preset << 'EOF'
+[Install]
+gnome-keyring-daemon.socket=yes
+gnome-keyring-daemon.service=yes
+EOF
+
+# Enable GNOME Keyring services system-wide for all users
+systemctl --global enable gnome-keyring-daemon.socket || echo "Failed to globally enable gnome-keyring-daemon.socket"
+systemctl --global enable gnome-keyring-daemon.service || echo "Failed to globally enable gnome-keyring-daemon.service"
 
 # Configure PAM for gnome-keyring integration with cosmic-greeter
 if [ -f "/etc/pam.d/cosmic-greeter" ]; then
