@@ -182,11 +182,11 @@ echo "::group:: Configure ublue-brew"
 echo "Configuring ublue-brew integration..."
 
 # Fix critical symlink issue for ublue-brew
+# Create tmpfiles entry to ensure symlink is created on boot
 # The brew-setup.service doesn't create the essential symlink from
 # /home/linuxbrew/.linuxbrew to /var/home/linuxbrew/.linuxbrew
 echo "Adding symlink fix to brew-setup.service..."
 
-# Create tmpfiles entry to ensure symlink is created on boot
 cat > /usr/lib/tmpfiles.d/brew-symlink.conf <<'EOF'
 # Create the essential symlink for Homebrew on boot
 d /home 0755 - - -
@@ -204,9 +204,8 @@ if [ -d "/home/linuxbrew/.linuxbrew" ]; then
 fi
 EOF
 
-# Enable ublue-brew services
-echo "Enabling ublue-brew services..."
-systemctl enable brew-setup.service || echo "brew-setup.service already enabled or not found"
+# Enable uupd.timer (brew-setup.service is already enabled by ublue-brew package)
+echo "Enabling uupd.timer..."
 systemctl enable uupd.timer || echo "uupd.timer already enabled or not found"
 
 # Configure uupd to disable distrobox module (following Zirconium pattern)
