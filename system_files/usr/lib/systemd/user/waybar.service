@@ -1,8 +1,7 @@
 [Unit]
 Description=Waybar
 PartOf=graphical-session.target
-After=graphical-session.target display-environment.service
-Wants=display-environment.service
+After=graphical-session.target
 ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
 
 [Service]
