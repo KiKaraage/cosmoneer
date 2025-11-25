@@ -67,9 +67,8 @@ echo "::endgroup::"
 echo "::group:: Configure User Services"
 
 # Unmask any previously masked services to allow presets
-systemctl unmask --global cosmic-ext-alternative-startup.service 2>/dev/null || true
+systemctl unmask --global cosmic-niri-session.service 2>/dev/null || true
 systemctl unmask --global cosmic-ext-bg-theme.service 2>/dev/null || true
-# systemctl unmask --global cosmic-ext-alternative-startup.service 2>/dev/null || true
 
 # Apply user service presets from system_files
 systemctl preset-all --global || true
@@ -78,9 +77,6 @@ systemctl preset-all --global || true
 mkdir -p /usr/lib/systemd/user/niri.service.wants
 
 # COSMIC components
-if [ -f /usr/lib/systemd/user/cosmic-ext-alternative-startup.service ]; then
-    ln -sf /usr/lib/systemd/user/cosmic-ext-alternative-startup.service /usr/lib/systemd/user/niri.service.wants/cosmic-ext-alternative-startup.service
-fi
 if [ -f /usr/lib/systemd/user/cosmic-ext-bg-theme.service ]; then
     ln -sf /usr/lib/systemd/user/cosmic-ext-bg-theme.service /usr/lib/systemd/user/niri.service.wants/cosmic-ext-bg-theme.service
 fi

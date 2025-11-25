@@ -6,7 +6,7 @@ ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/cosmic-session niri
+ExecStart=/usr/bin/cosmic-session cosmic-ext-alternative-startup niri
 Restart=on-failure
 RestartSec=5
 
