@@ -89,15 +89,15 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     echo "BUILD_IMAGE_TAG=${BUILD_IMAGE_TAG}" && \
     echo "BUILD_VERSION=${BUILD_VERSION}" && \
     # Run build scripts with cleanup and disk space reporting \
-    /ctx/build/00-base.sh && report_disk_space "After 00-base.sh" && \
-     BUILD_VERSION="${BUILD_VERSION}" UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" /ctx/build/01-image-id.sh && report_disk_space "After 01-image-id.sh" && \
-    dnf5 clean all && rm -rf /var/cache/dnf/* || true && report_disk_space "After cleanup (base scripts)" && \
-    /ctx/build/10-kernel-hardware.sh && report_disk_space "After 10-kernel-hardware.sh" && \
-    /ctx/build/11-packages.sh && report_disk_space "After 11-packages.sh" && \
-    dnf5 clean all && rm -rf /var/cache/dnf/* || true && report_disk_space "After cleanup (package scripts)" && \
-    /ctx/build/20-desktop.sh && report_disk_space "After 20-desktop.sh" && \
-    /ctx/build/21-desktop-config.sh && report_disk_space "After 21-desktop-config.sh" && \
-    /ctx/build/22-desktop-applets.sh && report_disk_space "After 22-desktop-applets.sh" && \
+    /ctx/build/00-base.sh && \
+     BUILD_VERSION="${BUILD_VERSION}" UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" /ctx/build/01-image-id.sh && \
+    dnf5 clean all && rm -rf /var/cache/dnf/* || true && \
+    /ctx/build/10-kernel-hardware.sh && \
+    /ctx/build/11-packages.sh && \
+    dnf5 clean all && rm -rf /var/cache/dnf/* || true && \
+    /ctx/build/20-desktop.sh && \
+    /ctx/build/21-desktop-config.sh && \
+    /ctx/build/22-desktop-applets.sh && \
     /ctx/build/23-system-files.sh && report_disk_space "After 23-system-files.sh" && \
     /ctx/build/99-cleanup.sh && report_disk_space "After 99-cleanup.sh" && \
     echo "Build scripts completed successfully" && \
