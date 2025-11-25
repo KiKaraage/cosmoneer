@@ -11,24 +11,11 @@ Scripts are named with a number prefix (e.g., `00-base.sh`, `01-image-id.sh`) an
 ### Base System
 - **`00-base.sh`** - Base system setup and core configuration
 - **`01-image-id.sh`** - Image identification and metadata
-
-### System Foundation  
-- **`10-kernel-hardware.sh`** - Kernel and hardware support packages
+- **`10-kernel-hardware.sh`** - Kernel and hardware support packages (currently disabled)
 - **`11-packages.sh`** - System packages, CLI tools, and COPR packages
-
-### Desktop Environment
-- **`20-desktop.sh`** - COSMIC desktop installation
-- **`21-desktop-config.sh`** - Niri window manager configuration
-- **`22-desktop-applets.sh`** - COSMIC applets installation
-
-### System Integration
-- **`23-system-files.sh`** - System files copying and service configuration
-
-### Additional Software
-- **`30-extras.sh`** - Additional software and tools
-
-### Finalization
-- **`99-cleanup.sh`** - Final cleanup tasks
+- **`20-desktop.sh`** - COSMIC desktop + Niri window manager installation
+- **`21-applets.sh`** - COSMIC applets installation
+- **`22-systemconf.sh`** - System files copying and service configuration
 
 ## Example Scripts
 
@@ -92,11 +79,8 @@ The Containerfile runs scripts in this exact order:
 /ctx/build/10-kernel-hardware.sh && \
 /ctx/build/11-packages.sh && \
 /ctx/build/20-desktop.sh && \
-/ctx/build/21-desktop-config.sh && \
-/ctx/build/22-desktop-applets.sh && \
-/ctx/build/23-system-files.sh && \
-/ctx/build/30-extras.sh && \
-/ctx/build/99-cleanup.sh
+/ctx/build/21-desktop-applets.sh && \
+/ctx/build/22-systemconf.sh
 ```
 
 ## Notes

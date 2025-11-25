@@ -96,10 +96,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build/11-packages.sh && \
     dnf5 clean all && rm -rf /var/cache/dnf/* || true && \
     /ctx/build/20-desktop.sh && \
-    /ctx/build/21-desktop-config.sh && \
-    /ctx/build/22-desktop-applets.sh && \
-    /ctx/build/23-system-files.sh && report_disk_space "After 23-system-files.sh" && \
-    /ctx/build/99-cleanup.sh && report_disk_space "After 99-cleanup.sh" && \
+    /ctx/build/21-applets.sh && \
+    /ctx/build/22-systemconf.sh && report_disk_space "After all scripts finished" && \
     echo "Build scripts completed successfully" && \
     # Final aggressive cleanup to reduce image size \
     dnf5 clean all && \
