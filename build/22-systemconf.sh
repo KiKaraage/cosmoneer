@@ -76,11 +76,6 @@ systemctl preset-all --global || true
 # Configure Niri session services
 mkdir -p /usr/lib/systemd/user/niri.service.wants
 
-# COSMIC components
-if [ -f /usr/lib/systemd/user/cosmic-ext-bg-theme.service ]; then
-    ln -sf /usr/lib/systemd/user/cosmic-ext-bg-theme.service /usr/lib/systemd/user/niri.service.wants/cosmic-ext-bg-theme.service
-fi
-
 # Niri utilities
 if [ -f /usr/lib/systemd/user/waybar.service ]; then
     ln -sf /usr/lib/systemd/user/waybar.service /usr/lib/systemd/user/niri.service.wants/waybar.service
