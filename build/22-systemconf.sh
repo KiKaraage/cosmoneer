@@ -73,19 +73,23 @@ systemctl unmask --global cosmic-ext-bg-theme.service 2>/dev/null || true
 # Apply user service presets from system_files
 systemctl preset-all --global || true
 
-# Configure Niri session services
-mkdir -p /usr/lib/systemd/user/niri.service.wants
+# Configure Niri session services using dynamic Wants configuration
+add_wants_niri() {
+    sed -i "s|\[Unit\]|\[Unit\]\nWants=$1|" "/usr/lib/systemd/user/niri.service"
+}
 
-# Niri utilities
-if [ -f /usr/lib/systemd/user/waybar.service ]; then
-    ln -sf /usr/lib/systemd/user/waybar.service /usr/lib/systemd/user/niri.service.wants/waybar.service
-fi
-if [ -f /usr/lib/systemd/user/swayidle.service ]; then
-    ln -sf /usr/lib/systemd/user/swayidle.service /usr/lib/systemd/user/niri.service.wants/swayidle.service
-fi
-if [ -f /usr/lib/systemd/user/cliphist.service ]; then
-    ln -sf /usr/lib/systemd/user/cliphist.service /usr/lib/systemd/user/niri.service.wants/cliphist.service
-fi
+# Add Niri dependencies
+add_wants_niri cliphist.service
+add_wants_niri swayidle.service
+add_wants_niri udiskie.service
+
+# Replace complex symlink logic with preset pattern
+cat > /usr/lib/systemd/user-preset/01-cosmoneer.preset <<'EOF'
+enable swayidle.service
+enable cliphist.service
+enable cosmic-niri-session.service
+enable gnome-keyring-daemon.socket
+EOF
 
 echo "::endgroup::"
 
