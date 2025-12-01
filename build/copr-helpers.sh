@@ -12,6 +12,10 @@ copr_install_isolated() {
     local copr_name="$1"
     shift
     local packages=("$@")
+# Check if last argument is "priority"
+    if [[ ${#packages[@]} -gt 0 && "${packages[-1]}" == "priority" ]]; then
+        unset "packages[-1]"
+    fi
 
     if [[ ${#packages[@]} -eq 0 ]]; then
         echo "ERROR: No packages specified for copr_install_isolated"
@@ -24,6 +28,9 @@ copr_install_isolated() {
 
     dnf5 -y copr enable "$copr_name"
     dnf5 -y copr disable "$copr_name"
+    
+    
+    
     dnf5 -y install --enablerepo="$repo_id" "${packages[@]}"
 
     echo "Installed ${packages[*]} from $copr_name"

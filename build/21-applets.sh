@@ -117,6 +117,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
     if ! command -v just >/dev/null 2>&1; then
         echo "Installing 'just'..."
         dnf5 install -y just
+        rm -rf /usr/share/doc/just
     fi
     
     for applet_dir in /applets/*/; do
