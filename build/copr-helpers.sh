@@ -12,6 +12,13 @@ copr_install_isolated() {
     local copr_name="$1"
     shift
     local packages=("$@")
+    local set_priority=""
+
+    # Check if last argument is "priority"
+    if [[ ${#packages[@]} -gt 0 && "${packages[-1]}" == "priority" ]]; then
+        set_priority="true"
+        unset 'packages[-1]'  # Remove "priority" from packages array
+    fi
 
     if [[ ${#packages[@]} -eq 0 ]]; then
         echo "ERROR: No packages specified for copr_install_isolated"
@@ -25,10 +32,9 @@ copr_install_isolated() {
     dnf5 -y copr enable "$copr_name"
     dnf5 -y copr disable "$copr_name"
     
-    # Ensure the repo file has proper format before adding priority
-    if [[ -f "/etc/yum.repos.d/_copr:${repo_id}.repo" ]]; then
-        # Add priority setting to the end of the file with proper formatting
-        echo -e "\n[${repo_id}]\npriority=1" >> "/etc/yum.repos.d/_copr:${repo_id}.repo"
+    # Add priority setting only if requested (needed for niri-git)
+    if [[ -n "$set_priority" ]]; then
+        echo "priority=1" | tee -a "/etc/yum.repos.d/_copr:${repo_id}.repo"
     fi
     
     dnf5 -y install --enablerepo="$repo_id" "${packages[@]}"
