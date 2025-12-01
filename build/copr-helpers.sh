@@ -24,6 +24,7 @@ copr_install_isolated() {
 
     dnf5 -y copr enable "$copr_name"
     dnf5 -y copr disable "$copr_name"
+    echo "priority=1" | tee -a "/etc/yum.repos.d/_copr:${repo_id}.repo"
     dnf5 -y install --enablerepo="$repo_id" "${packages[@]}"
 
     echo "Installed ${packages[*]} from $copr_name"
