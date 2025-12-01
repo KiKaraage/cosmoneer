@@ -51,8 +51,8 @@ echo "::endgroup::"
 
 echo "::group:: Install Niri Window Manager"
 
-# Install Niri from yalter/niri-git COPR
-copr_install_isolated "yalter/niri-git" niri
+# Install Niri from yalter/niri-git COPR (with priority to override Fedora updates)
+copr_install_isolated "yalter/niri-git" niri priority
 
 rm -rf /usr/share/doc/niri
 echo "Niri window manager installed successfully"
