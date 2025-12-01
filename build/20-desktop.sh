@@ -54,6 +54,7 @@ echo "::group:: Install Niri Window Manager"
 # Install Niri from yalter/niri-git COPR
 copr_install_isolated "yalter/niri-git" niri
 
+rm -rf /usr/share/doc/niri
 echo "Niri window manager installed successfully"
 echo "::endgroup::"
 
