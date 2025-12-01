@@ -14,10 +14,9 @@ copr_install_isolated() {
     local packages=("$@")
     local set_priority=""
 
-    # Check if last argument is "priority"
+# Check if last argument is "priority"
     if [[ ${#packages[@]} -gt 0 && "${packages[-1]}" == "priority" ]]; then
-        set_priority="true"
-        unset 'packages[-1]'  # Remove "priority" from packages array
+        unset \'packages[-1]\'  # Remove "priority" from packages array
     fi
 
     if [[ ${#packages[@]} -eq 0 ]]; then
