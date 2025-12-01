@@ -6,8 +6,6 @@ A proof-of-concept to bring COSMIC + Niri + Bluefin goodies together into a scro
 - With Nightly COSMIC **and** Nightly Niri as scrollable tiling compositor. Applets and utilities ready.
 - Updated every Monday, Wednesday, Friday midnight UTC!
 
-
-
 <img alt="Cosmoneer desktop with Bluefin's Collapse wallpaper" src=".github/assets/01-wallpaper.png" />
 
 <img alt="Cosmoneer desktop with Niri compositor, handling multiple windows horizontally in its scrolling nature" src=".github/assets/02-multitasking.jpg" />
@@ -15,11 +13,9 @@ A proof-of-concept to bring COSMIC + Niri + Bluefin goodies together into a scro
 Try it:
 - Install a Fedora Atomic variant, like [Bluefin](https://projectbluefin.io)
 - Run `sudo bootc switch ghcr.io/kikaraage/cosmoneer`
-- COSMIC + Niri Integration: After your first login, run `ujust configure-niri-cosmic` to configure COSMIC apps and keybindings inside Niri. Use `ujust show-niri-config` to review the configuration or `ujust reset-niri-config` to roll back to defaults.
+- Reboot and you;ll meet COSMIC's greeter! Chose Niri for the scroller experience, or COSMIC if you want the regular version of the DE
 
 ## About This Image
-
-
 
 | Aspects | Choices | Sources |
 |---------|-------- | ------- |
@@ -30,7 +26,17 @@ Try it:
 
 ### Benefits and Compromises
 
-Coming soon, check /issues for now. Lots of tradeoffs between cosmic-comp and niri sessions for sure, but it's worth it for me!
+- Fuzzel is installed if you want faster, more relible launcher
+- Alacrittty is installed if you want a faster terminal
+- Some non-flatpak applets are installed by default, see below
+- Compromises for Niri session:
+  - COSMIC's app list (taskbar) doesn't worked at all
+    - But Waybar is installed (and preconfigured) to show taskbar of active applications when you hover to bottom center part of your screen!
+  - Also the shortcut section on COSMIC Settings app doesn't work on Niri, you have to edit .config/niri/config.kdl and add your own screenshots
+    - (I might cook up a preconfigured kdl with middle ground between COSMIC and Niri default keybinds)
+  - COSMIC idle stuff doesn't work too
+    - But swayidle works! It's set to 10 minutes for auto screen off and 30 minutes for auto suspend
+  - and more (to be edited) 
 
 ### Applets
 
@@ -38,8 +44,7 @@ Coming soon, check /issues for now. Lots of tradeoffs between cosmic-comp and ni
 | ----------- | ----------- | ------ | ------ |
 | cosmic-ext-applet-emoji-selector | Emoji selector | Git | Working (but the emojis rendered blank) | 
 | cosmic-ext-applet-vitals | System monitoring | Git | Working |
-| cosmic-ext-applet-caffeine | Keep device idle | Git | Working (kinda, though the Niri session itself is caffeinated) |
-| cosmic-connect-applet | (Supposedly) bridging KDE Connect | Git | Not working, still template-y |
+| cosmic-ext-applet-caffeine | Keep device idle | Git | Working |
 | cosmic-ext-applet-clipboard-manager | Clipboard manager | Git | Working with no icon |
 | cosmic-ext-applet-privacy-indicator | Indicator for webcam/mic activity | GH Release (RPM) | Working (but not when wf-recorder is active) |
 | cosmic-ext-applet-ollama | Chat with local LLM via Ollama | Git | Working (but my system is too weak for it anyway) |
@@ -48,10 +53,9 @@ Coming soon, check /issues for now. Lots of tradeoffs between cosmic-comp and ni
 
 | Tool Name | Description | Source | Status |
 | --------- | ----------- | ------ | ------ |
-| cosmic-ext-alternative-startup | Making Niri session work on COSMIC | Git | Half-working (filechooser & app list/taskbar fails) |
+| cosmic-ext-alternative-startup | Making Niri session work on COSMIC | Git | Works |
 | cosmic-ext-bg-theme | Dynamic theming based on wallpaper | Git | Working |
 | wf-recorder-gui | Screenrecording app using wf-recorder | Git | Working only on Niri session |
-| prtsc-wayland | Faster screencapture utility for cosmic-comp | Git | Working (partial SS doesn't work yet) |
 
 ### Other Apps & Multimedia Support
 - **Docker CE** - Latest Docker Engine with docker-compose plugin
@@ -65,12 +69,11 @@ Coming soon, check /issues for now. Lots of tradeoffs between cosmic-comp and ni
 - Modern image format support (libjxl)
 
 ### ujust Commands (WIP)
-- `ujust configure-niri-cosmic` - Configure Niri for COSMIC integration
 - `ujust show-niri-config` - Display current Niri configuration
 - `ujust reset-niri-config` - Reset Niri to defaults
 - `ujust configure-dev-groups` - Add user to docker and libvirt groups
 
-*Last updated: 2025-11-17*
+*Last updated: 2025-12-02*
 
 ## Communities
 
@@ -78,8 +81,7 @@ Coming soon, check /issues for now. Lots of tradeoffs between cosmic-comp and ni
 - [Universal Blue Discord](https://discord.gg/WEu6BdFEtp)
 - [Zirconium](https://github.com/zirconium-dev/zirconium/) Discord for Niri talks
 - [Niri](https://github.com/YaLTeR/niri) Discord for actual Niri talks
-- [Origami Linux](https://github.com/john-holt4/Origami-Linux) Discord for COSMIC talks
-- [Pop!_OS ~~Slack~~ Mattermost](https://chat.pop-os.org/) for actual COSMIC talks, updates, complaints
+- [Pop!_OS ~~Slack~~ Mattermost](https://chat.pop-os.org/) for COSMIC talks, updates, complaints with System76 folks
 - [Fedora COSMIC Matrix](https://matrix.to/#/#cosmic:fedoraproject.org) for COSMIC talks with Ryanabx, the Fedora maintainer
 
 ## Learn More
