@@ -32,15 +32,7 @@ copr_install_isolated() {
     dnf5 -y copr enable "$copr_name"
     dnf5 -y copr disable "$copr_name"
     
-    # Add priority setting only if requested (needed for niri-git)
-    if [[ -n "$set_priority" ]]; then
-        local repo_file="/etc/yum.repos.d/_copr:${repo_id}.repo"
-        if [[ -f "$repo_file" ]]; then
-            echo "priority=1" | tee -a "$repo_file"
-        else
-            echo "Warning: Repository file $repo_file not found, skipping priority setting"
-        fi
-    fi
+    
     
     dnf5 -y install --enablerepo="$repo_id" "${packages[@]}"
 
