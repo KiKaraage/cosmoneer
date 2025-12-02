@@ -31,7 +31,7 @@ on:
           - "cosmic-ext-bg-theme"
           - "wf-recorder-gui"
           - "prtsc-wayland"
-          - "niri_window_buttons"
+          
 
 permissions:
   contents: write
@@ -81,9 +81,8 @@ jobs:
             {name: "cosmic-ext-alternative-startup", url: "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
             {name: "cosmic-ext-bg-theme", url: "https://github.com/wash2/cosmic_ext_bg_theme"},
             {name: "wf-recorder-gui", url: "https://github.com/ali205412/wf-recorder-gui.git"},
-            {name: "prtsc-wayland", url: "https://github.com/Amchik/prtsc-wayland.git"},
-            {name: "niri_window_buttons", url: "https://github.com/adelmonte/niri_window_buttons.git"}
-          ]')
+{name: "prtsc-wayland", url: "https://github.com/Amchik/prtsc-wayland.git"}
+           ]')
           echo "matrix<<EOF" >> $GITHUB_OUTPUT
           printf '%s\n' "$APPLET_JSON" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -317,21 +316,7 @@ jobs:
                 fi
             fi
 
-            # Special case for niri_window_buttons - look for specific .so file
-            if [ -z "$BINARY_NAME" ] && [ "${APPLET_NAME}" = "niri_window_buttons" ]; then
-                echo "Searching for niri_window_buttons .so file..."
-                SPECIFIC_SO_FILE="$MAIN_TARGET_DIR/release/libniri_window_buttons.so"
-                if [ -f "$SPECIFIC_SO_FILE" ]; then
-                    BINARY_NAME="$SPECIFIC_SO_FILE"
-                    echo "Found niri_window_buttons .so file: $BINARY_NAME"
-                    # For niri_window_buttons, copy .so file directly to artifact root
-                    cp "$SPECIFIC_SO_FILE" "$APPLET_ARTIFACT_DIR/libniri_window_buttons.so"
-                    echo "Copied .so file directly to artifact root"
-                else
-                    echo "Error: libniri_window_buttons.so not found in target directory"
-                    exit 1
-                fi
-            fi
+
 
             # Validate we found a binary
             if [[ -z "$BINARY_NAME" || ! -f "$BINARY_NAME" ]]; then
@@ -397,8 +382,7 @@ jobs:
                         echo "Renamed binary to prtsc-wayland"
                     fi
                     ;;
-                "niri_window_buttons"
-                    ;;
+
               esac
             else
               echo "::error:: No binary found in $MAIN_TARGET_DIR/release"
