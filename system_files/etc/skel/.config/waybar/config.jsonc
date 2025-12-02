@@ -1,13 +1,42 @@
 {
-    "layer": "top",
-    "position": "bottom",
-    "mode": "hide",
-    "modules-center": ["wlr/taskbar"],
-    "width": 2,
-    "wlr/taskbar": {
-        "format": "{icon}",
-        "icon-size": 20,
-        "tooltip-format": "{title}",
-        "on-click": "activate"
-    }
+  "layer": "top",
+  "position": "bottom",
+  "mode": "hide",
+  "modules-left": ["cffi/niri_window_buttons"],
+  "width": 2,
+  /* "wlr/taskbar": {
+      "format": "{icon}",
+      "icon-size": 20,
+      "tooltip-format": "{title}",
+      "on-click": "activate"
+  }, */
+  "cffi/niri_window_buttons": {
+    "module_path": "/usr/lib/niri_window_buttons.so",
+    "only_current_workspace": false,
+    "show_window_titles": true,
+    "icon_size": 24,
+    "icon_spacing": 6,
+    "min_button_width": 150,
+    "max_button_width": 235,
+    "click_actions": {
+      "left_click_unfocused": "focus",
+      "left_click_focused": "maximize-column",
+      "double_click": "maximize-edges",
+      "right_click": "menu",
+      "middle_click": "close",
+    },
+    "context_menu": [
+      { "label": "  Maximize Column", "action": "maximize-column" },
+      { "label": "  Maximize to Edges", "action": "maximize-edges" },
+      { "label": "󰉩  Toggle Floating", "action": "toggle-floating" },
+      { "label": "  Close Window", "action": "close" },
+    ],
+    "ignore_rules": [],
+    "notifications": {
+      "enabled": true,
+      "use_desktop_entry": true,
+      "use_fuzzy_matching": false,
+    },
+    "apps": {},
+  },
 }

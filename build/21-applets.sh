@@ -69,31 +69,44 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
         if [ -f "$zip_file" ]; then
             applet_name=$(basename "$zip_file" .zip)
             echo "Extracting $applet_name..."
-            # Convert underscores back to hyphens for directory naming consistency
-            applet_dir_name=${applet_name//_/-}
-            # Extract to temp directory first to handle nested structure
-            temp_dir="/tmp/$applet_name"
-            mkdir -p "$temp_dir"
-            unzip -q "$zip_file" -d "$temp_dir"
             
-            # Move contents up one level if there's a single nested directory
-            # ZIP contains: cosmic-ext-applet-privacy-indicator/
-            # We want: /applets/cosmic-ext-applet-privacy-indicator/
-            nested_dir=$(find "$temp_dir" -mindepth 1 -maxdepth 1 -type d | head -1)
-            if [ -n "$nested_dir" ] && [ "$(find "$temp_dir" -mindepth 1 -maxdepth 1 | wc -l)" -eq 1 ]; then
-                echo "Moving contents from nested directory..."
-                mv "$nested_dir" "/applets/$applet_dir_name"
+            # Special handling for niri_window_buttons - direct .so file
+            if [ "$applet_name" = "niri_window_buttons" ]; then
+                # Extract directly to the applet directory
+                unzip -q "$zip_file" -d "/applets/niri_window_buttons/"
+                echo "Extracted niri_window_buttons .so file directly"
             else
-                echo "No nested directory found, moving all contents..."
-                mkdir -p "/applets/$applet_dir_name"
-                mv "$temp_dir"/* "/applets/$applet_dir_name/"
+                # Convert underscores back to hyphens for directory naming consistency
+                applet_dir_name=${applet_name//_/-}
+                # Extract to temp directory first to handle nested structure
+                temp_dir="/tmp/$applet_name"
+                mkdir -p "$temp_dir"
+                unzip -q "$zip_file" -d "$temp_dir"
+                
+                # Move contents up one level if there's a single nested directory
+                # ZIP contains: cosmic-ext-applet-privacy-indicator/
+                # We want: /applets/cosmic-ext-applet-privacy-indicator/
+                nested_dir=$(find "$temp_dir" -mindepth 1 -maxdepth 1 -type d | head -1)
+                if [ -n "$nested_dir" ] && [ "$(find "$temp_dir" -mindepth 1 -maxdepth 1 | wc -l)" -eq 1 ]; then
+                    echo "Moving contents from nested directory..."
+                    mv "$nested_dir" "/applets/$applet_dir_name"
+                else
+                    echo "No nested directory found, moving all contents..."
+                    mkdir -p "/applets/$applet_dir_name"
+                    mv "$temp_dir"/* "/applets/$applet_dir_name/"
+                fi
+                rmdir "$temp_dir"
             fi
-            rmdir "$temp_dir"
             rm "$zip_file"  # Remove ZIP after extraction
             
             # Log extracted contents
             echo "Extracted files for $applet_name:"
-            if [ -d "/applets/$applet_dir_name" ]; then
+            if [ "$applet_name" = "niri_window_buttons" ]; then
+                # List .so file
+                find "/applets/niri_window_buttons" -name "*.so" -type f | while read -r so_file; do
+                    echo "  .so file: $(basename "$so_file")"
+                done
+            elif [ -d "/applets/$applet_dir_name" ]; then
                 # List binaries
                 find "/applets/$applet_dir_name" -maxdepth 2 -name "cosmic*" -type f -executable | while read -r binary; do
                     echo "  Binary: $(basename "$binary")"
@@ -384,6 +397,22 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             fi
         fi
     done
+    
+    # Special handling for niri_window_buttons (so file)
+    if [ "$applet_name" = "niri_window_buttons" ]; then
+        echo "Installing niri_window_buttons..."
+        # Look for the .so file directly in the applet directory
+        so_file=$(find "$applet_dir" -name "libniri_window_buttons.so" -type f | head -1)
+        if [ -n "$so_file" ]; then
+            # Copy to skel directory for waybar config
+            mkdir -p /etc/skel/.config/waybar/
+            cp "$so_file" /etc/skel/.config/waybar/libniri_window_buttons.so
+            echo "Copied .so file to skel directory for waybar config"
+        else
+            echo "Error: libniri_window_buttons.so not found in applet directory"
+            exit 1
+        fi
+    fi
     
     echo "Applet installation completed."
 else
