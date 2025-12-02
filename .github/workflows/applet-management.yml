@@ -443,12 +443,13 @@ jobs:
               echo "$JUSTFILE_CONTENT" | grep -E "^[a-zA-Z][a-zA-Z0-9_-]*\s*:=.*" | while IFS= read -r line; do
                 # Extract paths from variable assignments
                 # Pattern: desktop-src := 'res' / desktop
-                echo "$line" | grep -oE "'[^']*'|\"[^\"]*\"" | sed "s/['\"]//g" | while read -r path_part; do
+                echo "$line" | grep -oE "'[^']*'|\"[^\"]*\"" | sed "s/['\"]//g" > /tmp/paths.txt
+                while IFS= read -r path_part; do
                   # Skip empty strings, single quotes, and system paths
                   if [[ -n "$path_part" && "$path_part" != "'" && "$path_part" != "\"" && ! "$path_part" =~ ^/usr && ! "$path_part" =~ ^/etc && ! "$path_part" =~ ^/var ]]; then
                     copy_with_structure "$path_part" "$APPLET_ARTIFACT_DIR"
                   fi
-                done
+                done < /tmp/paths.txt
               done
 
              # Skip build-related targets and parse file references from non-build targets
