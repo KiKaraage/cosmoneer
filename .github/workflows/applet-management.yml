@@ -31,6 +31,7 @@ on:
           - "cosmic-ext-bg-theme"
           - "wf-recorder-gui"
           - "prtsc-wayland"
+          - "niri_window_buttons"
 
 permissions:
   contents: write
@@ -80,7 +81,8 @@ jobs:
             {name: "cosmic-ext-alternative-startup", url: "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
             {name: "cosmic-ext-bg-theme", url: "https://github.com/wash2/cosmic_ext_bg_theme"},
             {name: "wf-recorder-gui", url: "https://github.com/ali205412/wf-recorder-gui.git"},
-            {name: "prtsc-wayland", url: "https://github.com/Amchik/prtsc-wayland"}
+            {name: "prtsc-wayland", url: "https://github.com/Amchik/prtsc-wayland"},
+            {name: "niri_window_buttons", url: "https://github.com/adelmonte/niri_window_buttons"}
           ]')
           echo "matrix<<EOF" >> $GITHUB_OUTPUT
           printf '%s\n' "$APPLET_JSON" >> $GITHUB_OUTPUT
@@ -266,8 +268,10 @@ jobs:
             # Function to check if file is likely a binary (not source/config)
             is_binary() {
             local file="$1"
-            # Must be executable, regular file, and larger than 100KB
-            [[ -x "$file" ]] && [[ -f "$file" ]] && [[ $(stat -c%s "$file" 2>/dev/null || echo 0) -gt 102400 ]]
+            # Must be regular file and larger than 100KB
+            # For .so files, we don't require executable bit since they're shared libraries
+            [[ -f "$file" ]] && [[ $(stat -c%s "$file" 2>/dev/null || echo 0) -gt 102400 ]] && \
+            ( [[ -x "$file" ]] || [[ "$file" == *.so ]] )
             }
 
             # Search in the target/release directory
@@ -283,14 +287,14 @@ jobs:
 
             # Fallback to generic search if specific binary not found
             if [ -z "$BINARY_NAME" ]; then
-                echo "Specific binary not found, searching for any cosmic binaries..."
-                while IFS= read -r -d '' file; do
+                echo "Specific binary not found, searching for any cosmic binaries or .so files..."
+                while IFS= read -r -d \'\' file; do
                   if is_binary "$file"; then
                     BINARY_NAME="$file"
                     echo "Found binary: $BINARY_NAME"
                     break
                   fi
-                done < <(find "$MAIN_TARGET_DIR/release" -name "cosmic*" -type f -executable ! -name "*.ftl" ! -name "*.json" ! -name "*.xml" ! -name "*.toml" -print0 2>/dev/null)
+                done < <(find "$MAIN_TARGET_DIR/release" \( -name "cosmic*" -o -name "*.so" \) -type f ! -name "*.ftl" ! -name "*.json" ! -name "*.xml" ! -name "*.toml" -print0 2>/dev/null)
             fi
 
             # Special case for wf-recorder-gui - look for the actual binary name
@@ -313,18 +317,33 @@ jobs:
                 fi
             fi
 
+            # Special case for niri_window_buttons - look for specific .so file
+            if [ -z "$BINARY_NAME" ] && [ "${APPLET_NAME}" = "niri_window_buttons" ]; then
+                echo "Searching for niri_window_buttons .so file..."
+                SPECIFIC_SO_FILE="$MAIN_TARGET_DIR/release/libniri_window_buttons.so"
+                if [ -f "$SPECIFIC_SO_FILE" ]; then
+                    BINARY_NAME="$SPECIFIC_SO_FILE"
+                    echo "Found niri_window_buttons .so file: $BINARY_NAME"
+                    # For niri_window_buttons, copy .so file directly to artifact root
+                    cp "$SPECIFIC_SO_FILE" "$APPLET_ARTIFACT_DIR/libniri_window_buttons.so"
+                    echo "Copied .so file directly to artifact root"
+            else
+                echo "Error: libniri_window_buttons.so not found in target directory"
+                exit 1
+            fi
+
             # Validate we found a binary
             if [[ -z "$BINARY_NAME" || ! -f "$BINARY_NAME" ]]; then
-            echo "::error:: No cosmic binary found after build"
-            echo "::error:: All cosmic files found:"
-            find "$MAIN_TARGET_DIR/release" -name "cosmic*" -type f | head -10
-            echo "::error:: Target directory contents:"
-            ls -la "$MAIN_TARGET_DIR/release/" 2>/dev/null || echo "Cannot list $MAIN_TARGET_DIR/release"
-            echo "::error:: All executable files in $MAIN_TARGET_DIR/release:"
-            find "$MAIN_TARGET_DIR/release" -type f -executable 2>/dev/null | head -10
-            echo "::error:: File sizes in $MAIN_TARGET_DIR/release:"
-            find "$MAIN_TARGET_DIR/release" -type f -exec ls -lh {} \; 2>/dev/null | head -10
-            exit 1
+                echo "::error:: No cosmic binary found after build"
+                echo "::error:: All cosmic files found:"
+                find "$MAIN_TARGET_DIR/release" -name "cosmic*" -type f | head -10
+                echo "::error:: Target directory contents:"
+                ls -la "$MAIN_TARGET_DIR/release/" 2>/dev/null || echo "Cannot list $MAIN_TARGET_DIR/release"
+                echo "::error:: All executable files in $MAIN_TARGET_DIR/release:"
+                find "$MAIN_TARGET_DIR/release" -type f -executable 2>/dev/null | head -10
+                echo "::error:: File sizes in $MAIN_TARGET_DIR/release:"
+                find "$MAIN_TARGET_DIR/release" -type f -exec ls -lh {} \; 2>/dev/null | head -10
+                exit 1
             fi
 
            echo "Final binary: $BINARY_NAME"
@@ -348,7 +367,6 @@ jobs:
                         echo "Renamed binary to cosmic-ext-applet-ollama"
                     fi
                     ;;
-
                 "cosmic-ext-alternative-startup")
                     if [[ "$BINARY_BASENAME" != "cosmic-ext-alternative-startup" ]]; then
                         mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-ext-alternative-startup"
@@ -366,27 +384,25 @@ jobs:
                         echo "Copied desktop file to artifacts"
                     fi
                     ;;
-                 "wf-recorder-gui")
-                     # wf-recorder-gui binary was already found and copied
-                     # Just ensure desktop file is copied if it exists
-                     if [[ -f "wf-recorder-gui.desktop" ]]; then
-                         cp "wf-recorder-gui.desktop" "$APPLET_ARTIFACT_DIR/"
-                         echo "Copied desktop file to artifacts"
-                     fi
-                     ;;
-                  "prtsc-wayland")
-                      # prtsc-wayland is a standalone screenshot utility
-                      # Binary should already be found and copied above
-                      if [[ "$BINARY_BASENAME" != "prtsc-wayland" ]]; then
-                          mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/prtsc-wayland"
-                          echo "Renamed binary to prtsc-wayland"
-                      fi
-                      ;;
-            esac
-           else
-           echo "::error:: No binary found in $MAIN_TARGET_DIR/release"
-           exit 1
-           fi
+                "wf-recorder-gui")
+                    if [[ -f "wf-recorder-gui.desktop" ]]; then
+                        cp "wf-recorder-gui.desktop" "$APPLET_ARTIFACT_DIR/"
+                        echo "Copied desktop file to artifacts"
+                    fi
+                    ;;
+                "prtsc-wayland")
+                    if [[ "$BINARY_BASENAME" != "prtsc-wayland" ]]; then
+                        mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/prtsc-wayland"
+                        echo "Renamed binary to prtsc-wayland"
+                    fi
+                    ;;
+                "niri_window_buttons")
+                    ;;
+              esac
+            else
+              echo "::error:: No binary found in $MAIN_TARGET_DIR/release"
+              exit 1
+            fi
 
            # Copy justfile if it exists
            if [[ -f "justfile" ]]; then
@@ -711,8 +727,10 @@ jobs:
             # Function to check if file is likely a binary (not source/config)
             is_binary() {
             local file="$1"
-            # Must be executable, regular file, and larger than 100KB
-            [[ -x "$file" ]] && [[ -f "$file" ]] && [[ $(stat -c%s "$file" 2>/dev/null || echo 0) -gt 102400 ]]
+            # Must be regular file and larger than 100KB
+            # For .so files, we don't require executable bit since they're shared libraries
+            [[ -f "$file" ]] && [[ $(stat -c%s "$file" 2>/dev/null || echo 0) -gt 102400 ]] && \
+            ( [[ -x "$file" ]] || [[ "$file" == *.so ]] )
             }
 
             # Search in the target/release directory
@@ -728,14 +746,14 @@ jobs:
 
             # Fallback to generic search if specific binary not found
             if [ -z "$BINARY_NAME" ]; then
-                echo "Specific binary not found, searching for any cosmic binaries..."
+                echo "Specific binary not found, searching for any cosmic binaries or .so files..."
                 while IFS= read -r -d '' file; do
                   if is_binary "$file"; then
                     BINARY_NAME="$file"
                     echo "Found binary: $BINARY_NAME"
                     break
                   fi
-                done < <(find "$MAIN_TARGET_DIR/release" -name "cosmic*" -type f -executable ! -name "*.ftl" ! -name "*.json" ! -name "*.xml" ! -name "*.toml" -print0 2>/dev/null)
+                done < <(find "$MAIN_TARGET_DIR/release" \( -name "cosmic*" -o -name "*.so" \) -type f ! -name "*.ftl" ! -name "*.json" ! -name "*.xml" ! -name "*.toml" -print0 2>/dev/null)
             fi
 
            echo "Final binary: $BINARY_NAME"
@@ -808,11 +826,12 @@ jobs:
 
           if [ -z "$BINARY_NAME" ]; then
               while IFS= read -r -d '' file; do
-                if [[ -x "$file" ]] && [[ -f "$file" ]] && [[ $(stat -c%s "$file" 2>/dev/null || echo 0) -gt 102400 ]]; then
+                if [[ -f "$file" ]] && [[ $(stat -c%s "$file" 2>/dev/null || echo 0) -gt 102400 ]] && \
+                  ( [[ -x "$file" ]] || [[ "$file" == *.so ]] ); then
                   BINARY_NAME="$file"
                   break
                 fi
-              done < <(find "$MAIN_TARGET_DIR/release" -name "cosmic*" -type f -executable ! -name "*.ftl" ! -name "*.json" ! -name "*.xml" ! -name "*.toml" -print0 2>/dev/null)
+            done < <(find "$MAIN_TARGET_DIR/release" \( -name "cosmic*" -o -name "*.so" \) -type f ! -name "*.ftl" ! -name "*.json" ! -name "*.xml" ! -name "*.toml" -print0 2>/dev/null)
           fi
 
           if [[ -z "$BINARY_NAME" || ! -f "$BINARY_NAME" ]]; then
