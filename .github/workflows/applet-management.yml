@@ -71,18 +71,18 @@ jobs:
         id: applets
         run: |
           APPLET_JSON=$(jq -n '[
-            {name: "cosmic-ext-applet-emoji-selector", url: "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"},
+            {name: "cosmic-ext-applet-emoji-selector", url: "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector.git"},
             {name: "cosmic-ext-applet-vitals", url: "https://github.com/Coinio/cosmic-ext-applet-vitals.git"},
             {name: "cosmic-applet-music-player", url: "https://github.com/Ebbo/cosmic-applet-music-player.git"},
-            {name: "cosmic-ext-applet-caffeine", url: "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
+            {name: "cosmic-ext-applet-caffeine", url: "https://github.com/tropicbliss/cosmic-ext-applet-caffeine.git"},
             {name: "cosmic-connect-applet", url: "https://github.com/cosmic-utils/cosmic-connect-applet.git"},
-            {name: "cosmic-ext-applet-clipboard-manager", url: "https://github.com/cosmic-utils/clipboard-manager"},
+            {name: "cosmic-ext-applet-clipboard-manager", url: "https://github.com/cosmic-utils/clipboard-manager.git"},
             {name: "cosmic-ext-applet-ollama", url: "https://github.com/cosmic-utils/cosmic-ext-applet-ollama.git"},
             {name: "cosmic-ext-alternative-startup", url: "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
             {name: "cosmic-ext-bg-theme", url: "https://github.com/wash2/cosmic_ext_bg_theme"},
             {name: "wf-recorder-gui", url: "https://github.com/ali205412/wf-recorder-gui.git"},
-            {name: "prtsc-wayland", url: "https://github.com/Amchik/prtsc-wayland"},
-            {name: "niri_window_buttons", url: "https://github.com/adelmonte/niri_window_buttons"}
+            {name: "prtsc-wayland", url: "https://github.com/Amchik/prtsc-wayland.git"},
+            {name: "niri_window_buttons", url: "https://github.com/adelmonte/niri_window_buttons.git"}
           ]')
           echo "matrix<<EOF" >> $GITHUB_OUTPUT
           printf '%s\n' "$APPLET_JSON" >> $GITHUB_OUTPUT
@@ -271,7 +271,7 @@ jobs:
             # Must be regular file and larger than 100KB
             # For .so files, we don't require executable bit since they're shared libraries
             [[ -f "$file" ]] && [[ $(stat -c%s "$file" 2>/dev/null || echo 0) -gt 102400 ]] && \
-            ( [[ -x "$file" ]] || [[ "$file" == *.so ]] )
+            [[ -x "$file" ]] || [[ "$file" == *.so ]]
             }
 
             # Search in the target/release directory
@@ -356,25 +356,25 @@ jobs:
 
              # Rename binary to match expected applet name for special case applets
              case "${APPLET_NAME}" in
-                "cosmic-connect-applet")
+                "cosmic-connect-applet"
                     if [[ "$BINARY_BASENAME" != "cosmic-connect-applet" ]]; then
                         mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-connect-applet"
                         echo "Renamed binary to cosmic-connect-applet"
                     fi
                     ;;
-                "cosmic-ext-applet-ollama")
+                "cosmic-ext-applet-ollama"
                     if [[ "$BINARY_BASENAME" != "cosmic-ext-applet-ollama" ]]; then
                         mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-ext-applet-ollama"
                         echo "Renamed binary to cosmic-ext-applet-ollama"
                     fi
                     ;;
-                "cosmic-ext-alternative-startup")
+                "cosmic-ext-alternative-startup"
                     if [[ "$BINARY_BASENAME" != "cosmic-ext-alternative-startup" ]]; then
                         mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-ext-alternative-startup"
                         echo "Renamed binary to cosmic-ext-alternative-startup"
                     fi
                     ;;
-                "cosmic-ext-bg-theme")
+                "cosmic-ext-bg-theme"
                     if [[ "$BINARY_BASENAME" != "cosmic-ext-bg-theme" ]]; then
                         mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/cosmic-ext-bg-theme"
                         echo "Renamed binary to cosmic-ext-bg-theme"
@@ -385,19 +385,19 @@ jobs:
                         echo "Copied desktop file to artifacts"
                     fi
                     ;;
-                "wf-recorder-gui")
+                "wf-recorder-gui"
                     if [[ -f "wf-recorder-gui.desktop" ]]; then
                         cp "wf-recorder-gui.desktop" "$APPLET_ARTIFACT_DIR/"
                         echo "Copied desktop file to artifacts"
                     fi
                     ;;
-                "prtsc-wayland")
+                "prtsc-wayland"
                     if [[ "$BINARY_BASENAME" != "prtsc-wayland" ]]; then
                         mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/prtsc-wayland"
                         echo "Renamed binary to prtsc-wayland"
                     fi
                     ;;
-                "niri_window_buttons")
+                "niri_window_buttons"
                     ;;
               esac
             else
@@ -567,7 +567,7 @@ jobs:
                      echo "Copied clipboard manager symbolic icon"
                    fi
                    ;;
-                 "cosmic-ext-applet-vitals")
+                 "cosmic-ext-applet-vitals"
                    # Handle vitals icon pattern
                    VITALS_APPID="dev.eidolon.cosmic-ext-applet-vitals"
                    if [[ -f "res/icons/${VITALS_APPID}.svg" ]]; then
@@ -576,7 +576,7 @@ jobs:
                      echo "Copied vitals icon"
                    fi
                    ;;
-                 "cosmic-connect-applet")
+                 "cosmic-connect-applet"
                    # Handle multi-size icons for connect applet
                    CONNECT_APPID="com.example.CosmicAppletTemplate"
                    if [[ -d "res/icons/hicolor" ]]; then
@@ -587,7 +587,7 @@ jobs:
                      find "$APPLET_ARTIFACT_DIR/share/icons/hicolor" -name "${CONNECT_APPID}.svg" -exec bash -c 'mv "$1" "${1//CosmicAppletTemplate/cosmic-connect-applet}"' _ {} \;
                    fi
                    ;;
-                 "cosmic-applet-music-player")
+                 "cosmic-applet-music-player"
                    # Handle multi-size icons for music player
                    MUSIC_APPID="com.github.MusicPlayer"
                    if [[ -d "res/icons/hicolor" ]]; then
@@ -596,7 +596,7 @@ jobs:
                      echo "Copied music player multi-size icons"
                    fi
                    ;;
-                 "cosmic-ext-applet-caffeine")
+                 "cosmic-ext-applet-caffeine"
                    # Handle dual icons for caffeine applet
                    CAFFEINE_APPID="net.tropicbliss.CosmicExtAppletCaffeine"
                    if [[ -f "res/${CAFFEINE_APPID}-empty.svg" ]]; then
@@ -783,7 +783,7 @@ jobs:
            fi
 
             popd >/dev/null
-          ) || {
+          || {
             echo "::error:: Build timed out or failed for ${APPLET_NAME}"
             exit 1
           }
