@@ -327,9 +327,10 @@ jobs:
                     # For niri_window_buttons, copy .so file directly to artifact root
                     cp "$SPECIFIC_SO_FILE" "$APPLET_ARTIFACT_DIR/libniri_window_buttons.so"
                     echo "Copied .so file directly to artifact root"
-            else
-                echo "Error: libniri_window_buttons.so not found in target directory"
-                exit 1
+                else
+                    echo "Error: libniri_window_buttons.so not found in target directory"
+                    exit 1
+                fi
             fi
 
             # Validate we found a binary
