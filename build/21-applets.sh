@@ -398,14 +398,14 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
         fi
     done
     
-    # Special handling for niri_window_buttons (so file)
+    # Special handling for niri_window_buttons (so file) - moved inside loop
     if [ "$applet_name" = "niri_window_buttons" ]; then
         echo "Installing niri_window_buttons..."
         
-        # Always try to download from GitHub Actions artifact first
+        # Always try to download from GitHub Actions first
         if command -v gh &> /dev/null; then
             echo "Fetching latest niri_window_buttons from GitHub Actions..."
-            LATEST_ARTIFACT_URL=$(gh run list --limit 1 --workflow "niri_window_buttons Update" --json artifacts --jq '.[0].artifacts[] | select(.name == "niri_window_buttons") | .archive_download_url' | head -1)
+            LATEST_ARTIFACT_URL=$(gh run list --limit 1 --workflow "niri_window_buttons Update" --json artifacts --jq '.[0].artifacts[] | select(.name == "niri_window_buttons") | .archive_download_url' | head-1)
             
             if [ -n "$LATEST_ARTIFACT_URL" ]; then
                 echo "Downloading from GitHub Actions..."
@@ -416,14 +416,14 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 unzip -q artifact.zip
                 
                 # Look for the .so file
-                so_file=$(find . -name "libniri_window_buttons.so" -type f | head -1)
+                so_file=$(find . -name "libniri_window_buttons.so" -type f | head-1)
                 if [ -n "$so_file" ]; then
                     # Copy to skel directory for waybar config
                     mkdir -p /etc/skel/.config/waybar/
                     cp "$so_file" /etc/skel/.config/waybar/libniri_window_buttons.so
                     echo "✅ Downloaded and copied .so file to skel directory for waybar config"
                     
-                    # Log extracted contents (similar to other applets)
+                    # Log extracted contents
                     echo "Extracted files for niri_window_buttons:"
                     echo "  .so file: $(basename "$so_file")"
                 else

@@ -36,12 +36,12 @@ update-niriwaybar:
         if [ -f "libniri_window_buttons.so" ]; then
             # Backup existing version if present
             if [ -f "$HOME/.config/waybar/libniri_window_buttons.so" ]; then
-                cp "$HOME/.config/waybar/libniri_window_buttons.so" "$HOME/.config/waybar/libniri_window_buttons.so.backup-$(date +%Y%m%d-%H%M%S)"
+                cp "$HOME/.config/waybar/libniri_window_buttons.so" "$HOME/.config/waybar/libniri_window_buttons.so.bak"
             fi
 
-            # Install the new version
-            install -Dm755 libniri_window_buttons.so "$HOME/.config/waybar/libniri_window_buttons.so"
-            echo "✅ Installed niri-window-buttons to $HOME/.config/waybar/"
+            # Copy from skel directory (copied during build)
+            cp /etc/skel/.config/waybar/libniri_window_buttons.so "$HOME/.config/waybar/libniri_window_buttons.so"
+            echo "✅ Copied niri-window-buttons to $HOME/.config/waybar/"
             echo "💡 Restart waybar or log out/in to apply changes"
         else
             echo "❌ Error: libniri_window_buttons.so not found in artifact"
