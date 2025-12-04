@@ -29,16 +29,16 @@ update-niriwaybar:
         echo "Downloading latest niri-window-buttons..."
         TEMP_DIR=$(mktemp -d)
         cd "$TEMP_DIR"
-        
+   
         gh api "$LATEST_ARTIFACT_URL" > artifact.zip
         unzip artifact.zip
-        
+   
         if [ -f "libniri_window_buttons.so" ]; then
             # Backup existing version if present
             if [ -f "$HOME/.config/waybar/libniri_window_buttons.so" ]; then
                 cp "$HOME/.config/waybar/libniri_window_buttons.so" "$HOME/.config/waybar/libniri_window_buttons.so.backup-$(date +%Y%m%d-%H%M%S)"
             fi
-            
+       
             # Install the new version
             install -Dm755 libniri_window_buttons.so "$HOME/.config/waybar/libniri_window_buttons.so"
             echo "✅ Installed niri-window-buttons to $HOME/.config/waybar/"
@@ -47,7 +47,7 @@ update-niriwaybar:
             echo "❌ Error: libniri_window_buttons.so not found in artifact"
             exit 1
         fi
-        
+   
         cd /
         rm -rf "$TEMP_DIR"
     else
