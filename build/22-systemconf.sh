@@ -43,10 +43,6 @@ systemctl preset systemd-resolved.service
 # Enable firewalld
 systemctl enable firewalld
 
-echo "::endgroup::"
-echo "::group:: Container Registry Configuration"
-
-# Add container registry configuration
 echo "Configuring container registries..."
 mkdir -p /etc/containers/registries.d
 tee /etc/containers/registries.d/cosmoneer.yaml <<'EOF'
@@ -55,30 +51,24 @@ docker:
         tls: false
 EOF
 
-echo "::endgroup::"
-echo "::group:: Copy System Files"
-
-# Copy system files to container
+echo "Copy system files to container..."
 if [ -d "/ctx/system_files" ]; then
     rsync -rvK /ctx/system_files/ /
 fi
 
 echo "::endgroup::"
+
+
 echo "::group:: Configure User Services"
 
-# Unmask any previously masked services to allow presets
+# Unmask cosmic-niri-session, then apply user service presets from system_files
 systemctl unmask --global cosmic-niri-session.service 2>/dev/null || true
-systemctl unmask --global cosmic-ext-bg-theme.service 2>/dev/null || true
-
-# Apply user service presets from system_files
 systemctl preset-all --global || true
 
-# Configure Niri session services using dynamic Wants configuration
+# Configure Niri session services using dynamic wants configs
 add_wants_niri() {
     sed -i "s|\[Unit\]|\[Unit\]\nWants=$1|" "/usr/lib/systemd/user/niri.service"
 }
-
-# Add Niri dependencies
 add_wants_niri cliphist.service
 add_wants_niri swayidle.service
 add_wants_niri udiskie.service
@@ -92,6 +82,7 @@ enable gnome-keyring-daemon.socket
 EOF
 
 echo "::endgroup::"
+
 
 echo "::group:: System Configuration Files"
 
