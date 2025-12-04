@@ -72,7 +72,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             
             # Special handling for niri_window_buttons - direct .so file
             if [ "$applet_name" = "niri_window_buttons" ]; then
-                # Extract directly to the applet directory
+                # Extract directly to the applet directory (consistent with download method)
                 unzip -q "$zip_file" -d "/applets/niri_window_buttons/"
                 echo "Extracted niri_window_buttons .so file directly"
             else
@@ -401,15 +401,44 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
     # Special handling for niri_window_buttons (so file)
     if [ "$applet_name" = "niri_window_buttons" ]; then
         echo "Installing niri_window_buttons..."
-        # Look for the .so file directly in the applet directory
-        so_file=$(find "$applet_dir" -name "libniri_window_buttons.so" -type f | head -1)
-        if [ -n "$so_file" ]; then
-            # Copy to skel directory for waybar config
-            mkdir -p /etc/skel/.config/waybar/
-            cp "$so_file" /etc/skel/.config/waybar/libniri_window_buttons.so
-            echo "Copied .so file to skel directory for waybar config"
+        
+        # Always try to download from GitHub Actions artifact first
+        if command -v gh &> /dev/null; then
+            echo "Fetching latest niri_window_buttons from GitHub Actions..."
+            LATEST_ARTIFACT_URL=$(gh run list --limit 1 --workflow "niri_window_buttons Update" --json artifacts --jq '.[0].artifacts[] | select(.name == "niri_window_buttons") | .archive_download_url' | head -1)
+            
+            if [ -n "$LATEST_ARTIFACT_URL" ]; then
+                echo "Downloading from GitHub Actions..."
+                mkdir -p "/applets/niri_window_buttons"
+                cd "/applets/niri_window_buttons"
+                
+                gh api "$LATEST_ARTIFACT_URL" > artifact.zip
+                unzip -q artifact.zip
+                
+                # Look for the .so file
+                so_file=$(find . -name "libniri_window_buttons.so" -type f | head -1)
+                if [ -n "$so_file" ]; then
+                    # Copy to skel directory for waybar config
+                    mkdir -p /etc/skel/.config/waybar/
+                    cp "$so_file" /etc/skel/.config/waybar/libniri_window_buttons.so
+                    echo "✅ Downloaded and copied .so file to skel directory for waybar config"
+                    
+                    # Log extracted contents (similar to other applets)
+                    echo "Extracted files for niri_window_buttons:"
+                    echo "  .so file: $(basename "$so_file")"
+                else
+                    echo "❌ Error: libniri_window_buttons.so not found in downloaded artifact"
+                    exit 1
+                fi
+                
+                rm -f artifact.zip
+                cd /
+            else
+                echo "❌ Error: Could not find niri_window_buttons artifact from GitHub Actions"
+                exit 1
+            fi
         else
-            echo "Error: libniri_window_buttons.so not found in applet directory"
+            echo "❌ Error: gh CLI not available, cannot download niri_window_buttons"
             exit 1
         fi
     fi
