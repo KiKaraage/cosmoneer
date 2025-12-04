@@ -31,7 +31,6 @@ on:
           - "cosmic-ext-bg-theme"
           - "wf-recorder-gui"
           - "prtsc-wayland"
-          
 
 permissions:
   contents: write
@@ -81,7 +80,7 @@ jobs:
             {name: "cosmic-ext-alternative-startup", url: "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
             {name: "cosmic-ext-bg-theme", url: "https://github.com/wash2/cosmic_ext_bg_theme"},
             {name: "wf-recorder-gui", url: "https://github.com/ali205412/wf-recorder-gui.git"},
-{name: "prtsc-wayland", url: "https://github.com/Amchik/prtsc-wayland.git"}
+            {name: "prtsc-wayland", url: "https://github.com/Amchik/prtsc-wayland.git"}
            ]')
           echo "matrix<<EOF" >> $GITHUB_OUTPUT
           printf '%s\n' "$APPLET_JSON" >> $GITHUB_OUTPUT
