@@ -4,6 +4,8 @@ name: niri_window_buttons Update
 on:
   schedule:
     - cron: '0 2 * * 0'  # Weekly on Sunday at 2 AM UTC
+  push:
+    branches: [main]
   workflow_dispatch:
   repository_dispatch:
     types: [build-niri-window-buttons]
@@ -100,6 +102,7 @@ jobs:
             cargo build-essential git gcc g++ make \
             libxkbcommon-dev libpipewire-0.3-dev libdbus-1-dev \
             libssl-dev pkg-config libwayland-dev ca-certificates \
+            libglib2.0-dev libgtk-3-dev \
             just unzip
 
       - name: Build niri_window_buttons
