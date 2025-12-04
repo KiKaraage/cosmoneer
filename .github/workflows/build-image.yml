@@ -249,13 +249,25 @@ jobs:
           total_count=$((total_count + 1))
           echo "Looking for workflow run: Build $applet_name"
 
-          # Try applet-management.yml first with more lenient matching
-          run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
-
-          # If not found in applet-management.yml, try build-applets.yml
+          # Try applet-management.yml first with more lenient matching, get latest run
+          run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" --limit 100 --json databaseId,conclusion,status,name,createdAt -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | sort_by(.createdAt) | reverse | .[0].databaseId" | head-1)
+  
+          # If not found in applet-management.yml, try build-applets.yml, get latest run
           if [ -z "$run_id" ]; then
               echo "No successful run found in applet-management.yml, checking build-applets.yml..."
-              run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
+              run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" --limit 100 --json databaseId,conclusion,status,name,createdAt -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | sort_by(.createdAt) | reverse | .[0].databaseId" | head-1)
+          fi
+  
+          # If still not found, try niri-window-buttons.yml workflow specifically, get latest run
+          if [ -z "$run_id" ]; then
+              echo "No specific run found, checking niri-window-buttons.yml workflow..."
+              run_id=$(gh run list --repo "$GH_REPO" --workflow "niri-window-buttons.yml" --limit 100 --json databaseId,conclusion,status,name,createdAt -q ".[] | select(.status == \"completed\" and (.name | contains(\"niri_window_buttons Update\"))) | sort_by(.createdAt) | reverse | .[0].databaseId" | head-1)
+          fi
+  
+          # If still not found, try any workflow that might contain the applet name, get latest run
+          if [ -z "$run_id" ]; then
+              echo "No specific run found, checking any workflow with $applet_name..."
+              run_id=$(gh run list --repo "$GH_REPO" --limit 100 --json databaseId,conclusion,status,name,createdAt -q ".[] | select(.status == \"completed\" and (.name | contains(\"$applet_name\"))) | sort_by(.createdAt) | reverse | .[0].databaseId" | head-1)
           fi
 
           # If still not found, try niri-window-buttons.yml workflow specifically
