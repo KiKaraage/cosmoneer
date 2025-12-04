@@ -1,0 +1,15 @@
+[Unit]
+Description=COSMIC Notifications Service
+After=graphical.target
+Requires=cosmic-session.target
+After=cosmic-niri-session.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/cosmic-notifications
+Environment=DAEMON_NOTIFICATIONS_FD=3
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=cosmic-session.target
