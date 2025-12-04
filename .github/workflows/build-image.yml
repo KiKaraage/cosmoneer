@@ -237,7 +237,7 @@ jobs:
             {"name": "cosmic-ext-bg-theme", "url": "https://github.com/wash2/cosmic_ext_bg_theme"},
             {"name": "wf-recorder-gui", "url": "https://github.com/ali205412/wf-recorder-gui.git"},
             {"name": "prtsc-wayland", "url": "https://github.com/Amchik/prtsc-wayland"},
-            {"name": "niri_window_buttons", "url": "https://github.com/pop-os/cosmic-ext-applet-niri-window-buttons"}
+            {"name": "niri_window_buttons", "url": "https://github.com/adelmonte/niri_window_buttons"}
           ]'
 
           echo "Searching for specific applet workflow runs in $GH_REPO"
