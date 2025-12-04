@@ -4,6 +4,57 @@
 #####################
 ## Commands for configuring Niri with COSMIC
 
+# Install or update niri-window-buttons
+[group('System')]
+update-niriwaybar:
+    #!/usr/bin/bash
+    source /usr/lib/ujust/ujust.sh
+
+    echo "Installing/updating niri-window-buttons..."
+
+    # Check if gh CLI is available
+    if ! command -v gh &> /dev/null; then
+        echo "Error: gh CLI not found. Please install it first:"
+        echo "  flatpak install flathub com.github.cli.cli"
+        exit 1
+    fi
+
+    # Create waybar config directory if it doesn't exist
+    mkdir -p "$HOME/.config/waybar"
+
+    # Download the latest artifact
+    LATEST_ARTIFACT_URL=$(gh run list --limit 1 --workflow "niri_window_buttons Update" --json artifacts --jq '.[0].artifacts[] | select(.name == "niri_window_buttons") | .archive_download_url' | head -1)
+
+    if [ -n "$LATEST_ARTIFACT_URL" ]; then
+        echo "Downloading latest niri-window-buttons..."
+        TEMP_DIR=$(mktemp -d)
+        cd "$TEMP_DIR"
+
+        gh api "$LATEST_ARTIFACT_URL" > artifact.zip
+        unzip artifact.zip
+
+        if [ -f "libniri_window_buttons.so" ]; then
+            # Backup existing version if present
+            if [ -f "$HOME/.config/waybar/libniri_window_buttons.so" ]; then
+                cp "$HOME/.config/waybar/libniri_window_buttons.so" "$HOME/.config/waybar/libniri_window_buttons.so.bak"
+            fi
+
+            # Copy from skel directory (copied during build)
+            cp /etc/skel/.config/waybar/libniri_window_buttons.so "$HOME/.config/waybar/libniri_window_buttons.so"
+            echo "✅ Copied niri-window-buttons to $HOME/.config/waybar/"
+            echo "💡 Restart waybar or log out/in to apply changes"
+        else
+            echo "❌ Error: libniri_window_buttons.so not found in artifact"
+            exit 1
+        fi
+
+        cd /
+        rm -rf "$TEMP_DIR"
+    else
+        echo "❌ Error: Could not find niri-window-buttons artifact"
+        exit 1
+    fi
+
 # Configure Niri for COSMIC integration (minimal additive approach)
 [group('System')]
 configure-niri-cosmic:

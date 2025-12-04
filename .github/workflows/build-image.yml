@@ -236,7 +236,8 @@ jobs:
             {"name": "cosmic-ext-alternative-startup", "url": "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
             {"name": "cosmic-ext-bg-theme", "url": "https://github.com/wash2/cosmic_ext_bg_theme"},
             {"name": "wf-recorder-gui", "url": "https://github.com/ali205412/wf-recorder-gui.git"},
-            {"name": "prtsc-wayland", "url": "https://github.com/Amchik/prtsc-wayland"}
+            {"name": "prtsc-wayland", "url": "https://github.com/Amchik/prtsc-wayland"},
+            {"name": "niri_window_buttons", "url": "https://github.com/adelmonte/niri_window_buttons"}
           ]'
 
           echo "Searching for specific applet workflow runs in $GH_REPO"
@@ -257,10 +258,16 @@ jobs:
               run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
           fi
 
+          # If still not found, try niri-window-buttons.yml workflow specifically
+          if [ -z "$run_id" ]; then
+              echo "No specific run found, checking niri-window-buttons.yml workflow..."
+              run_id=$(gh run list --repo "$GH_REPO" --workflow "niri-window-buttons.yml" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"niri_window_buttons Update\"))) | .databaseId" | head-1)
+          fi
+
           # If still not found, try any workflow that might contain the applet name
           if [ -z "$run_id" ]; then
               echo "No specific run found, checking any workflow with $applet_name..."
-              run_id=$(gh run list --repo "$GH_REPO" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"$applet_name\"))) | .databaseId" | head -1)
+              run_id=$(gh run list --repo "$GH_REPO" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"$applet_name\"))) | .databaseId" | head-1)
           fi
 
           if [ -n "$run_id" ]; then

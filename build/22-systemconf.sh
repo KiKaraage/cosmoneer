@@ -72,6 +72,7 @@ add_wants_niri() {
 add_wants_niri cliphist.service
 add_wants_niri swayidle.service
 add_wants_niri udiskie.service
+add_wants_niri cosmic-notifications.service
 
 # Replace complex symlink logic with preset pattern
 cat > /usr/lib/systemd/user-preset/01-cosmoneer.preset <<'EOF'
@@ -79,6 +80,7 @@ enable swayidle.service
 enable cliphist.service
 enable cosmic-niri-session.service
 enable gnome-keyring-daemon.socket
+enable cosmic-notifications.service
 EOF
 
 echo "::endgroup::"
