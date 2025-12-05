@@ -257,12 +257,11 @@ jobs:
                         -q ".[] | select(.status == \"completed\" and (.name | contains(\"niri_window_buttons Update\"))) | .databaseId" \
                         2>/dev/null | head -1)
           else
-              # Try applet-management.yml first with more lenient matching,
-              # get latest run
+              # Try applet-management.yml first with more lenient matching, get latest run
               run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" \
-            --limit 100 --json databaseId,conclusion,status,name,createdAt \
-            -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" \
-            2>/dev/null | head -1)
+              --limit 100 --json databaseId,conclusion,status,name,createdAt \
+              -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" \
+              2>/dev/null | head -1)
 
           # If not found in applet-management.yml, try build-applets.yml,
           # get latest run
@@ -272,16 +271,6 @@ jobs:
                 --limit 100 --json databaseId,conclusion,status,name,createdAt \
                 -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" \
                 2>/dev/null | head -1)
-          fi
-
-          # If still not found, try niri-window-buttons.yml workflow
-          # specifically
-          if [ -z "$run_id" ]; then
-              echo "No specific run found, checking niri-window-buttons.yml workflow..."
-              run_id=$(gh run list --repo "$GH_REPO" --workflow ".github/workflows/niri-window-buttons.yml" \
-                    --limit 100 --json databaseId,conclusion,status,name,createdAt \
-                    -q ".[] | select(.status == \"completed\" and (.name | contains(\"niri_window_buttons Update\"))) | .databaseId" \
-                    2>/dev/null | head -1)
           fi
 
           # If still not found, try any workflow that might contain the
