@@ -245,59 +245,77 @@ jobs:
           total_count=0
 
           # For each applet, find most recent successful workflow run by name
-          echo "$APPLET_JSON" | jq -r '.[] | .name' | while read -r applet_name; do
-          total_count=$((total_count + 1))
-          echo "Looking for workflow run: Build $applet_name"
+          applet_count=$(echo "$APPLET_JSON" | jq -r '.[] | .name' | wc -l)
+          total_count=$applet_count
+          echo "$APPLET_JSON" | jq -r '.[] | .name' | while IFS= read -r applet_name; do
+            echo "Looking for workflow run: Build $applet_name"
 
-          # Try applet-management.yml first with more lenient matching
-          run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
+            # Special handling for niri_window_buttons - check niri-window-buttons.yml first
+            if [ "$applet_name" = "niri_window_buttons" ]; then
+              echo "Checking niri-window-buttons.yml workflow for niri_window_buttons..."
+              run_id=$(gh run list --repo "$GH_REPO" --workflow ".github/workflows/niri-window-buttons.yml" \
+                        --limit 100 --json databaseId,conclusion,status,name,createdAt \
+                        -q ".[] | select(.status == \"completed\" and (.name | contains(\"niri_window_buttons Update\"))) | .databaseId" \
+                        2>/dev/null | head -1)
+            else
+              # Try applet-management.yml first with more lenient matching, get latest run
+              run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" \
+                       --limit 100 --json databaseId,conclusion,status,name,createdAt \
+                       -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" \
+                       2>/dev/null | head -1)
 
-          # If not found in applet-management.yml, try build-applets.yml
-          if [ -z "$run_id" ]; then
-              echo "No successful run found in applet-management.yml, checking build-applets.yml..."
-              run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" | head -1)
-          fi
+              # If not found in applet-management.yml, try build-applets.yml,
+              # get latest run
+              if [ -z "$run_id" ]; then
+                echo "No successful run found in applet-management.yml, checking build-applets.yml..."
+                run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" \
+                         --limit 100 --json databaseId,conclusion,status,name,createdAt \
+                         -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" \
+                         2>/dev/null | head -1)
+              fi
 
-          # If still not found, try niri-window-buttons.yml workflow specifically
-          if [ -z "$run_id" ]; then
-              echo "No specific run found, checking niri-window-buttons.yml workflow..."
-              run_id=$(gh run list --repo "$GH_REPO" --workflow "niri-window-buttons.yml" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"niri_window_buttons Update\"))) | .databaseId" | head-1)
-          fi
+              # If still not found, try any workflow that might contain the
+              # applet name
+              if [ -z "$run_id" ]; then
+                echo "No specific run found, checking any workflow with $applet_name..."
+                run_id=$(gh run list --repo "$GH_REPO" --limit 100 --json databaseId,conclusion,status,name,createdAt \
+                         -q ".[] | select(.status == \"completed\" and (.name | contains(\"$applet_name\"))) | .databaseId" \
+                         2>/dev/null | head -1)
+              fi
+            fi
 
-          # If still not found, try any workflow that might contain the applet name
-          if [ -z "$run_id" ]; then
-              echo "No specific run found, checking any workflow with $applet_name..."
-              run_id=$(gh run list --repo "$GH_REPO" --limit 100 --json databaseId,conclusion,status,name -q ".[] | select(.status == \"completed\" and (.name | contains(\"$applet_name\"))) | .databaseId" | head-1)
-          fi
-
-          if [ -n "$run_id" ]; then
+            if [ -n "$run_id" ]; then
               echo "Found successful run $run_id for '$applet_name'"
 
               # Download all artifacts from this specific applet's workflow run
               echo "Downloading artifacts from '$applet_name' run $run_id"
               if gh run download --repo "$GH_REPO" "$run_id" --dir "/tmp/applet-artifacts" 2>/dev/null; then
-              echo "✓ Successfully downloaded artifacts for $applet_name"
-              success_count=$((success_count + 1))
+                echo "✓ Successfully downloaded artifacts for $applet_name"
+                success_count=$((success_count + 1))
               else
-              echo "⚠ No artifacts found for $applet_name in run $run_id"
+                echo "⚠ No artifacts found for $applet_name in run $run_id"
               fi
-          else
+            else
               echo "⚠ No successful workflow run found for '$applet_name'"
+            fi
+          done
+
+          echo ""
+          echo "=== Download Summary ==="
+          if [ "$applet_count" -gt 0 ]; then
+            echo "Successfully downloaded: $success_count/$applet_count applets"
+          else
+            echo "Successfully downloaded: $success_count/0 applets"
           fi
-              done
+          echo "Final downloaded artifacts:"
+          ls -la /tmp/applet-artifacts/ || echo "No artifacts directory contents"
 
-              echo ""
-              echo "=== Download Summary ==="
-              echo "Successfully downloaded: $success_count/$total_count applets"
-              echo "Final downloaded artifacts:"
-              ls -la /tmp/applet-artifacts/ || echo "No artifacts directory contents"
-
-              # Create empty artifacts directory if nothing was downloaded to avoid build failures
-              if [ ! -d "/tmp/applet-artifacts" ] || [ -z "$(ls -A /tmp/applet-artifacts 2>/dev/null)" ]; then
-                echo "Creating empty artifacts directory to avoid build failures"
-                mkdir -p /tmp/applet-artifacts
-                touch /tmp/applet-artifacts/.empty
-              fi
+          # Create empty artifacts directory if nothing was downloaded to avoid build failures
+          if [ ! -d "/tmp/applet-artifacts" ] || [ -z "$(ls -A /tmp/applet-artifacts 2>/dev/null)" ]; then
+            echo "Creating empty artifacts directory to avoid build failures"
+            mkdir -p /tmp/applet-artifacts
+            touch /tmp/applet-artifacts/.empty
+          fi
         continue-on-error: true
 
       - name: Copy Artifacts to Build Context
