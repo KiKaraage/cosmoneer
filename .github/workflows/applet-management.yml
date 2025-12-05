@@ -24,7 +24,6 @@ on:
           - "cosmic-ext-applet-vitals"
           - "cosmic-applet-music-player"
           - "cosmic-ext-applet-caffeine"
-          - "cosmic-connect-applet"
           - "cosmic-ext-applet-clipboard-manager"
           - "cosmic-ext-applet-ollama"
           - "cosmic-ext-alternative-startup"
@@ -74,7 +73,6 @@ jobs:
             {name: "cosmic-ext-applet-vitals", url: "https://github.com/Coinio/cosmic-ext-applet-vitals.git"},
             {name: "cosmic-applet-music-player", url: "https://github.com/Ebbo/cosmic-applet-music-player.git"},
             {name: "cosmic-ext-applet-caffeine", url: "https://github.com/tropicbliss/cosmic-ext-applet-caffeine.git"},
-            {name: "cosmic-connect-applet", url: "https://github.com/cosmic-utils/cosmic-connect-applet.git"},
             {name: "cosmic-ext-applet-clipboard-manager", url: "https://github.com/cosmic-utils/clipboard-manager.git"},
             {name: "cosmic-ext-applet-ollama", url: "https://github.com/cosmic-utils/cosmic-ext-applet-ollama.git"},
             {name: "cosmic-ext-alternative-startup", url: "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},

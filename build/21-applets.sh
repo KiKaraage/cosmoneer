@@ -232,10 +232,6 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             binary_name=$(basename "$binary")
             # Use proper applet names instead of hash-suffixed binaries
                 case "$applet_name" in
-                    "cosmic-connect-applet")
-                        install -Dm0755 "$binary" "/usr/bin/cosmic-connect-applet"
-                        echo "Installed binary: cosmic-connect-applet (from $binary_name)"
-                        ;;
                     "cosmic-ext-applet-ollama")
                         install -Dm0755 "$binary" "/usr/bin/cosmic-ext-applet-ollama"
                         echo "Installed binary: cosmic-ext-applet-ollama (from $binary_name)"
