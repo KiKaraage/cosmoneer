@@ -42,10 +42,10 @@ else
     # Get the latest release assets
     RELEASE_API_URL="https://api.github.com/repos/D-Brox/cosmic-ext-applet-privacy-indicator/releases/latest"
     echo "Fetching latest release assets from: $RELEASE_API_URL"
-    
+
     # Find the first x86_64 RPM in the latest release assets
     RPM_URL=$(curl -s "$RELEASE_API_URL" | grep -o '"browser_download_url": "[^"]*x86_64\.rpm"' | sed 's/"browser_download_url": "//;s/"$//' | head -1)
-    
+
     if [ -n "$RPM_URL" ]; then
         echo "Found x86_64 RPM: $RPM_URL"
         if curl -L -f -o cosmic-ext-applet-privacy-indicator.rpm "$RPM_URL"; then
@@ -63,13 +63,13 @@ fi
 # Install applets from artifacts if they exist
 if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
     echo "Installing applets from artifacts..."
-    
+
     # Extract ZIP files if present
     for zip_file in /applets/*.zip; do
         if [ -f "$zip_file" ]; then
             applet_name=$(basename "$zip_file" .zip)
             echo "Extracting $applet_name..."
-            
+
             # Special handling for niri_window_buttons - direct .so file
             if [ "$applet_name" = "niri_window_buttons" ]; then
                 # Extract directly to the applet directory (consistent with download method)
@@ -82,7 +82,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 temp_dir="/tmp/$applet_name"
                 mkdir -p "$temp_dir"
                 unzip -q "$zip_file" -d "$temp_dir"
-                
+
                 # Move contents up one level if there's a single nested directory
                 # ZIP contains: cosmic-ext-applet-privacy-indicator/
                 # We want: /applets/cosmic-ext-applet-privacy-indicator/
@@ -98,7 +98,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 rmdir "$temp_dir"
             fi
             rm "$zip_file"  # Remove ZIP after extraction
-            
+
             # Log extracted contents
             echo "Extracted files for $applet_name:"
             if [ "$applet_name" = "niri_window_buttons" ]; then
@@ -125,27 +125,27 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             fi
         fi
     done
-    
+
     # Install 'just' if not available
     if ! command -v just >/dev/null 2>&1; then
         echo "Installing 'just'..."
         dnf5 install -y just
         rm -rf /usr/share/doc/just
     fi
-    
+
     for applet_dir in /applets/*/; do
         if [ -d "$applet_dir" ]; then
             applet_name=$(basename "$applet_dir")
             echo "Installing applet: $applet_name"
-            
-            
-            
+
+
+
             cd "$applet_dir"
-            
+
             echo "Current directory contents:"
             find . -maxdepth 2 -type f | head -20 || true
             echo ""
-            
+
             # Install binary if present (in target/release/ or root)
             # First try to find the expected binary name
             expected_binary_name="$applet_name"
@@ -174,7 +174,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
 
             echo "Searching for binary: $expected_binary_name in current directory..."
             binary=$(search_binary "." "$expected_binary_name")
-            
+
             if [ -z "$binary" ]; then
                 echo "Binary not found, trying justfile name variable..."
                 # Try to find from justfile name variable
@@ -220,13 +220,13 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     echo "No justfile found"
                 fi
             fi
-            
+
             if [ -z "$binary" ]; then
                 echo "Not found with justfile name, searching for any cosmic binary..."
                 # Fallback to generic cosmic search
                 binary=$(search_binary "." "cosmic*")
             fi
-            
+
             if [ -n "$binary" ]; then
             echo "Found binary: $binary"
             binary_name=$(basename "$binary")
@@ -260,7 +260,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                         else
                             echo "wf-recorder-gui binary not found in artifacts"
                         fi
-                        
+
                         # Install desktop file if present
                         if [ -f "wf-recorder-gui.desktop" ]; then
                             install -Dm644 wf-recorder-gui.desktop /usr/share/applications/wf-recorder-gui.desktop
@@ -277,7 +277,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                          else
                              echo "cosmic-ext-bg-theme binary not found in artifacts"
                          fi
-                         
+
                          # Install desktop file if present
                          if [ -f "res/cosmic.ext.BgTheme.desktop" ]; then
                              install -Dm644 res/cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
@@ -304,7 +304,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                         ;;
                 esac
             fi
-            
+
             # Only run just install if we didn't already install a binary
             if [ -f "justfile" ] && just --list 2>/dev/null | grep -q "install" && [ -z "$binary" ]; then
                 echo "Running just install for $applet_name"
@@ -314,19 +314,33 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 bash install.sh
             else
                 echo "No justfile install target or install.sh found, performing manual installation..."
-                
-                # Manual installation based on preserved structure
-                
-                # Install desktop files, checking multiple directories
-                desktop_files=""
-                if [ -d "res" ]; then
-                    desktop_files=$(find res -name "*.desktop" -type f 2>/dev/null)
-                fi
-                if [ -z "$desktop_files" ] && [ -d "data" ]; then
-                    desktop_files=$(find data -name "*.desktop" -type f 2>/dev/null)
-                fi
-                if [ -z "$desktop_files" ]; then
-                    desktop_files=$(find . -maxdepth 1 -name "*.desktop" -type f 2>/dev/null)
+
+                # Special handling for niri_window_buttons - copy .so file to waybar config
+                if [ "$applet_name" = "niri_window_buttons" ]; then
+                    echo "Installing niri_window_buttons..."
+                    so_file=$(find . -name "libniri_window_buttons.so" -type f | head -1)
+                    if [ -n "$so_file" ]; then
+                        mkdir -p /etc/skel/.config/waybar/
+                        cp "$so_file" /etc/skel/.config/waybar/libniri_window_buttons.so
+                        echo "  Installed libniri_window_buttons.so to /etc/skel/.config/waybar/"
+                    else
+                        echo "Error: libniri_window_buttons.so not found in current directory"
+                        exit 1
+                    fi
+                else
+                    # Manual installation based on preserved structure
+
+                    # Install desktop files, checking multiple directories
+                    desktop_files=""
+                    if [ -d "res" ]; then
+                        desktop_files=$(find res -name "*.desktop" -type f 2>/dev/null)
+                    fi
+                    if [ -z "$desktop_files" ] && [ -d "data" ]; then
+                        desktop_files=$(find data -name "*.desktop" -type f 2>/dev/null)
+                    fi
+                    if [ -z "$desktop_files" ]; then
+                        desktop_files=$(find . -maxdepth 1 -name "*.desktop" -type f 2>/dev/null)
+                    fi
                 fi
                 if [ -n "$desktop_files" ]; then
                     echo "Installing desktop files..."
@@ -341,7 +355,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 else
                     echo "No desktop files found for $applet_name"
                 fi
-                
+
                 # Install metainfo files, prioritizing res/ over root to avoid duplicates
                 metainfo_files=""
                 if [ -d "res" ]; then
@@ -357,7 +371,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                         echo "  Installed metainfo file: $(basename "$metainfo_file")"
                     done
                 fi
-                
+
                 # Install icons from their original structure
                 if [ -d "res/icons" ]; then
                     echo "Installing icons from res/icons..."
@@ -374,7 +388,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                         echo "  Installed icon: $relative_path"
                     done
                 fi
-                
+
                 # Install i18n files from their original structure
                 if [ -d "i18n-json" ]; then
                     echo "Installing i18n files..."
@@ -384,7 +398,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                         echo "  Installed i18n file: $relative_path"
                     done
                 fi
-                
+
                 # Install schema files if present
                 if [ -d "data/schema" ]; then
                     echo "Installing schema files..."
@@ -397,24 +411,24 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             fi
         fi
     done
-    
+
     # Special handling for niri_window_buttons (so file) - moved inside loop
     if [ "$applet_name" = "niri_window_buttons" ]; then
         echo "Installing niri_window_buttons..."
-        
+
         # Always try to download from GitHub Actions first
         if command -v gh &> /dev/null; then
             echo "Fetching latest niri_window_buttons from GitHub Actions..."
             LATEST_ARTIFACT_URL=$(gh run list --limit 1 --workflow "niri_window_buttons Update" --json artifacts --jq '.[0].artifacts[] | select(.name == "niri_window_buttons") | .archive_download_url' | head-1)
-            
+
             if [ -n "$LATEST_ARTIFACT_URL" ]; then
                 echo "Downloading from GitHub Actions..."
                 mkdir -p "/applets/niri_window_buttons"
                 cd "/applets/niri_window_buttons"
-                
+
                 gh api "$LATEST_ARTIFACT_URL" > artifact.zip
                 unzip -q artifact.zip
-                
+
                 # Look for the .so file
                 so_file=$(find . -name "libniri_window_buttons.so" -type f | head-1)
                 if [ -n "$so_file" ]; then
@@ -422,7 +436,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     mkdir -p /etc/skel/.config/waybar/
                     cp "$so_file" /etc/skel/.config/waybar/libniri_window_buttons.so
                     echo "✅ Downloaded and copied .so file to skel directory for waybar config"
-                    
+
                     # Log extracted contents
                     echo "Extracted files for niri_window_buttons:"
                     echo "  .so file: $(basename "$so_file")"
@@ -430,7 +444,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     echo "❌ Error: libniri_window_buttons.so not found in downloaded artifact"
                     exit 1
                 fi
-                
+
                 rm -f artifact.zip
                 cd /
             else
@@ -442,7 +456,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             exit 1
         fi
     fi
-    
+
     echo "Applet installation completed."
 else
     echo "No applet artifacts found, skipping applet installation."

@@ -245,8 +245,9 @@ jobs:
           total_count=0
 
           # For each applet, find most recent successful workflow run by name
+          applet_count=$(echo "$APPLET_JSON" | jq -r '.[] | .name' | wc -l)
+          total_count=$applet_count
           echo "$APPLET_JSON" | jq -r '.[] | .name' | while IFS= read -r applet_name; do
-            total_count=$((total_count + 1))
             echo "Looking for workflow run: Build $applet_name"
 
             # Special handling for niri_window_buttons - check niri-window-buttons.yml first
@@ -301,7 +302,11 @@ jobs:
 
           echo ""
           echo "=== Download Summary ==="
-          echo "Successfully downloaded: $success_count/$total_count applets"
+          if [ "$applet_count" -gt 0 ]; then
+            echo "Successfully downloaded: $success_count/$applet_count applets"
+          else
+            echo "Successfully downloaded: $success_count/0 applets"
+          fi
           echo "Final downloaded artifacts:"
           ls -la /tmp/applet-artifacts/ || echo "No artifacts directory contents"
 
