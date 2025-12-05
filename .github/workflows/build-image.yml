@@ -245,7 +245,7 @@ jobs:
           total_count=0
 
           # For each applet, find most recent successful workflow run by name
-          echo "$APPLET_JSON" | jq -r '.[] | .name' | while read -r applet_name; do
+          echo "$APPLET_JSON" | jq -r '.[] | .name' | while IFS= read -r applet_name; do
           total_count=$((total_count + 1))
           echo "Looking for workflow run: Build $applet_name"
 
@@ -296,7 +296,7 @@ jobs:
           else
               echo "⚠ No successful workflow run found for '$applet_name'"
           fi
-              done
+          done
 
               echo ""
               echo "=== Download Summary ==="
