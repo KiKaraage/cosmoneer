@@ -56,10 +56,15 @@ jobs:
             https://api.github.com/repos/adelmonte/niri_window_buttons/releases/latest | \
             jq -r '.tag_name // empty')
           
-          if [ -n "$LATEST_RELEASE" ]; then
+          if [ -n "$LATEST_RELEASE" ] && [ "$LATEST_RELEASE" != "$CURRENT_VERSION" ]; then
             echo "Latest release: $LATEST_RELEASE"
             echo "has_update=true" >> $GITHUB_OUTPUT
             echo "new_version=$LATEST_RELEASE" >> $GITHUB_OUTPUT
+            echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          elif [ -n "$LATEST_RELEASE" ]; then
+            echo "Latest release: $LATEST_RELEASE (same as current)"
+            echo "has_update=false" >> $GITHUB_OUTPUT
+            echo "new_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
             echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           else
             # Fallback to checking HEAD commit if no releases
@@ -89,7 +94,7 @@ jobs:
     name: Build niri_window_buttons
     runs-on: ubuntu-24.04
     needs: check-update
-    if: needs.check-update.outputs.has_update == 'true' && github.event_name != 'pull_request'
+    if: (needs.check-update.outputs.has_update == 'true' || github.event_name == 'workflow_dispatch') && github.event_name != 'pull_request'
 
     steps:
       - name: Checkout Repository

@@ -113,8 +113,40 @@ jobs:
             fi
 
             echo "::group:: Checking ${APPLET_NAME}"
-            LATEST_COMMIT=$(git ls-remote "${APPLET_URL}" HEAD | awk '{print $1}')
-            CURRENT_COMMIT=$(jq -r ".[\"${APPLET_NAME}\"] // \"\"" build/applet-versions.json)
+
+            # Check for releases first, fallback to commits
+            if [ "${APPLET_NAME}" = "wf-recorder-gui" ] || [ "${APPLET_NAME}" = "niri_window_buttons" ]; then
+              # For version-based applets, check GitHub releases
+              LATEST_RELEASE=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                https://api.github.com/repos/$(echo "${APPLET_URL}" | sed 's|https://github.com/||' | sed 's/\.git$//')/releases/latest | \
+                jq -r '.tag_name // empty')
+
+              if [ -n "$LATEST_RELEASE" ]; then
+                LATEST_VERSION="$LATEST_RELEASE"
+                CURRENT_VERSION=$(jq -r ".[\"${APPLET_NAME}\"] // \"\"" build/applet-versions.json)
+                echo "Current version: $CURRENT_VERSION"
+                echo "Latest release: $LATEST_VERSION"
+
+                if [ "$LATEST_VERSION" != "$CURRENT_VERSION" ]; then
+                  echo "Update available: $CURRENT_VERSION -> $LATEST_VERSION"
+                  UPDATE_VERSION="$LATEST_VERSION"
+                else
+                  echo "Already up to date"
+                  echo "::endgroup::"
+                  continue
+                fi
+              else
+                # Fallback to commit checking if no releases
+                LATEST_COMMIT=$(git ls-remote "${APPLET_URL}" HEAD | awk '{print $1}')
+                CURRENT_COMMIT=$(jq -r ".[\"${APPLET_NAME}\"] // \"\"" build/applet-versions.json)
+                UPDATE_VERSION="$LATEST_COMMIT"
+              fi
+            else
+              # For commit-based applets, use commit checking
+              LATEST_COMMIT=$(git ls-remote "${APPLET_URL}" HEAD | awk '{print $1}')
+              CURRENT_COMMIT=$(jq -r ".[\"${APPLET_NAME}\"] // \"\"" build/applet-versions.json)
+              UPDATE_VERSION="$LATEST_COMMIT"
+            fi
 
             # Check if this applet has a successful build (artifact exists)
             if echo "$SUCCESSFUL_APPLETS" | grep -wq "$APPLET_NAME"; then
@@ -123,7 +155,17 @@ jobs:
               HAS_ARTIFACT=false
             fi
 
-            if [ "${FORCE_CHECK}" != "true" ] && [ "${HAS_ARTIFACT}" == "true" ] && [ "${LATEST_COMMIT}" == "${CURRENT_COMMIT}" ]; then
+            # Determine if update is needed
+            NEEDS_UPDATE=false
+            if [ "${FORCE_CHECK}" = "true" ]; then
+              NEEDS_UPDATE=true
+            elif [ "${HAS_ARTIFACT}" = "false" ]; then
+              NEEDS_UPDATE=true
+            elif [ -n "${UPDATE_VERSION:-}" ] && [ "${UPDATE_VERSION}" != "${CURRENT_COMMIT:-${CURRENT_VERSION:-}}" ]; then
+              NEEDS_UPDATE=true
+            fi
+
+            if [ "$NEEDS_UPDATE" = "false" ]; then
               echo "${APPLET_NAME} is up to date and has artifact. Skipping."
               echo "::endgroup::"
               continue
@@ -133,7 +175,7 @@ jobs:
             CHANGES_MADE=true
 
             # Update version
-            jq ".[\"${APPLET_NAME}\"] = \"${LATEST_COMMIT}\"" build/applet-versions.json > applet-versions.tmp && mv applet-versions.tmp build/applet-versions.json
+            jq ".[\"${APPLET_NAME}\"] = \"${UPDATE_VERSION}\"" build/applet-versions.json > applet-versions.tmp && mv applet-versions.tmp build/applet-versions.json
 
             # Add to build list
             APPLETS_TO_BUILD=$(echo "$APPLETS_TO_BUILD" | jq ". + [{name: \"${APPLET_NAME}\", url: \"${APPLET_URL}\"}]")

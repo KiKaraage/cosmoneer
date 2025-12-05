@@ -7,7 +7,8 @@
   "cosmic-ext-applet-clipboard-manager": "f74b562a09e88e8d20ee0b9c5ab8cade8e4edbdb",
   "cosmic-ext-applet-ollama": "227df9d4b3d505d23ec5a3d3eef1197c24c96fb0",
   "cosmic-ext-alternative-startup": "8ceda00197c7ec0905cf1dccdc2d67d738e45417",
-  "wf-recorder-gui": "6958fbf69803042e12e1aa93dc3bfe0255173026",
+  "wf-recorder-gui": "0.4.0",
   "cosmic-ext-bg-theme": "884c3501458a1952e4c009fcc2fadf4e19014a2a",
-  "prtsc-wayland": "70948dc948be43d3d1435582154aa6f4d492ce56"
+  "prtsc-wayland": "70948dc948be43d3d1435582154aa6f4d492ce56",
+  "niri_window_buttons": "0.2.0"
 }
