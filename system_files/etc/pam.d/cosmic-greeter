@@ -15,6 +15,7 @@ password   optional   pam_gnome_keyring.so use_authtok
 
 session    required   pam_limits.so
 session    required   pam_unix.so
+session    required   pam_env.so user_readenv=1
 session    optional   pam_gnome_keyring.so auto_start
 session    optional   pam_motd.so
 session    optional   pam_mail.so standard
