@@ -130,13 +130,6 @@ EOF
 
 echo "::endgroup::"
 
-echo "::group:: Install OpenCode Desktop"
-
-echo "Installing latest OpenCode Desktop RPM..."
-dnf5 install -y https://github.com/sst/opencode/releases/download/latest/opencode-desktop-linux-x86_64.rpm
-
-echo "::endgroup::"
-
 echo "::group:: Package Exclusions"
 
 # Packages to exclude - common to all versions
@@ -257,5 +250,16 @@ echo "::endgroup::"
 
 echo "Enable Tailscale daemon service"
 systemctl enable tailscaled || echo "Can't enable Tailscale daemon service"
+
+echo "::group:: Install OpenCode Desktop"
+
+echo "Installing latest OpenCode Desktop RPM..."
+# Download and install to handle GitHub redirects properly
+cd /tmp
+curl -L -o opencode-desktop.rpm "https://github.com/sst/opencode/releases/latest/download/opencode-desktop-linux-x86_64.rpm"
+dnf5 install -y ./opencode-desktop.rpm
+rm -f opencode-desktop.rpm
+
+echo "::endgroup::"
 
 echo "System packages, CLI tools, and COPR packages installation complete!"
