@@ -19,6 +19,7 @@ echo "::group:: Fedora Packages (Bulk Installation)"
 FEDORA_PACKAGES=(
     # Development Tools
     make
+    jq
     python3-pip
     python3-pygit2
     git-credential-libsecret
@@ -126,6 +127,13 @@ systemctl preset docker.service docker.socket
 cat > /usr/lib/sysusers.d/docker.conf <<'EOF'
 g docker -
 EOF
+
+echo "::endgroup::"
+
+echo "::group:: Install OpenCode Desktop"
+
+echo "Installing latest OpenCode Desktop RPM..."
+dnf5 install -y https://github.com/sst/opencode/releases/download/latest/opencode-desktop-linux-x86_64.rpm
 
 echo "::endgroup::"
 
