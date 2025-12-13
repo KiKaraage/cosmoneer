@@ -31,7 +31,7 @@ copr_install_isolated() {
     
     
     
-    dnf5 -y install --enablerepo="$repo_id" "${packages[@]}"
+    dnf5 -y install --enablerepo="$repo_id" "${packages[@]}" --skip-unavailable
 
     echo "Installed ${packages[*]} from $copr_name"
 }
