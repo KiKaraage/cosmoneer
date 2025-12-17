@@ -12,6 +12,7 @@ set -eoux pipefail
 # shellcheck source=/dev/null
 source /ctx/build/copr-helpers.sh
 
+echo "===$(basename "$0")==="
 echo "::group:: Kernel Version Management"
 
 # Set kernel and akmods flavor from build args
@@ -24,10 +25,10 @@ echo "Target kernel version: $KERNEL"
 if [ -n "$KERNEL" ]; then
     echo "Removing existing kernel packages..."
     rpm --erase --nodeps kernel kernel-core kernel-modules kernel-modules-extra || true
-    
+
     echo "Installing kernel version: $KERNEL"
     dnf5 install -y "kernel-$KERNEL" "kernel-core-$KERNEL" "kernel-modules-$KERNEL" "kernel-modules-extra-$KERNEL"
-    
+
     echo "Locking kernel version to prevent updates..."
     dnf5 versionlock add "kernel-$KERNEL" "kernel-core-$KERNEL" "kernel-modules-$KERNEL" "kernel-modules-extra-$KERNEL"
 fi

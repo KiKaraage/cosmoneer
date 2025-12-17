@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "::group:: ===$(basename "$0")==="
+echo "===$(basename "$0")==="
 
 set -xeuo pipefail
 
@@ -79,5 +79,3 @@ echo "IMAGE_VERSION=\"${VERSION}\"" >> /usr/lib/os-release
 
 # Fix issues caused by ID no longer being fedora
 sed -i "s|^EFIDIR=.*|EFIDIR=\"fedora\"|" /usr/sbin/grub2-switch-to-blscfg
-
-echo "::endgroup::"

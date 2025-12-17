@@ -8,6 +8,7 @@ set -eoux pipefail
 # This script configures essential system services for Cosmoneer
 ###############################################################################
 
+echo "===$(basename "$0")==="
 echo "::group:: System Services Configuration"
 
 echo "Configuring essential system services..."
