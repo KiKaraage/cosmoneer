@@ -2,6 +2,8 @@
 
 echo "===$(basename "$0")==="
 
+echo "::group:: Add Image Identity"
+
 set -xeuo pipefail
 
 IMAGE_PRETTY_NAME="Cosmoneer"
@@ -79,3 +81,6 @@ echo "IMAGE_VERSION=\"${VERSION}\"" >> /usr/lib/os-release
 
 # Fix issues caused by ID no longer being fedora
 sed -i "s|^EFIDIR=.*|EFIDIR=\"fedora\"|" /usr/sbin/grub2-switch-to-blscfg
+
+echo "::endgroup::"
+echo "Image ID successfully applied!"
