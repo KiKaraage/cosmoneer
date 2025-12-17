@@ -262,7 +262,9 @@ dnf5 install -y ./oc.rpm
 rm -f oc.rpm
 
 echo "Installing latest Wave Terminal RPM..."
-curl -L -o wave.rpm "https://github.com/wavetermdev/waveterm/releases/latest/download/[^]*waveterm-linux-x86_64[^"]*\.rpm[^"]*"
+# Get the latest Wave Terminal release RPM URL
+WAVE_URL=$(curl -s "https://api.github.com/repos/wavetermdev/waveterm/releases/latest" | grep "browser_download_url.*waveterm-linux-x86_64.*\.rpm" | cut -d '"' -f 4)
+curl -L -o wave.rpm "$WAVE_URL"
 dnf5 install -y ./wave.rpm
 rm -f wave.rpm
 
