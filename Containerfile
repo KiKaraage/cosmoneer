@@ -6,12 +6,12 @@ COPY system_files /system_files
 ARG APPLET_ARTIFACTS_DIR=./applets-artifacts
 COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts
 
+FROM ghcr.io/ublue-os/base-main:43
+
 # Build args: image tag (YYMMDD or YYMMDD.x format) and
 # full version string for image (YYMMDD or YYMMDD.x or PR.YYMMDD)
 ARG BUILD_IMAGE_TAG=daily
 ARG BUILD_VERSION=daily
-
-FROM ghcr.io/ublue-os/base-main:43
 LABEL org.opencontainers.image.description="A scroller desktop image with COSMIC, Niri and Bluefin goodies together"
 
 ### MODIFICATIONS - the following RUN directive does all the things required to run scripts as recommended.
