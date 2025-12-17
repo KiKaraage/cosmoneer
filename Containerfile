@@ -60,7 +60,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     # Final aggressive cleanup to reduce image size
     dnf5 clean all && \
     rm -rf /var/tmp/* /tmp/* /var/log/* /var/cache/dnf/* /usr/share/doc/* /usr/share/man/* /usr/share/info/* && \
-    echo "Build scripts completed successfully" && \
+    echo "Build scripts completed successfully" && \ \
 
 ### LINTING - Verify final image and contents are correct.
 
