@@ -88,18 +88,23 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     echo "Running build scripts..." && \
     echo "BUILD_IMAGE_TAG=${BUILD_IMAGE_TAG}" && \
     echo "BUILD_VERSION=${BUILD_VERSION}" && \
-    # Run build scripts with cleanup and disk space reporting \
-    /ctx/build/00-base.sh && \
-     BUILD_VERSION="${BUILD_VERSION}" UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" /ctx/build/01-image-id.sh && \
-    dnf5 clean all && rm -rf /var/cache/dnf/* || true && \
-    /ctx/build/10-kernel-hardware.sh && \
-    /ctx/build/11-packages.sh && \
-    dnf5 clean all && rm -rf /var/cache/dnf/* || true && \
-    /ctx/build/20-desktop.sh && \
-    /ctx/build/21-applets.sh && \
-    /ctx/build/22-systemconf.sh && report_disk_space "After all scripts finished" && \
-    echo "Build scripts completed successfully" && \
-    # Final aggressive cleanup to reduce image size \
+
+    # Base image with identification
+    /ctx/build/0-base.sh && \
+     BUILD_VERSION="${BUILD_VERSION}" UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" /ctx/build/1-image-id.sh && \
+    dnf5 clean all && rm -rf /var/cache/dnf/* && \
+
+    # Hardware & packages
+    /ctx/build/2-kernel-hardware.sh && \
+    /ctx/build/3-packages.sh && \
+    dnf5 clean all && rm -rf /var/cache/dnf/* && \
+
+    # Desktops, applets & system configs
+    /ctx/build/4-desktop.sh && \
+    /ctx/build/5-applets.sh && \
+    /ctx/build/6-systemconf.sh && \
+
+    # Final aggressive cleanup to reduce image size
     dnf5 clean all && \
     rm -rf /var/tmp/* /tmp/* /var/log/* /var/cache/dnf/* /usr/share/doc/* /usr/share/man/* /usr/share/info/* || true && \
     report_disk_space "Final state after all cleanup"
