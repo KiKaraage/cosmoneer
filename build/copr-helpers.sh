@@ -12,6 +12,7 @@ copr_install_isolated() {
     local copr_name="$1"
     shift
     local packages=("$@")
+    local repo_id
 # Check if last argument is "priority"
     if [[ ${#packages[@]} -gt 0 && "${packages[-1]}" == "priority" ]]; then
         unset "packages[-1]"

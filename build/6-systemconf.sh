@@ -8,6 +8,7 @@ set -eoux pipefail
 # This script configures essential system services for Cosmoneer
 ###############################################################################
 
+echo "===$(basename "$0")==="
 echo "::group:: System Services Configuration"
 
 echo "Configuring essential system services..."
@@ -92,14 +93,14 @@ echo "::group:: System Configuration Files"
 mkdir -p /usr/lib/sysusers.d
 mkdir -p /usr/lib/tmpfiles.d
 
-# Temporary directories for applications
-# Note: %u template variables don't work in tmpfiles.d during container build
-# These directories will be created dynamically at user session startup
+# Essential tmpfiles.d entries
 tee /usr/lib/tmpfiles.d/cosmoneer.conf <<'EOF'
 # Type Path Mode UID GID Age Argument
-# User-specific temp directories - created at session startup
-d /run/user/1000/tmp 0700 1000 1000 - -
-d /run/user/1000/cliphist 0700 1000 1000 - -
+# Essential system directories that aren't created by packages
+L /var/lib/greetd/.config/systemd/user/xdg-desktop-portal.service - - - - /dev/null
+d /var/lib/AccountsService 0775 root root - -
+d /var/lib/AccountsService/icons 0775 root root - -
+d /var/lib/AccountsService/users 0700 root root - -
 EOF
 
 echo "::endgroup::"

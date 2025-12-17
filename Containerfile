@@ -1,80 +1,32 @@
-# Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
 COPY build /build
 COPY custom /custom
 COPY system_files /system_files
 
-# Copy applet artifacts if available (handle missing directory gracefully)
 ARG APPLET_ARTIFACTS_DIR=./applets-artifacts
 COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts
 
-# Build image tag (YYMMDD or YYMMDD.x format)
-ARG BUILD_IMAGE_TAG=daily
-
-# Full version string for image (YYMMDD or YYMMDD.x or PR.YYMMDD)
-ARG BUILD_VERSION=daily
-
-###############################################################################
-# PROJECT NAME CONFIGURATION
-###############################################################################
-# Name: cosmoneer
-###############################################################################
-
-# Base Image
 FROM ghcr.io/ublue-os/base-main:43
 
-# Re-declare ARGs for this stage
+# Build args: image tag (YYMMDD or YYMMDD.x format) and
+# full version string for image (YYMMDD or YYMMDD.x or PR.YYMMDD)
 ARG BUILD_IMAGE_TAG=daily
 ARG BUILD_VERSION=daily
-
-# Image metadata to override base image description
 LABEL org.opencontainers.image.description="A scroller desktop image with COSMIC, Niri and Bluefin goodies together"
 
-## Other possible base images include:
-# FROM ghcr.io/ublue-os/bazzite:latest
-# FROM ghcr.io/ublue-os/bluefin-nvidia:stable
-#
-# ... and so on, here are more base images
-# Universal Blue Images: https://github.com/orgs/ublue-os/packages
-# Fedora base image: quay.io/fedora/fedora-bootc:41
-# CentOS base images: quay.io/centos-bootc/centos-bootc:stream10
+### MODIFICATIONS - the following RUN directive does all the things required to run scripts as recommended.
 
-### /opt
-## Some bootable images, like Fedora, have /opt symlinked to /var/opt, in order to
-## make it mutable/writable for users. However, some packages write files to this directory,
-## thus its contents might be wiped out when bootc deploys an image, making it troublesome for
-## some packages. Eg, google-chrome, docker-desktop.
-##
-## Uncomment the following line if one desires to make /opt immutable and be able to be used
-## by the package manager.
-
-# RUN rm /opt && mkdir /opt
-
-### MODIFICATIONS
-## make modifications desired in your image and install packages by modifying the build scripts
-## the following RUN directive does all the things required to run scripts as recommended.
-## Scripts are run in numerical order (10-build.sh, 20-example.sh, etc.)
-
+RUN rm /opt && mkdir /opt
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
-    set -e && \
-    # Disk space reporting function \
-    report_disk_space() { \
-        echo "=== DISK SPACE REPORT: $1 ===" && \
-        echo "Root filesystem usage:" && \
-        df -h / && \
-        echo "Largest directories in /:" && \
-        du -sh /* 2>/dev/null | sort -hr | head -10 && \
-        echo "Package cache size:" && \
-        du -sh /var/cache/dnf 2>/dev/null || echo "No dnf cache found" && \
-        echo "================================="; \
-    } && \
-    # Aggressive cleanup before build to maximize space \
+    set -euo pipefail && \
+
+    # Aggressive cleanup before build to maximize space
     dnf5 clean all && \
-    rm -rf /var/cache/dnf/* /var/log/* /tmp/* || true && \
-    report_disk_space "Initial state" && \
+    rm -rf /var/cache/dnf/* /var/log/* /tmp/* && \
+
     echo "Setting up applets directory..." && \
     mkdir -p /applets && \
     if [ -d "/ctx/applets-artifacts" ] && [ "$(ls -A /ctx/applets-artifacts 2>/dev/null)" ]; then \
@@ -85,27 +37,33 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     else \
         echo "No applet artifacts found, /applets will be empty"; \
     fi && \
+
     echo "Running build scripts..." && \
     echo "BUILD_IMAGE_TAG=${BUILD_IMAGE_TAG}" && \
     echo "BUILD_VERSION=${BUILD_VERSION}" && \
-    # Run build scripts with cleanup and disk space reporting \
-    /ctx/build/00-base.sh && \
-     BUILD_VERSION="${BUILD_VERSION}" UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" /ctx/build/01-image-id.sh && \
-    dnf5 clean all && rm -rf /var/cache/dnf/* || true && \
-    /ctx/build/10-kernel-hardware.sh && \
-    /ctx/build/11-packages.sh && \
-    dnf5 clean all && rm -rf /var/cache/dnf/* || true && \
-    /ctx/build/20-desktop.sh && \
-    /ctx/build/21-applets.sh && \
-    /ctx/build/22-systemconf.sh && report_disk_space "After all scripts finished" && \
-    echo "Build scripts completed successfully" && \
-    # Final aggressive cleanup to reduce image size \
-    dnf5 clean all && \
-    rm -rf /var/tmp/* /tmp/* /var/log/* /var/cache/dnf/* /usr/share/doc/* /usr/share/man/* /usr/share/info/* || true && \
-    report_disk_space "Final state after all cleanup"
 
-### LINTING
-## Verify final image and contents are correct.
+    # Base image with identification
+    /ctx/build/0-base.sh && \
+     BUILD_VERSION="${BUILD_VERSION}" UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" /ctx/build/1-image-id.sh && \
+    dnf5 clean all && rm -rf /var/cache/dnf/* && \
+
+    # Hardware & packages
+    /ctx/build/2-kernel-hardware.sh && \
+    /ctx/build/3-packages.sh && \
+    dnf5 clean all && rm -rf /var/cache/dnf/* && \
+
+    # Desktops, applets & system configs
+    /ctx/build/4-desktop.sh && \
+    /ctx/build/5-applets.sh && \
+    /ctx/build/6-systemconf.sh && \
+
+    # Final aggressive cleanup to reduce image size
+    dnf5 clean all && \
+    rm -rf /var/tmp/* /tmp/* /var/log/* /var/cache/dnf/* /usr/share/doc/* /usr/share/man/* /usr/share/info/* && \
+    echo "Build scripts completed successfully"
+
+### LINTING - Verify final image and contents are correct.
+
 RUN echo "Running container lint..." && \
     bootc container lint && \
     echo "Container lint passed successfully"

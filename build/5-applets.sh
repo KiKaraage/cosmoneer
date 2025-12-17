@@ -5,6 +5,8 @@ set -euo pipefail
 # shellcheck source=/dev/null
 source /ctx/build/copr-helpers.sh
 
+echo "===$(basename "$0")==="
+
 echo "::group:: Install COSMIC Applets"
 
 # Install common dependencies for GitHub release RPMs

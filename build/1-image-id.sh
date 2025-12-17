@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-echo "::group:: ===$(basename "$0")==="
+echo "===$(basename "$0")==="
+
+echo "::group:: Add Image Identity"
 
 set -xeuo pipefail
 
@@ -81,3 +83,4 @@ echo "IMAGE_VERSION=\"${VERSION}\"" >> /usr/lib/os-release
 sed -i "s|^EFIDIR=.*|EFIDIR=\"fedora\"|" /usr/sbin/grub2-switch-to-blscfg
 
 echo "::endgroup::"
+echo "Image ID successfully applied!"

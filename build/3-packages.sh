@@ -13,6 +13,8 @@ set -eoux pipefail
 # shellcheck source=/dev/null
 source /ctx/build/copr-helpers.sh
 
+echo "===$(basename "$0")==="
+
 echo "::group:: Fedora Packages (Bulk Installation)"
 
 # Base packages from Fedora repos - common to all versions
@@ -251,15 +253,21 @@ echo "::endgroup::"
 echo "Enable Tailscale daemon service"
 systemctl enable tailscaled || echo "Can't enable Tailscale daemon service"
 
-echo "::group:: Install OpenCode Desktop"
+echo "::group:: Install OpenCode Desktop & Wave Terminal"
 
-echo "Installing latest OpenCode Desktop RPM..."
-# Download and install to handle GitHub redirects properly
+echo "Installing latest OpenCode RPM..."
 cd /tmp
-curl -L -o opencode-desktop.rpm "https://github.com/sst/opencode/releases/latest/download/opencode-desktop-linux-x86_64.rpm"
-dnf5 install -y ./opencode-desktop.rpm
-rm -f opencode-desktop.rpm
+curl -L -o oc.rpm "https://github.com/sst/opencode/releases/latest/download/opencode-desktop-linux-x86_64.rpm"
+dnf5 install -y ./oc.rpm
+rm -f oc.rpm
+
+echo "Installing latest Wave Terminal RPM..."
+# Get the latest Wave Terminal release RPM URL
+WAVE_URL=$(curl -s "https://api.github.com/repos/wavetermdev/waveterm/releases/latest" | grep "browser_download_url.*waveterm-linux-x86_64.*\.rpm" | cut -d '"' -f 4)
+curl -L -o wave.rpm "$WAVE_URL"
+dnf5 install -y ./wave.rpm
+rm -f wave.rpm
 
 echo "::endgroup::"
 
-echo "System packages, CLI tools, and COPR packages installation complete!"
+echo "System packages/CLI tools/COPR packages installation complete!"
