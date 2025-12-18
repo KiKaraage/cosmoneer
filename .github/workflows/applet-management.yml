@@ -4,6 +4,10 @@ run-name: "${{ github.event_name == 'schedule' && 'Weekly Applet Check' || githu
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 2'
+    - cron: '0 0 * * 4'
+    - cron: '0 0 * * 0'
     inputs:
       test_mode:
         description: "Run test mode instead of full build"
@@ -30,6 +34,7 @@ on:
           - "cosmic-ext-bg-theme"
           - "wf-recorder-gui"
           - "prtsc-wayland"
+          - "niri_window_buttons"
 
 permissions:
   contents: write
@@ -78,7 +83,8 @@ jobs:
             {name: "cosmic-ext-alternative-startup", url: "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
             {name: "cosmic-ext-bg-theme", url: "https://github.com/wash2/cosmic_ext_bg_theme"},
             {name: "wf-recorder-gui", url: "https://github.com/ali205412/wf-recorder-gui.git"},
-            {name: "prtsc-wayland", url: "https://github.com/Amchik/prtsc-wayland.git"}
+            {name: "prtsc-wayland", url: "https://github.com/Amchik/prtsc-wayland.git"},
+            {name: "niri_window_buttons", url: "https://github.com/adelmonte/niri_window_buttons"}
            ]')
           echo "matrix<<EOF" >> $GITHUB_OUTPUT
           printf '%s\n' "$APPLET_JSON" >> $GITHUB_OUTPUT
@@ -355,6 +361,16 @@ jobs:
                 fi
             fi
 
+            # Special case for niri_window_buttons - look for .so file
+            if [ -z "$BINARY_NAME" ] && [ "${APPLET_NAME}" = "niri_window_buttons" ]; then
+                echo "Searching for niri_window_buttons .so file..."
+                SO_FILE="$MAIN_TARGET_DIR/release/libniri_window_buttons.so"
+                if [ -f "$SO_FILE" ] && [[ -s "$SO_FILE" ]]; then  # Check if file exists and is not empty
+                    BINARY_NAME="$SO_FILE"
+                    echo "Found niri_window_buttons .so file: $BINARY_NAME"
+                fi
+            fi
+
 
 
             # Validate we found a binary
@@ -419,6 +435,13 @@ jobs:
                     if [[ "$BINARY_BASENAME" != "prtsc-wayland" ]]; then
                         mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/prtsc-wayland"
                         echo "Renamed binary to prtsc-wayland"
+                    fi
+                    ;;
+                "niri_window_buttons")
+                    # For niri_window_buttons, ensure the .so file is properly named
+                    if [[ "$BINARY_BASENAME" != "libniri_window_buttons.so" ]]; then
+                        mv "$APPLET_ARTIFACT_DIR/$BINARY_BASENAME" "$APPLET_ARTIFACT_DIR/libniri_window_buttons.so"
+                        echo "Renamed binary to libniri_window_buttons.so"
                     fi
                     ;;
 
