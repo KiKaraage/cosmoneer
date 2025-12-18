@@ -4,16 +4,12 @@ run-name: "${{ github.event_name == 'schedule' && 'Weekly Applet Check' || githu
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * 2'
-    - cron: '0 0 * * 4'
-    - cron: '0 0 * * 0'
     inputs:
       test_mode:
         description: "Run test mode instead of full build"
         required: false
         default: false
-        type: boolean
+        type: true
       force_all:
         description: "Force build all applets"
         required: false
@@ -35,6 +31,10 @@ on:
           - "wf-recorder-gui"
           - "prtsc-wayland"
           - "niri_window_buttons"
+  schedule:
+    - cron: '0 0 * * 2'
+    - cron: '0 0 * * 4'
+    - cron: '0 0 * * 0'
 
 permissions:
   contents: write
