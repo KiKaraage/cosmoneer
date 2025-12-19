@@ -1,69 +1,99 @@
 FROM scratch AS ctx
-COPY build /build
-COPY custom /custom
-COPY system_files /system_files
 
 ARG APPLET_ARTIFACTS_DIR=./applets-artifacts
 COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts
 
+COPY build /build
+COPY custom /custom
+COPY system_files /system_files
+COPY --from=ghcr.io/ublue-os/brew:latest /system_files /files
+
 FROM ghcr.io/ublue-os/base-main:43
 
-# Build args: image tag (YYMMDD or YYMMDD.x format) and
-# full version string for image (YYMMDD or YYMMDD.x or PR.YYMMDD)
 ARG BUILD_IMAGE_TAG=daily
 ARG BUILD_VERSION=daily
 LABEL org.opencontainers.image.description="A scroller desktop image with COSMIC, Niri and Bluefin goodies together"
 
 ### MODIFICATIONS - the following RUN directive does all the things required to run scripts as recommended.
 
-RUN rm /opt && mkdir /opt
+### STAGE 0: Setup
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
-    --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
+    --label build.stage="setup" \
     set -euo pipefail && \
-
-    # Aggressive cleanup before build to maximize space
-    dnf5 clean all && \
-    rm -rf /var/cache/dnf/* /var/log/* /tmp/* && \
-
-    echo "Setting up applets directory..." && \
+    rm /opt && mkdir /opt
+    dnf5 clean all && rm -rf /var/cache/dnf/* /var/log/* /tmp/* && \
     mkdir -p /applets && \
     if [ -d "/ctx/applets-artifacts" ] && [ "$(ls -A /ctx/applets-artifacts 2>/dev/null)" ]; then \
-        echo "Found applet artifacts, copying to /applets..." && \
         cp -r /ctx/applets-artifacts/* /applets/ && \
-        echo "Applet artifacts copied successfully:" && \
+        echo "✅ Applet artifacts copied successfully" && \
         ls -la /applets/ || true; \
     else \
-        echo "No applet artifacts found, /applets will be empty"; \
+        echo "ℹ️ No applet artifacts found"; \
     fi && \
+    echo "✅ Context setup completed"
 
-    echo "Running build scripts..." && \
-    echo "BUILD_IMAGE_TAG=${BUILD_IMAGE_TAG}" && \
-    echo "BUILD_VERSION=${BUILD_VERSION}" && \
-
-    # Base image with identification
+### STAGE 1: Base Identity
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=cache,dst=/var/cache \
+    --mount=type=tmpfs,dst=/tmp \
+    --label build.stage="base-identity" \
     /ctx/build/0-base.sh && \
-     BUILD_VERSION="${BUILD_VERSION}" UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" /ctx/build/1-image-id.sh && \
+    BUILD_VERSION="${BUILD_VERSION}" UBLUE_IMAGE_TAG="${BUILD_IMAGE_TAG}" /ctx/build/1-id.sh && \
+    echo "✅ Base identity completed"
+
+### STAGE 2: System Packages
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=cache,target=/var/cache/dnf \
+    --mount=type=cache,target=/var/lib/rpm \
+    --mount=type=tmpfs,dst=/tmp \
+    --label build.stage="packages" \
+    /ctx/build/2-dnf.sh && \
     dnf5 clean all && rm -rf /var/cache/dnf/* && \
+    echo "✅ System packages completed"
 
-    # Hardware & packages
-    /ctx/build/2-kernel-hardware.sh && \
-    /ctx/build/3-packages.sh && \
-    dnf5 clean all && rm -rf /var/cache/dnf/* && \
+### STAGE 3: UBlue Integration
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=cache,target=/var/cache/dnf \
+    --mount=type=tmpfs,dst=/tmp \
+    --label build.stage="ublue" \
+    /ctx/build/3-ublue.sh && \
+    echo "✅ UBlue integration completed"
 
-    # Desktops, applets & system configs
-    /ctx/build/4-desktop.sh && \
-    /ctx/build/5-applets.sh && \
-    /ctx/build/6-systemconf.sh && \
+### STAGE 4: Niri Desktop
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=cache,target=/var/cache/dnf \
+    --label build.stage="niri" \
+    /ctx/build/4-niri.sh && \
+    echo "✅ Niri desktop completed"
 
-    # Final aggressive cleanup to reduce image size
+### STAGE 5: COSMIC Desktop
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=cache,target=/var/cache/dnf \
+    --mount=type=tmpfs,dst=/tmp \
+    --label build.stage="cosmic" \
+    /ctx/build/5-cosmic.sh && \
+    echo "✅ COSMIC desktop completed"
+
+### STAGE 6: COSMIC Applets & Binaries
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=tmpfs,dst=/tmp \
+    --label build.stage="applets" \
+    /ctx/build/6-applets.sh && \
+    echo "✅ Applets completed"
+
+### STAGE 7: System Configuration & Cleanup
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=cache,target=/var/cache/dnf \
+    --mount=type=tmpfs,dst=/tmp \
+    --label build.stage="system-config" \
+    /ctx/build/7-systemconf.sh && \
     dnf5 clean all && \
     rm -rf /var/tmp/* /tmp/* /var/log/* /var/cache/dnf/* /usr/share/doc/* /usr/share/man/* /usr/share/info/* && \
-    echo "Build scripts completed successfully"
+    echo "✅ Build completed successfully"
 
-### LINTING - Verify final image and contents are correct.
-
-RUN echo "Running container lint..." && \
+### STAGE 8: Validation
+RUN --label build.stage="validation" \
     bootc container lint && \
-    echo "Container lint passed successfully"
+    echo "✅ Container validation passed"

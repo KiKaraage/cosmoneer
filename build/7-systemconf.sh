@@ -2,19 +2,46 @@
 
 set -eoux pipefail
 
-###############################################################################
 # System Services & Configuration
-###############################################################################
 # This script configures essential system services for Cosmoneer
-###############################################################################
-
+# 1. Docker CE
+# 2. Tailscale
+# 3.
 echo "===$(basename "$0")==="
-echo "::group:: System Services Configuration"
 
-echo "Configuring essential system services..."
-# Enable core system services
-systemctl enable systemd-timesyncd
-systemctl enable systemd-resolved.service
+echo "::group:: Docker CE"
+
+echo "Installing Docker CE..."
+dnf5 config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
+dnf5 config-manager setopt docker-ce-stable.enabled=0
+dnf5 install -y --skip-unavailable --enablerepo='docker-ce-stable' docker-ce docker-ce-cli docker-compose-plugin
+
+echo "Configuring Docker CE..."
+# Enable SSH agent globally
+systemctl enable --global ssh-agent
+
+# Create docker-compose symlink
+ln -sf /usr/libexec/docker/cli-plugins/docker-compose /usr/bin/docker-compose
+
+# Enable IP forwarding for Docker
+mkdir -p /usr/lib/sysctl.d
+echo "net.ipv4.ip_forward = 1" > /usr/lib/sysctl.d/docker-ce.conf
+
+# Configure Docker service presets
+sed -i 's/enable docker/disable docker/' /usr/lib/systemd/system-preset/90-default.preset
+systemctl preset docker.service docker.socket
+
+# Create docker group
+cat > /usr/lib/sysusers.d/docker.conf <<'EOF'
+g docker -
+EOF
+
+echo "::endgroup::"
+
+echo "Enable Tailscale daemon service"
+systemctl enable tailscaled || echo "Can't enable Tailscale daemon service"
+
+echo "::group:: System Services Configuration"
 
 # Configure bootc automatic updates
 echo "Configuring automatic updates..."
@@ -30,16 +57,6 @@ tee /usr/lib/systemd/zram-generator.conf <<'EOF'
 [zram0]
 zram-size = min(ram, 8192)
 EOF
-
-# Configure systemd-resolved as default
-echo "Configuring systemd-resolved..."
-tee /usr/lib/systemd/system-preset/91-resolved-default.preset <<'EOF'
-enable systemd-resolved.service
-EOF
-tee /usr/lib/tmpfiles.d/resolved-default.conf <<'EOF'
-L /etc/resolv.conf - - - - ../run/systemd/resolve/stub-resolv.conf
-EOF
-systemctl preset systemd-resolved.service
 
 # Enable firewalld
 systemctl enable firewalld

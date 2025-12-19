@@ -3,9 +3,7 @@
 set -eoux pipefail
 
 ###############################################################################
-# COSMIC Desktop and Niri Window Manager
-###############################################################################
-# This script combines the installation of COSMIC desktop and Niri window manager
+# COSMIC Desktop
 ###############################################################################
 
 # Source helper functions
@@ -47,17 +45,6 @@ copr_install_isolated "ryanabx/cosmic-epoch" \
     xdg-desktop-portal-cosmic
 
 echo "COSMIC desktop installed successfully"
-echo "::endgroup::"
-
-echo "::group:: Install Niri Window Manager"
-
-# Install Niri from yalter/niri-git COPR directly
-dnf5 -y copr enable yalter/niri-git
-dnf5 -y copr disable yalter/niri-git
-echo "priority=1" | tee -a /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:yalter:niri-git.repo
-dnf5 -y --enablerepo copr:copr.fedorainfracloud.org:yalter:niri-git install niri
-rm -rf /usr/share/doc/niri
-echo "Niri window manager installed successfully"
 echo "::endgroup::"
 
 echo "::group:: Configure Display Manager"
