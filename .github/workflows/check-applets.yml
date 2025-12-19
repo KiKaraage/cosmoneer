@@ -1,0 +1,105 @@
+---
+name: Check for Applet Updates
+
+on:
+  schedule:
+    - cron: "0 0 * * 0" # Sunday
+    - cron: "0 0 * * 2" # Tuesday
+    - cron: "0 0 * * 4" # Thursday
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/check-applets.yml"
+      - ".github/workflows/update-applets.yml"
+      - "build/applet-config.toml"
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  check:
+    name: Check for Updates
+    runs-on: ubuntu-24.04
+    outputs:
+      changes_made: ${{ steps.check.outputs.changes_made }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: sudo apt-get update && sudo apt-get install -y git jq ca-certificates
+
+      - name: Check Applets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          CONFIG_FILE="build/applet-config.toml"
+
+          FORCE_CHECK="${{ github.event_name == 'push' }}"
+          CHANGES_MADE=false
+
+          # Get successful builds
+          SUCCESSFUL_APPLETS=$(gh run list --workflow update-applets.yml --limit 20 \
+            --json conclusion,name -q '.[] | select(.conclusion == "success") | .name | split(" ") | .[1]' \
+            2>/dev/null | sort | uniq | tr '\n' ' ' || echo "")
+
+          # Process applets from TOML config
+          while IFS= read -r section; do
+            [[ -z "$section" ]] && continue
+
+            applet=$(echo "$section" | sed 's/\(applets\|utilities\)\.//')
+            echo "::group:: Checking $applet"
+
+            # Get current version from TOML (prioritize version, fallback to git_sha)
+            current=$(tomlq -r ".${section}.version // .${section}.git_sha // \"\"" "$CONFIG_FILE" 2>/dev/null || echo "")
+            version_type=$(tomlq -r "if .${section}.version then \"version\" else \"git_sha\" end" "$CONFIG_FILE" 2>/dev/null || echo "git_sha")
+
+            # Get latest version
+            github_repo=$(tomlq -r ".$section.github_repo" build/applet-config.toml)
+            if [[ "$version_type" == "version" ]]; then
+              # Get latest release tag
+              latest=$(gh api "repos/$github_repo/releases/latest" --jq '.tag_name' 2>/dev/null || echo "")
+              # Remove 'v' prefix if present
+              latest=$(echo "$latest" | sed 's/^v//')
+            else
+              # Get latest git SHA
+              latest=$(git ls-remote "https://github.com/$github_repo" HEAD | awk '{print $1}')
+            fi
+
+            # Check if update needed
+            has_artifact=$(echo "$SUCCESSFUL_APPLETS" | grep -wq "$applet" && echo "true" || echo "false")
+            needs_update="$FORCE_CHECK"
+
+            if [[ "$needs_update" != "true" ]]; then
+              if [[ "$has_artifact" == "false" ]] || [[ "$latest" != "$current" ]]; then
+                needs_update=true
+              fi
+            fi
+
+            if [[ "$needs_update" == "true" ]]; then
+              echo "Updating $applet: $current -> $latest ($version_type)"
+              # Update version field in applet config
+              tomlq -p ".${section}.${version_type} = \"$latest\"" "$CONFIG_FILE" > tmp.toml && mv tmp.toml "$CONFIG_FILE"
+              CHANGES_MADE=true
+
+
+            else
+              echo "$applet is up to date"
+            fi
+
+            echo "::endgroup::"
+          done <<< "$(tomlq -r 'with_entries(select(.key | startswith("applets.") or startswith("utilities."))) | keys[]' build/applet-config.toml)"
+
+          echo "changes_made=$CHANGES_MADE" >> $GITHUB_OUTPUT
+
+      - name: Commit Updates
+        if: steps.check.outputs.changes_made == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "ci(applets): Update applet version values"
+          file_pattern: "build/applet-config.toml"
