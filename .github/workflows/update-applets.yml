@@ -62,8 +62,14 @@ jobs:
           set -euo pipefail
           CONFIG_FILE="build/applets.yml"
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            FORCE_CHECK="true"  # Always allow building for manual dispatch
-            SPECIFIC_APPLET="${{ github.event.inputs.applet_name }}"
+            # For manual dispatch, build if force_all is true OR specific applet selected
+            if [[ "${{ github.event.inputs.force_all }}" == "true" || "${{ github.event.inputs.applet_name }}" != "" ]]; then
+              FORCE_CHECK="true"
+              SPECIFIC_APPLET="${{ github.event.inputs.applet_name }}"
+            else
+              FORCE_CHECK="false"
+              SPECIFIC_APPLET=""
+            fi
            elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
              # Check if any applets changed
              CHANGED_APPLETS="${{ github.event.workflow_run.outputs.changed_applets }}"
@@ -86,7 +92,7 @@ jobs:
           if [[ "$FORCE_CHECK" == "true" ]]; then
             if [[ -n "$SPECIFIC_APPLET" ]]; then
               # Build specific applet
-              BUILD_LIST="{\"name\": \"$SPECIFIC_APPLET\"}"
+              BUILD_LIST=$(echo "$SPECIFIC_APPLET" | jq -R '{name: .}' | jq -c '.')
             else
               # Build all applets for workflow_run or scheduled backup
               APPLET_NAMES=$( (yq '.applets | keys[]' "$CONFIG_FILE"; yq '.utilities | keys[]' "$CONFIG_FILE") | tr '\n' ' ' | sed 's/ $//')
