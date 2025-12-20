@@ -64,9 +64,17 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             FORCE_CHECK="${{ github.event.inputs.force_all == 'true' || github.event.inputs.applet_name != '' }}"
             SPECIFIC_APPLET="${{ github.event.inputs.applet_name }}"
-          elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
-            FORCE_CHECK="true"
-            SPECIFIC_APPLET=""
+           elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+             # Check if any applets changed
+             CHANGED_APPLETS="${{ github.event.workflow_run.outputs.changed_applets }}"
+             if [[ -n "$CHANGED_APPLETS" && "$CHANGED_APPLETS" != "[]" ]]; then
+               FORCE_CHECK="true"
+               SPECIFIC_APPLET=""
+               BUILD_LIST="$CHANGED_APPLETS"
+             else
+               FORCE_CHECK="false"
+               SPECIFIC_APPLET=""
+             fi
           else
             # Schedule - only run on Sunday as backup
             FORCE_CHECK="true"
