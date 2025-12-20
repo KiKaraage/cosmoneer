@@ -62,7 +62,7 @@ jobs:
           set -euo pipefail
           CONFIG_FILE="build/applets.yml"
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            FORCE_CHECK="${{ github.event.inputs.force_all == 'true' || github.event.inputs.applet_name != '' }}"
+            FORCE_CHECK="true"  # Always allow building for manual dispatch
             SPECIFIC_APPLET="${{ github.event.inputs.applet_name }}"
            elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
              # Check if any applets changed
@@ -95,8 +95,13 @@ jobs:
             fi
           fi
 
+          # Ensure BUILD_LIST is valid JSON
+          if [[ -z "$BUILD_LIST" ]]; then
+            BUILD_LIST="[]"
+          fi
+
           echo "applets_to_build=$BUILD_LIST" >> $GITHUB_OUTPUT
-          echo "should_build=$([ -n "$BUILD_LIST" ] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+          echo "should_build=$([ "$BUILD_LIST" != "[]" ] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
 
   build-applets:
     name: Build ${{ matrix.applet.name }}
