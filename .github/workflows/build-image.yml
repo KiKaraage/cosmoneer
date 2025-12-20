@@ -48,6 +48,47 @@ jobs:
       packages: write
       id-token: write
     steps:
+      - name: Check for ignored file changes (PR only)
+        if: github.event_name == 'pull_request'
+        run: |
+          # For PRs, check if only ignored files changed
+          cd ${{ github.workspace }}
+
+          # Get changed files in PR
+          CHANGED_FILES=$(git diff --name-only HEAD~1 2>/dev/null || git diff --name-only origin/main 2>/dev/null || echo "")
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "Could not determine changed files, proceeding with build"
+            exit 0
+          fi
+
+          IGNORED_FILES=("build/applets.yml" ".github/workflows/check-applets.yml" ".github/workflows/update-applets.yml")
+
+          # Check if all changed files are in the ignored list
+          ALL_IGNORED=true
+          for file in $CHANGED_FILES; do
+            IGNORED=false
+            for ignored in "${IGNORED_FILES[@]}"; do
+              if [ "$file" = "$ignored" ]; then
+                IGNORED=true
+                break
+              fi
+            done
+            if [ "$IGNORED" = "false" ]; then
+              ALL_IGNORED=false
+              break
+            fi
+          done
+
+          if [ "$ALL_IGNORED" = "true" ]; then
+            echo "Only ignored files changed ($CHANGED_FILES), skipping build"
+            # Create a marker file to indicate build was skipped
+            echo "BUILD_SKIPPED=true" >> $GITHUB_ENV
+            exit 0
+          else
+            echo "Non-ignored files changed, proceeding with build"
+          fi
+
       - name: Prepare environment
         run: |
           # Lowercase the image uri
@@ -58,9 +99,11 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
 
       - name: Maximize build space
+        if: env.BUILD_SKIPPED != 'true'
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6 # v8?
 
       - name: Install crane
+        if: env.BUILD_SKIPPED != 'true'
         run: |
           # Install crane for registry operations
           curl -sL "https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz" | tar -xz -C /usr/local/bin crane
@@ -217,6 +260,7 @@ jobs:
           sep-annotations: " "
 
       - name: Download Applet Artifacts
+        if: env.BUILD_SKIPPED != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -332,6 +376,7 @@ jobs:
           fi
 
       - name: Build Image
+        if: env.BUILD_SKIPPED != 'true'
         id: build_image
         uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
         with:
@@ -475,7 +520,7 @@ jobs:
         # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work
       - name: Login to GitHub Container Registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        if: env.BUILD_SKIPPED != 'true' && github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -483,7 +528,7 @@ jobs:
 
       - name: Push To GHCR
         uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
-        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        if: env.BUILD_SKIPPED != 'true' && github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: push
         env:
           REGISTRY_USER: ${{ github.actor }}
