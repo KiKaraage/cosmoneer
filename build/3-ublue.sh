@@ -20,11 +20,9 @@ copr_install_isolated "ublue-os/packages" \
     "ublue-polkit-rules" \
     "ublue-setup-services" \
     "uupd" \
-    "ublue-os-udev-rules" \
     "ublue-bling"
 
 echo "::endgroup::"
-
 
 echo "::group:: Configure ublue-brew"
 
