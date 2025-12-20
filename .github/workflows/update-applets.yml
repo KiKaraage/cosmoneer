@@ -92,14 +92,18 @@ jobs:
             else
               # Build all applets for workflow_run or scheduled backup
               # Create JSON array of all applets
-              APPLET_ARRAY=()
+              MATRIX_JSON="["
+              FIRST=true
               while IFS= read -r applet; do
                 [[ -z "$applet" ]] && continue
-                APPLET_ARRAY+=("{\"name\": \"$applet\"}")
+                if [[ "$FIRST" == "true" ]]; then
+                  MATRIX_JSON="${MATRIX_JSON}{\"name\": \"$applet\"}"
+                  FIRST=false
+                else
+                  MATRIX_JSON="${MATRIX_JSON},{\"name\": \"$applet\"}"
+                fi
               done <<< "$(yq '.applets | keys[]' "$CONFIG_FILE"; yq '.utilities | keys[]' "$CONFIG_FILE")"
-
-              # Join with commas and wrap in array
-              MATRIX_JSON="[$(IFS=,; echo "${APPLET_ARRAY[*]}")]"
+              MATRIX_JSON="${MATRIX_JSON}]"
               BUILD_LIST="$MATRIX_JSON"
             fi
           fi
