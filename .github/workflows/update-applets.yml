@@ -62,14 +62,10 @@ jobs:
           set -euo pipefail
           CONFIG_FILE="build/applets.yml"
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            # For manual dispatch, build if force_all is true OR specific applet selected
-            if [[ "${{ github.event.inputs.force_all }}" == "true" || "${{ github.event.inputs.applet_name }}" != "" ]]; then
-              FORCE_CHECK="true"
-              SPECIFIC_APPLET="${{ github.event.inputs.applet_name }}"
-            else
-              FORCE_CHECK="false"
-              SPECIFIC_APPLET=""
-            fi
+            # For manual dispatch, always check for inputs
+            FORCE_CHECK="true"
+            SPECIFIC_APPLET="${{ github.event.inputs.applet_name }}"
+            # Note: force_all input is not used in logic, user selects specific applet or gets all
            elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
              # Check if any applets changed
              CHANGED_APPLETS="${{ github.event.workflow_run.outputs.changed_applets }}"
@@ -95,8 +91,15 @@ jobs:
               BUILD_LIST=$(echo "$SPECIFIC_APPLET" | jq -R '{name: .}' | jq -c '.')
             else
               # Build all applets for workflow_run or scheduled backup
-              APPLET_NAMES=$( (yq '.applets | keys[]' "$CONFIG_FILE"; yq '.utilities | keys[]' "$CONFIG_FILE") | tr '\n' ' ' | sed 's/ $//')
-              MATRIX_JSON=$(echo "$APPLET_NAMES" | jq -R 'split(" ") | map(select(length > 0)) | map({name: .})' | jq -c '.')
+              # Create JSON array of all applets
+              APPLET_ARRAY=()
+              while IFS= read -r applet; do
+                [[ -z "$applet" ]] && continue
+                APPLET_ARRAY+=("{\"name\": \"$applet\"}")
+              done <<< "$(yq '.applets | keys[]' "$CONFIG_FILE"; yq '.utilities | keys[]' "$CONFIG_FILE")"
+
+              # Join with commas and wrap in array
+              MATRIX_JSON="[$(IFS=,; echo "${APPLET_ARRAY[*]}")]"
               BUILD_LIST="$MATRIX_JSON"
             fi
           fi
@@ -131,6 +134,11 @@ jobs:
             cargo build-essential git gcc g++ make yq \
             libxkbcommon-dev libpipewire-0.3-dev libdbus-1-dev \
             libssl-dev pkg-config libwayland-dev ca-certificates just
+
+          # Special dependencies for specific applets
+          if [[ "${{ matrix.applet.name }}" == "wf-recorder-gui" ]]; then
+            sudo apt-get install -y --no-install-recommends wf-recorder
+          fi
 
       - name: Build Applet
         run: |
