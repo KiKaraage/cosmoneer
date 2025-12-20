@@ -15,14 +15,8 @@ echo "::group:: ublue COPR Packages"
 
 echo "Installing ublue COPR packages..."
 
-# Package swaps with ublue COPR
-echo "Swapping fwupd with ublue-os packages version..."
-copr_install_isolated "ublue-os/packages" "fwupd"
-
 # Install ublue packages
-echo "Installing ublue packages..."
 copr_install_isolated "ublue-os/packages" \
-    # "ublue-brew"
     "ublue-polkit-rules" \
     "ublue-setup-services" \
     "uupd" \
