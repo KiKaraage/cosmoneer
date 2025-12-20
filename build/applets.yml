@@ -66,7 +66,7 @@ utilities:
     desktop_files: "wf-recorder-gui.desktop"
 
   cosmic-ext-bg-theme:
-    github_repo: "wash2/cosmic-ext-bg-theme"
+    github_repo: "wash2/cosmic_ext_bg_theme"
     git_sha: "884c3501458a1952e4c009fcc2fadf4e19014a2a"
     binary_names: "cosmic-ext-bg-theme"
     desktop_files: "res/cosmic.ext.BgTheme.desktop,cosmic.ext.BgTheme.desktop"
