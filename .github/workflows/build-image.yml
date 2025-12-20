@@ -15,7 +15,7 @@ on:
       - ".github/assets/*.*"
       - ".github/workflows/check-applets.yml"
       - ".github/workflows/update-applets.yml"
-      - "**/*.toml"
+      - "build/applets.yml"
   workflow_dispatch:
     inputs:
       build_type:

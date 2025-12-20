@@ -55,7 +55,7 @@ jobs:
         id: build_list
         run: |
           set -euo pipefail
-          CONFIG_FILE="build/applet-config.toml"
+          CONFIG_FILE="build/applets.yml"
           
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             FORCE_CHECK="${{ github.event.inputs.force_all == 'true' || github.event.inputs.applet_name != '' }}"
@@ -118,16 +118,16 @@ jobs:
 
           # Find applet section in TOML (applets or utilities)
           SECTION=""
-          if yq -e ".applets.\"$APPLET_NAME\"" build/applet-config.toml >/dev/null 2>&1; then
+          if yq -e ".applets.\"$APPLET_NAME\"" "$CONFIG_FILE" >/dev/null 2>&1; then
             SECTION="applets.$APPLET_NAME"
-          elif yq -e ".utilities.\"$APPLET_NAME\"" build/applet-config.toml >/dev/null 2>&1; then
+          elif yq -e ".utilities.\"$APPLET_NAME\"" "$CONFIG_FILE" >/dev/null 2>&1; then
             SECTION="utilities.$APPLET_NAME"
           fi
 
           [[ -z "$SECTION" ]] && { echo "No config found for $APPLET_NAME"; exit 1; }
 
           # Get configuration from TOML
-          GITHUB_REPO=$(yq -r ".$SECTION.github_repo" build/applet-config.toml)
+          GITHUB_REPO=$(yq -r ".$SECTION.github_repo" "$CONFIG_FILE")
 
           # Clone and build
           REPO_DIR="/tmp/$APPLET_NAME"

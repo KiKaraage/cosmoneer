@@ -1,0 +1,71 @@
+# Applet Configuration File
+# This file contains mappings for applet names to their installation configurations
+
+github_api:
+  # Timeout settings for GitHub API calls
+  timeout_seconds: "30"
+  retries: "3"
+  retry_delay: "2"
+
+applets:
+  cosmic-ext-applet-emoji-selector:
+    github_repo: "leb-kuchen/cosmic-ext-applet-emoji-selector"
+    git_sha: "4530c2d1f2690efc87a666645e534328eb55fafe"
+    binary_names: "cosmic-applet-emoji-selector"
+    desktop_pattern: "*.desktop"
+    metainfo_pattern: "*.metainfo.xml"
+    icon_patterns: "icons/*"
+    justfile_name_override: "cosmic-applet-emoji-selector"
+
+  cosmic-ext-applet-privacy-indicator:
+    github_repo: "D-Brox/cosmic-ext-applet-privacy-indicator"
+    git_sha: "2d3b0efec5a95cf704e414f6e3005641f3aa3666"
+    binary_names: "cosmic-ext-applet-privacy-indicator"
+    desktop_pattern: "*.desktop"
+    metainfo_pattern: "*.metainfo.xml"
+    icon_patterns: "icons/*"
+
+  cosmic-ext-applet-vitals:
+    github_repo: "Coinio/cosmic-ext-applet-vitals"
+    git_sha: "4895abe0e17fb1d25bb43c363fe58139bd47f087"
+    binary_names: "cosmic-ext-applet-vitals"
+    desktop_pattern: "*.desktop"
+    metainfo_pattern: "*.metainfo.xml"
+    icon_patterns: "icons/*"
+
+  cosmic-ext-applet-caffeine:
+    github_repo: "tropicbliss/cosmic-ext-applet-caffeine"
+    git_sha: "1a4ab86d1db1ef294b2cfb24a07f068da0f715ae"
+    binary_names: "cosmic-ext-applet-caffeine"
+    desktop_pattern: "*.desktop"
+    metainfo_pattern: "*.metainfo.xml"
+    icon_patterns: "icons/*"
+
+  cosmic-ext-applet-clipboard-manager:
+    github_repo: "cosmic-utils/clipboard-manager"
+    git_sha: "4e509f5dd9513db58a699748314f388ed4664348"
+    binary_names: "cosmic-ext-applet-clipboard-manager"
+    desktop_pattern: "*.desktop"
+    metainfo_pattern: "*.metainfo.xml"
+    icon_patterns: "icons/*"
+
+utilities:
+  cosmic-ext-alternative-startup:
+    github_repo: "Drakulix/cosmic-ext-alternative-startup"
+    git_sha: "8ceda00197c7ec0905cf1dccdc2d67d738e45417"
+    binary_names: "cosmic-ext-alternative-startup"
+    desktop_pattern: "*.desktop"
+    metainfo_pattern: "*.metainfo.xml"
+    icon_patterns: "icons/*"
+
+  wf-recorder-gui:
+    github_repo: "ali205412/wf-recorder-gui"
+    version: "0.4.0"
+    binary_names: "wf-recorder-gui"
+    desktop_files: "wf-recorder-gui.desktop"
+
+  cosmic-ext-bg-theme:
+    github_repo: "wash2/cosmic-ext-bg-theme"
+    git_sha: "884c3501458a1952e4c009fcc2fadf4e19014a2a"
+    binary_names: "cosmic-ext-bg-theme"
+    desktop_files: "res/cosmic.ext.BgTheme.desktop,cosmic.ext.BgTheme.desktop"

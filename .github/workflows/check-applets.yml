@@ -13,7 +13,7 @@ on:
     paths:
       - ".github/workflows/check-applets.yml"
       - ".github/workflows/update-applets.yml"
-      - "build/applet-config.toml"
+      - "build/applets.yml"
 
 permissions:
   contents: write
@@ -38,7 +38,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          CONFIG_FILE="build/applet-config.toml"
+          CONFIG_FILE="build/applets.yml"
 
           FORCE_CHECK="${{ github.event_name == 'push' }}"
           CHANGES_MADE=false
@@ -56,11 +56,11 @@ jobs:
             echo "::group:: Checking $applet"
 
             # Get current version from TOML (prioritize version, fallback to git_sha)
-            current=$(tomlq -r ".${section}.version // .${section}.git_sha // \"\"" "$CONFIG_FILE" 2>/dev/null || echo "")
-            version_type=$(tomlq -r "if .${section}.version then \"version\" else \"git_sha\" end" "$CONFIG_FILE" 2>/dev/null || echo "git_sha")
+            current=$(yq -r ".${section}.version // .${section}.git_sha // \"\"" "$CONFIG_FILE" 2>/dev/null || echo "")
+            version_type=$(yq -r "if .${section}.version then \"version\" else \"git_sha\" end" "$CONFIG_FILE" 2>/dev/null || echo "git_sha")
 
             # Get latest version
-            github_repo=$(tomlq -r ".$section.github_repo" build/applet-config.toml)
+            github_repo=$(yq -r ".$section.github_repo" "$CONFIG_FILE")
             if [[ "$version_type" == "version" ]]; then
               # Get latest release tag
               latest=$(gh api "repos/$github_repo/releases/latest" --jq '.tag_name' 2>/dev/null || echo "")
@@ -84,7 +84,7 @@ jobs:
             if [[ "$needs_update" == "true" ]]; then
               echo "Updating $applet: $current -> $latest ($version_type)"
               # Update version field in applet config
-              tomlq -p ".${section}.${version_type} = \"$latest\"" "$CONFIG_FILE" > tmp.toml && mv tmp.toml "$CONFIG_FILE"
+              yq -i ".${section}.${version_type} = \"$latest\"" "$CONFIG_FILE"
               CHANGES_MADE=true
 
 
@@ -93,7 +93,7 @@ jobs:
             fi
 
             echo "::endgroup::"
-          done <<< "$(tomlq -r 'with_entries(select(.key | startswith("applets.") or startswith("utilities."))) | keys[]' build/applet-config.toml)"
+          done <<< "$( (yq '.applets | keys[]' "$CONFIG_FILE" | sed 's/^/applets./'; yq '.utilities | keys[]' "$CONFIG_FILE" | sed 's/^/utilities./') )"
 
           echo "changes_made=$CHANGES_MADE" >> $GITHUB_OUTPUT
 
@@ -102,4 +102,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "ci(applets): Update applet version values"
-          file_pattern: "build/applet-config.toml"
+          file_pattern: "build/applets.yml"
