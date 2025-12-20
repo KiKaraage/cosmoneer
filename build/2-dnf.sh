@@ -17,13 +17,9 @@ FEDORA_PACKAGES=(
 
     # Development Tools
     make
-    jq
     python3-pip
     python3-pygit2
     git-credential-libsecret
-    glibc
-    openssl-libs
-    just
 
     # System Utilities
     gum
@@ -76,7 +72,6 @@ FEDORA_PACKAGES=(
     # Others
     fontawesome-fonts
     fontawesome-fonts-web
-    adwaita-icon-theme
     wf-recorder
     vte291-gtk4-devel
 )
@@ -89,19 +84,12 @@ echo "::endgroup::"
 
 echo "::group:: Bulk remove excluded Fedora packages"
 
-# Packages to exclude - common to all versions
+# Fedora packages to exclude
 EXCLUDED_PACKAGES=(
     fedora-bookmarks
     fedora-chromium-config
-    fedora-chromium-config-gnome
     firefox
     firefox-langpacks
-    gnome-extensions-app
-    gnome-shell-extension-background-logo
-    gnome-software-rpm-ostree
-    gnome-terminal-nautilus
-    podman-docker
-    yelp
 )
 
 # Remove excluded packages if they are installed
