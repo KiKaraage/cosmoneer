@@ -77,7 +77,7 @@ jobs:
               BUILD_LIST="{\"name\": \"$SPECIFIC_APPLET\"}"
             else
               # Build all applets for workflow_run or scheduled backup
-              APPLET_NAMES=$(yq '. | keys[]' "$CONFIG_FILE" | grep -E '^(applets\.|utilities\.)' | sed 's/applets\.//' | sed 's/utilities\.//')
+              APPLET_NAMES=$( (yq '.applets | keys[]' "$CONFIG_FILE"; yq '.utilities | keys[]' "$CONFIG_FILE") )
               MATRIX_JSON=$(echo "$APPLET_NAMES" | jq -R 'split("\n") | map(select(length > 0)) | map({name: .})' | jq -c '.')
               BUILD_LIST="$MATRIX_JSON"
             fi
