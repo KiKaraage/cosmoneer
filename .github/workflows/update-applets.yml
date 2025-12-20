@@ -61,11 +61,17 @@ jobs:
         run: |
           set -euo pipefail
           CONFIG_FILE="build/applets.yml"
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            # For manual dispatch, build all applets unless specific one requested
-            FORCE_CHECK="true"
-            SPECIFIC_APPLET="${{ github.event.inputs.applet_name || '' }}"
-           elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+          echo "Event name: ${{ github.event_name }}" >&2
+          echo "SPECIFIC_APPLET before: '${{ github.event.inputs.applet_name }}'" >&2
+          # For debugging: always build all applets
+          echo "DEBUG: Setting FORCE_CHECK=true, SPECIFIC_APPLET=''" >&2
+          FORCE_CHECK="true"
+          SPECIFIC_APPLET=""
+          # Temporarily disabled complex logic for debugging
+          # if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          #   FORCE_CHECK="true"
+          #   SPECIFIC_APPLET="${{ github.event.inputs.applet_name }}"
+          # elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
              # Check if any applets changed
              CHANGED_APPLETS="${{ github.event.workflow_run.outputs.changed_applets }}"
              if [[ -n "$CHANGED_APPLETS" && "$CHANGED_APPLETS" != "[]" ]]; then
@@ -102,6 +108,18 @@ jobs:
           else
             echo "❌ BUILD_LIST is invalid JSON, using empty array" >&2
             BUILD_LIST="[]"
+          fi
+
+          # Final validation and output
+          echo "Final BUILD_LIST: '$BUILD_LIST'" >&2
+          if [[ -z "$BUILD_LIST" ]]; then
+            echo "BUILD_LIST is empty, setting to []" >&2
+            BUILD_LIST="[]"
+          elif ! echo "$BUILD_LIST" | jq . >/dev/null 2>&1; then
+            echo "❌ BUILD_LIST is invalid JSON: '$BUILD_LIST', using empty array" >&2
+            BUILD_LIST="[]"
+          else
+            echo "✅ BUILD_LIST is valid JSON" >&2
           fi
 
           echo "applets_to_build=$BUILD_LIST" >> $GITHUB_OUTPUT
