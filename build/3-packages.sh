@@ -84,7 +84,6 @@ FEDORA_PACKAGES=(
     fontawesome-fonts-web
     adwaita-icon-theme
     wf-recorder
-    vte291-gtk4-devel
 )
 
 # Install all Fedora packages (bulk - safe from COPR injection)
