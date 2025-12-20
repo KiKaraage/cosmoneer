@@ -13,9 +13,9 @@ on:
     paths-ignore:
       - "**/*.md"
       - ".github/assets/*.*"
-      - ".github/workflows/check-applet-updates.yml"
-      - ".github/workflows/build-applet.yml"
-      - ".github/workflows/applet-management.yml"
+      - ".github/workflows/check-applets.yml"
+      - ".github/workflows/update-applets.yml"
+      - "**/*.toml"
   workflow_dispatch:
     inputs:
       build_type:
