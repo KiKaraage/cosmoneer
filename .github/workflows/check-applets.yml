@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       changes_made: ${{ steps.check.outputs.changes_made }}
+      changed_applets: ${{ steps.check.outputs.changed_applets }}
 
     steps:
       - name: Checkout Repository
@@ -40,8 +41,9 @@ jobs:
           set -euo pipefail
           CONFIG_FILE="build/applets.yml"
 
-          FORCE_CHECK="${{ github.event_name == 'push' }}"
-          CHANGES_MADE=false
+           FORCE_CHECK="${{ github.event_name == 'push' }}"
+           CHANGES_MADE=false
+           CHANGED_APPLETS=()
 
           # Get successful builds
           SUCCESSFUL_APPLETS=$(gh run list --workflow update-applets.yml --limit 20 \
@@ -83,9 +85,10 @@ jobs:
 
             if [[ "$needs_update" == "true" ]]; then
               echo "Updating $applet: $current -> $latest ($version_type)"
-              # Update version field in applet config
-              yq -i ".${section}.${version_type} = \"$latest\"" "$CONFIG_FILE"
-              CHANGES_MADE=true
+               # Update version field in applet config
+               yq -i ".${section}.${version_type} = \"$latest\"" "$CONFIG_FILE"
+               CHANGES_MADE=true
+               CHANGED_APPLETS+=("$applet")
 
 
             else
@@ -95,7 +98,15 @@ jobs:
             echo "::endgroup::"
           done <<< "$( (yq '.applets | keys[]' "$CONFIG_FILE" | sed 's/^/applets./'; yq '.utilities | keys[]' "$CONFIG_FILE" | sed 's/^/utilities./') )"
 
-          echo "changes_made=$CHANGES_MADE" >> $GITHUB_OUTPUT
+           echo "changes_made=$CHANGES_MADE" >> $GITHUB_OUTPUT
+
+           # Output changed applets as JSON array
+           if [[ ${#CHANGED_APPLETS[@]} -gt 0 ]]; then
+             CHANGED_JSON=$(printf '%s\n' "${CHANGED_APPLETS[@]}" | jq -R . | jq -s 'map({name: .})' | jq -c .)
+           else
+             CHANGED_JSON="[]"
+           fi
+           echo "changed_applets=$CHANGED_JSON" >> $GITHUB_OUTPUT
 
       - name: Commit Updates
         if: steps.check.outputs.changes_made == 'true'
