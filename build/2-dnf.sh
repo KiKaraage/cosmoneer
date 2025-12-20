@@ -9,11 +9,11 @@ echo "::group:: Bulk installing Fedora packages"
 
 FEDORA_PACKAGES=(
     # Shells & Terminal
-    # zsh
-    # ugrep
-    # bat
-    # atuin
-    # zoxide
+    zsh
+    ugrep
+    bat
+    atuin
+    zoxide
 
     # Development Tools
     make
@@ -22,12 +22,12 @@ FEDORA_PACKAGES=(
     git-credential-libsecret
 
     # System Utilities
-    # gum
-    # zenity
+    gum
+    zenity
     powertop
-    # lm_sensors
+    lm_sensors
     bcache-tools
-    # ddcutil
+    ddcutil
     evtest
     input-remapper
 
@@ -47,8 +47,8 @@ FEDORA_PACKAGES=(
     gvfs-smb
     fuse-devel
     fuse-encfs
-    # rclone
-    # chezmoi
+    rclone
+    chezmoi
     davfs2
     jmtpfs
 

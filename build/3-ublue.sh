@@ -28,9 +28,23 @@ echo "::group:: Configure ublue-brew"
 
 echo "Configuring ublue-brew integration..."
 
+mkdir -p /var/home/linuxbrew && \
+tar --zstd -xvf /usr/share/homebrew.tar.zst -C /tmp && \
+mv /tmp/home/linuxbrew/.linuxbrew /var/home/linuxbrew/ && \
+eval "$(/var/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
+tar --zstd -cvf /usr/share/homebrew.tar.zst /var/home/linuxbrew/.linuxbrew && \
+rm -rf /var/home/linuxbrew/.linuxbrew /tmp/home
+
 systemctl enable brew-setup.service || echo "brew-setup.service already enabled"
 systemctl enable flatpak-preinstall.service || echo "flatpak-preinstall.service already enabled"
 systemctl enable uupd.timer || echo "uupd.timer already enabled or not found"
+
+
+# echo "Installing CLI essentials..." && \
+# brew install zsh ugrep bat atuin zoxide gum zenity lm-sensors ddcutil rclone chezmoi && \
+# echo "✅ CLI essentials installed" && \
+# brew cleanup && \
+
 
 # Configure uupd to disable distrobox module
 if [ -f "/usr/lib/systemd/system/uupd.service" ]; then

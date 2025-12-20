@@ -8,17 +8,6 @@ COPY custom /custom
 COPY system_files /system_files
 COPY --from=ghcr.io/ublue-os/brew:latest /system_files /files
 
-RUN mkdir -p /var/home/linuxbrew && \
-    tar --zstd -xvf /usr/share/homebrew.tar.zst -C /tmp && \
-    mv /tmp/home/linuxbrew/.linuxbrew /var/home/linuxbrew/ && \
-    eval "$(/var/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
-    echo "Installing CLI essentials..." && \
-    brew install zsh ugrep bat atuin zoxide gum zenity lm-sensors ddcutil rclone chezmoi && \
-    echo "✅ CLI essentials installed" && \
-    brew cleanup && \
-    tar --zstd -cvf /usr/share/homebrew.tar.zst /var/home/linuxbrew/.linuxbrew && \
-    rm -rf /var/home/linuxbrew/.linuxbrew /tmp/home
-
 FROM ghcr.io/ublue-os/base-main:43
 
 ARG BUILD_IMAGE_TAG=daily
