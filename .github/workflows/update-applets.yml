@@ -132,7 +132,11 @@ jobs:
           [[ -z "$SECTION" ]] && { echo "No config found for $APPLET_NAME"; exit 1; }
 
           # Get configuration from YAML
-          GITHUB_REPO=$(yq -r ".$SECTION.github_repo" "$CONFIG_FILE")
+          if [[ "$SECTION" == applets.* ]]; then
+            GITHUB_REPO=$(yq -r ".applets.\"${SECTION#applets.}\".github_repo" "$CONFIG_FILE")
+          elif [[ "$SECTION" == utilities.* ]]; then
+            GITHUB_REPO=$(yq -r ".utilities.\"${SECTION#utilities.}\".github_repo" "$CONFIG_FILE")
+          fi
 
           # Clone and build
           REPO_DIR="/tmp/$APPLET_NAME"
