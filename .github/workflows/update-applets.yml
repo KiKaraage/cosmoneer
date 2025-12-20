@@ -87,27 +87,20 @@ jobs:
           if [[ "$FORCE_CHECK" == "true" ]]; then
             if [[ -n "$SPECIFIC_APPLET" ]]; then
               # Build specific applet
-              BUILD_LIST=$(echo "$SPECIFIC_APPLET" | jq -R '{name: .}' | jq -c '.')
+              BUILD_LIST="{\"name\": \"$SPECIFIC_APPLET\"}"
             else
               # Build all applets for workflow_run or scheduled backup
-              # Create JSON array manually
-              BUILD_LIST="[]"
-              while IFS= read -r line; do
-                if [[ -n "$line" ]]; then
-                  if [[ "$BUILD_LIST" == "[]" ]]; then
-                    BUILD_LIST="[{\"name\": \"$line\"}]"
-                  else
-                    # Remove trailing ] and add new item
-                    BUILD_LIST="${BUILD_LIST%?},{\"name\": \"$line\"}]"
-                  fi
-                fi
-              done <<< "$(yq '.applets | keys[]' "$CONFIG_FILE"; yq '.utilities | keys[]' "$CONFIG_FILE")"
+              # Hardcode the JSON for now to test
+              BUILD_LIST='[{"name": "cosmic-ext-applet-emoji-selector"},{"name": "cosmic-ext-applet-privacy-indicator"},{"name": "cosmic-ext-applet-vitals"},{"name": "cosmic-ext-applet-caffeine"},{"name": "cosmic-ext-applet-clipboard-manager"},{"name": "cosmic-ext-alternative-startup"},{"name": "wf-recorder-gui"},{"name": "cosmic-ext-bg-theme"}]'
             fi
           fi
 
-          # Ensure BUILD_LIST is valid JSON
-          if [[ -z "$BUILD_LIST" ]] || ! echo "$BUILD_LIST" | jq . >/dev/null 2>&1; then
-            echo "Warning: Invalid BUILD_LIST, using empty array" >&2
+          # Final validation and output
+          echo "Final BUILD_LIST: $BUILD_LIST" >&2
+          if echo "$BUILD_LIST" | jq . >/dev/null 2>&1; then
+            echo "✅ BUILD_LIST is valid JSON" >&2
+          else
+            echo "❌ BUILD_LIST is invalid JSON, using empty array" >&2
             BUILD_LIST="[]"
           fi
 
