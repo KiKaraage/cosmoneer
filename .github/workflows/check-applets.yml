@@ -3,9 +3,9 @@ name: Check for Applet Updates
 
 on:
   schedule:
-    - cron: "0 0 * * 0" # Sunday
-    - cron: "0 0 * * 2" # Tuesday
-    - cron: "0 0 * * 4" # Thursday
+    - cron: "0 0 * * 0"  # Sunday
+    - cron: "0 0 * * 2"  # Tuesday
+    - cron: "0 0 * * 4"  # Thursday
   workflow_dispatch:
   push:
     branches:
