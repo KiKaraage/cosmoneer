@@ -22,7 +22,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     set -euo pipefail && \
     rm /opt && mkdir /opt && \
-    dnf5 clean all && rm -rf /var/cache/dnf/* /var/log/* /tmp/* && \
+    rm -rf /var/log/* /tmp/* && \
     mkdir -p /applets && \
     if [ -d "/ctx/applets-artifacts" ] && [ "$(ls -A /ctx/applets-artifacts 2>/dev/null)" ]; then \
         cp -r /ctx/applets-artifacts/* /applets/ && \
