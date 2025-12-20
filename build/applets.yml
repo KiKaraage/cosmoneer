@@ -1,5 +1,6 @@
+---
 # Applet Configuration File
-# This file contains mappings for applet names to their installation configurations
+# This file contains mappings for applets and utilities configurations
 
 github_api:
   # Timeout settings for GitHub API calls
