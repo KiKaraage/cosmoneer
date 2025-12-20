@@ -22,29 +22,8 @@ copr_install_isolated "ublue-os/packages" \
     "uupd" \
     "ublue-bling"
 
-echo "::endgroup::"
-
-echo "::group:: Configure ublue-brew"
-
-echo "Configuring ublue-brew integration..."
-
-mkdir -p /var/home/linuxbrew && \
-tar --zstd -xvf /usr/share/homebrew.tar.zst -C /tmp && \
-mv /tmp/home/linuxbrew/.linuxbrew /var/home/linuxbrew/ && \
-eval "$(/var/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && \
-tar --zstd -cvf /usr/share/homebrew.tar.zst /var/home/linuxbrew/.linuxbrew && \
-rm -rf /var/home/linuxbrew/.linuxbrew /tmp/home
-
-systemctl enable brew-setup.service || echo "brew-setup.service already enabled"
-systemctl enable flatpak-preinstall.service || echo "flatpak-preinstall.service already enabled"
 systemctl enable uupd.timer || echo "uupd.timer already enabled or not found"
-
-
-# echo "Installing CLI essentials..." && \
-# brew install zsh ugrep bat atuin zoxide gum zenity lm-sensors ddcutil rclone chezmoi && \
-# echo "✅ CLI essentials installed" && \
-# brew cleanup && \
-
+systemctl enable brew-setup.service || echo "Brew setup is already done, or not found"
 
 # Configure uupd to disable distrobox module
 if [ -f "/usr/lib/systemd/system/uupd.service" ]; then
@@ -85,21 +64,3 @@ fi
 
 # echo "ublue-brew configured successfully"
 # echo "::endgroup::"
-
-echo "::group:: Verify Brew Installation Post-Configuration"
-
-# Check that brew-setup service is enabled
-if systemctl is-enabled brew-setup.service 2>/dev/null; then
-    echo "✓ brew-setup.service is enabled"
-else
-    echo "⚠ brew-setup.service is not enabled"
-fi
-
-# Check if homebrew tarball exists
-if [ -f "/usr/share/homebrew.tar.zst" ]; then
-    echo "✓ homebrew.tar.zst exists"
-else
-    echo "⚠ homebrew.tar.zst does not exist"
-fi
-
-echo "::endgroup::"
