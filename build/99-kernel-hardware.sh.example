@@ -2,7 +2,6 @@
 
 set -eoux pipefail
 
-###############################################################################
 # Kernel and Hardware Support
 ###############################################################################
 # This script handles kernel version locking and AKMODS for hardware support

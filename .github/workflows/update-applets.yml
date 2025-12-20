@@ -1,0 +1,213 @@
+---
+name: Applet Management
+run-name: "Applet ${{ github.event.inputs.force_all == 'true' && 'Force Build All' || github.event.inputs.applet_name && format('Build {0}', github.event.inputs.applet_name) || 'Check Updates' }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: "Run test mode instead of full build"
+        required: false
+        default: false
+        type: boolean
+      force_all:
+        description: "Force build all applets"
+        required: false
+        default: false
+        type: boolean
+      applet_name:
+        description: "Specific applet to build (optional)"
+        required: false
+        type: choice
+        options:
+          - "cosmic-ext-applet-emoji-selector"
+          - "cosmic-ext-applet-privacy-indicator"
+          - "cosmic-ext-applet-vitals"
+          - "cosmic-ext-applet-caffeine"
+          - "cosmic-ext-applet-clipboard-manager"
+          - "cosmic-ext-alternative-startup"
+          - "wf-recorder-gui"
+          - "cosmic-ext-bg-theme"
+  workflow_run:
+    workflows: ["Check for Applet Updates"]
+    types: [completed]
+  schedule:
+    - cron: "0 0 * * 0" # Sunday backup
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  determine-builds:
+    name: Determine Applets to Build
+    runs-on: ubuntu-24.04
+    if: github.event_name != 'pull_request'
+    outputs:
+      applets_to_build: ${{ steps.build_list.outputs.applets_to_build }}
+      should_build: ${{ steps.build_list.outputs.should_build }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Determine Build Strategy
+        id: build_list
+        run: |
+          set -euo pipefail
+          CONFIG_FILE="build/applet-config.toml"
+          
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            FORCE_CHECK="${{ github.event.inputs.force_all == 'true' || github.event.inputs.applet_name != '' }}"
+            SPECIFIC_APPLET="${{ github.event.inputs.applet_name }}"
+          elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            FORCE_CHECK="true"
+            SPECIFIC_APPLET=""
+          else
+            # Schedule - only run on Sunday as backup
+            FORCE_CHECK="true"
+            SPECIFIC_APPLET=""
+          fi
+
+          BUILD_LIST=""
+
+          if [[ "$FORCE_CHECK" == "true" ]]; then
+            if [[ -n "$SPECIFIC_APPLET" ]]; then
+              # Build specific applet
+              BUILD_LIST="{\"name\": \"$SPECIFIC_APPLET\"}"
+            else
+              # Build all applets for workflow_run or scheduled backup
+              APPLET_NAMES=$(tomlq -r 'with_entries(select(.key | startswith("applets.") or startswith("utilities."))) | keys[]' "$CONFIG_FILE" | sed 's/\(applets\|utilities\)\.//')
+              MATRIX_JSON=$(echo "$APPLET_NAMES" | jq -R 'split("\n") | map(select(length > 0)) | map({name: .})' | jq -c '.')
+              BUILD_LIST="$MATRIX_JSON"
+            fi
+          fi
+
+          echo "applets_to_build=$BUILD_LIST" >> $GITHUB_OUTPUT
+          echo "should_build=$([ -n "$BUILD_LIST" ] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+
+  build-applets:
+    name: Build ${{ matrix.applet.name }}
+    runs-on: ubuntu-24.04
+    needs: determine-builds
+    if: needs.determine-builds.outputs.should_build == 'true'
+
+    strategy:
+      matrix:
+        applet: ${{ fromJson(needs.determine-builds.outputs.applets_to_build) }}
+      fail-fast: false
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cargo build-essential git gcc g++ make \
+            libxkbcommon-dev libpipewire-0.3-dev libdbus-1-dev \
+            libssl-dev pkg-config libwayland-dev ca-certificates just
+
+      - name: Build Applet
+        run: |
+          set -euo pipefail
+          APPLET_NAME="${{ matrix.applet.name }}"
+
+          echo "::group:: Building $APPLET_NAME"
+
+          # Find applet section in TOML (applets or utilities)
+          SECTION=""
+          if tomlq -e ".applets.\"$APPLET_NAME\"" build/applet-config.toml >/dev/null 2>&1; then
+            SECTION="applets.$APPLET_NAME"
+          elif tomlq -e ".utilities.\"$APPLET_NAME\"" build/applet-config.toml >/dev/null 2>&1; then
+            SECTION="utilities.$APPLET_NAME"
+          fi
+
+          [[ -z "$SECTION" ]] && { echo "No config found for $APPLET_NAME"; exit 1; }
+
+          # Get configuration from TOML
+          GITHUB_REPO=$(tomlq -r ".$SECTION.github_repo" build/applet-config.toml)
+
+          # Clone and build
+          REPO_DIR="/tmp/$APPLET_NAME"
+          git clone --depth 1 "https://github.com/$GITHUB_REPO" "$REPO_DIR"
+          cd "$REPO_DIR"
+
+          # Setup build environment
+          export CARGO_HOME="/tmp/cargo"
+          export CARGO_TARGET_DIR="/tmp/cargo-target"
+          mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
+
+          # Build
+          if just --list 2>/dev/null | grep -q "build-release"; then
+            timeout 600 just build-release
+          else
+            timeout 600 cargo build --release
+          fi
+
+          # Copy artifacts
+          ARTIFACT_DIR="/tmp/artifacts/$APPLET_NAME"
+          mkdir -p "$ARTIFACT_DIR"
+
+          # Find and copy binary
+          find "$CARGO_TARGET_DIR/release" -name "*cosmic*" -type f -executable \
+            -exec cp {} "$ARTIFACT_DIR/" \;
+
+          # Copy additional files (justfile, desktop, icons)
+          [[ -f "justfile" ]] && cp justfile "$ARTIFACT_DIR/"
+          find . -name "*.desktop" -o -name "*.metainfo.xml" -o -name "*.svg" \
+            -exec cp --parents {} "$ARTIFACT_DIR/" \;
+
+          echo "✅ Build completed for $APPLET_NAME"
+          echo "::endgroup::"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.applet.name }}
+          path: /tmp/artifacts/${{ matrix.applet.name }}/
+
+  test-applet-workflow:
+    name: Test Applet Workflow
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.test_mode == 'true'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cargo build-essential git gcc g++ make libssl-dev \
+            libxkbcommon-dev libpipewire-0.3-dev libdbus-1-dev \
+            pkg-config libwayland-dev ca-certificates just wf-recorder
+
+      - name: Test Sample Build
+        run: |
+          set -euo pipefail
+
+          echo "::group:: Testing cosmic-ext-applet-clipboard-manager"
+
+          # Test build with clipboard manager as sample
+          REPO_DIR="/tmp/test-applet"
+          git clone --depth 1 https://github.com/cosmic-utils/cosmic-ext-applet-clipboard-manager.git "$REPO_DIR"
+          cd "$REPO_DIR"
+
+          export CARGO_HOME="/tmp/cargo"
+          export CARGO_TARGET_DIR="/tmp/cargo-target"
+          mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
+
+          timeout 600 just build-release || timeout 600 cargo build --release
+
+          # Validate build
+          if [[ -f "$CARGO_TARGET_DIR/release/cosmic-ext-applet-clipboard-manager" ]]; then
+            echo "✅ Test build successful"
+          else
+            echo "❌ Test build failed"
+            exit 1
+          fi
+
+          echo "::endgroup::"
