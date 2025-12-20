@@ -6,7 +6,7 @@ COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts
 COPY build /build
 COPY custom /custom
 COPY system_files /system_files
-COPY --from=ghcr.io/ublue-os/brew:latest /system_files /files
+COPY --from=ghcr.io/ublue-os/brew:latest /system_files /
 
 FROM ghcr.io/ublue-os/base-main:43
 
