@@ -63,30 +63,11 @@ jobs:
           CONFIG_FILE="build/applets.yml"
           echo "Event name: ${{ github.event_name }}" >&2
           echo "SPECIFIC_APPLET before: '${{ github.event.inputs.applet_name }}'" >&2
-          # For debugging: always build all applets
-          echo "DEBUG: Setting FORCE_CHECK=true, SPECIFIC_APPLET=''" >&2
-          FORCE_CHECK="true"
-          SPECIFIC_APPLET=""
-          # Temporarily disabled complex logic for debugging
-          # if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-          #   FORCE_CHECK="true"
-          #   SPECIFIC_APPLET="${{ github.event.inputs.applet_name }}"
-          # elif [[ "${{ github.event_name }}" == "workflow_run" ]]; then
-             # Check if any applets changed
-             CHANGED_APPLETS="${{ github.event.workflow_run.outputs.changed_applets }}"
-             if [[ -n "$CHANGED_APPLETS" && "$CHANGED_APPLETS" != "[]" ]]; then
-               FORCE_CHECK="true"
-               SPECIFIC_APPLET=""
-               BUILD_LIST="$CHANGED_APPLETS"
-             else
-               FORCE_CHECK="false"
-               SPECIFIC_APPLET=""
-             fi
-          else
-            # Schedule - only run on Sunday as backup
-            FORCE_CHECK="true"
-            SPECIFIC_APPLET=""
-          fi
+           # For debugging: always build all applets
+           echo "DEBUG: Setting FORCE_CHECK=true, SPECIFIC_APPLET=''" >&2
+           FORCE_CHECK="true"
+           SPECIFIC_APPLET=""
+           # Temporarily disabled complex logic for debugging
 
           BUILD_LIST=""
 
