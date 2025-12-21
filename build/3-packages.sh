@@ -51,13 +51,16 @@ FEDORA_PACKAGES=(
     tailscale
     iwd
     waypipe
+    libcamera-v4l2
 
     # Filesystems & Storage
     gvfs-nfs
     gvfs-mtp
+    gvfs-smb
+    fuse-devel
+    fuse-encfs
     rclone
     chezmoi
-    fuse-encfs
     davfs2
     jmtpfs
 
