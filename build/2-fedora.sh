@@ -1,21 +1,8 @@
 #!/usr/bin/bash
-
 set -eoux pipefail
 
-###############################################################################
-# System Packages, CLI Tools, and COPR Packages
-###############################################################################
-# This script installs essential CLI tools, system utilities, and ublue COPR packages
-# Following bluefin pattern: Fedora packages first (bulk), then COPR packages (isolated)
-###############################################################################
-
-# Source helper functions
-# shellcheck source=/dev/null
-source /ctx/build/copr-helpers.sh
-
 echo "===$(basename "$0")==="
-
-echo "::group:: Fedora Packages (Bulk Installation)"
+echo "::group:: RPM Installation from dnf5"
 
 # Base packages from Fedora repos - common to all versions
 FEDORA_PACKAGES=(
@@ -82,7 +69,6 @@ FEDORA_PACKAGES=(
     oddjob-mkhomedir
 
     # Others
-    msedit
     fontawesome-fonts
     fontawesome-fonts-web
     adwaita-icon-theme
@@ -93,23 +79,19 @@ FEDORA_PACKAGES=(
 echo "Installing ${#FEDORA_PACKAGES[@]} packages from Fedora repos..."
 dnf5 -y install --skip-unavailable "${FEDORA_PACKAGES[@]}"
 
+echo "Enable Tailscale daemon service"
+systemctl enable tailscaled || echo "Can't enable Tailscale daemon service"
+
 echo "::endgroup::"
 
-echo "::group:: Package Exclusions"
+echo "::group:: Remove Excluded Packages"
 
 # Packages to exclude - common to all versions
 EXCLUDED_PACKAGES=(
     fedora-bookmarks
     fedora-chromium-config
-    fedora-chromium-config-gnome
     firefox
     firefox-langpacks
-    gnome-extensions-app
-    gnome-shell-extension-background-logo
-    gnome-software-rpm-ostree
-    gnome-terminal-nautilus
-    podman-docker
-    yelp
 )
 
 # Remove excluded packages if they are installed
@@ -124,24 +106,4 @@ fi
 
 echo "::endgroup::"
 
-echo "Enable Tailscale daemon service"
-systemctl enable tailscaled || echo "Can't enable Tailscale daemon service"
-
-echo "::group:: Install OpenCode Desktop & Wave Terminal"
-
-echo "Installing latest OpenCode RPM..."
-cd /tmp
-curl -L -o oc.rpm "https://github.com/sst/opencode/releases/latest/download/opencode-desktop-linux-x86_64.rpm"
-dnf5 install -y ./oc.rpm
-rm -f oc.rpm
-
-echo "Installing latest Wave Terminal RPM..."
-# Get the latest Wave Terminal release RPM URL
-WAVE_URL=$(curl -s "https://api.github.com/repos/wavetermdev/waveterm/releases/latest" | grep "browser_download_url.*waveterm-linux-x86_64.*\.rpm" | cut -d '"' -f 4)
-curl -L -o wave.rpm "$WAVE_URL"
-dnf5 install -y ./wave.rpm
-rm -f wave.rpm
-
-echo "::endgroup::"
-
-echo "System packages/CLI tools/COPR packages installation complete!"
+echo "Fedora packages installation complete!"
