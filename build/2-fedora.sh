@@ -8,7 +8,6 @@ echo "::group:: RPM Installation from DNF5"
 FEDORA_PACKAGES=(
     # Development Tools
     make
-    jq
     python3-pip
     python3-pygit2
     git-credential-libsecret
@@ -71,7 +70,6 @@ FEDORA_PACKAGES=(
     # Others
     fontawesome-fonts
     fontawesome-fonts-web
-    adwaita-icon-theme
     wf-recorder
 )
 

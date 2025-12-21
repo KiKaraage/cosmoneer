@@ -11,15 +11,11 @@ source /ctx/build/copr-helpers.sh
 echo "::group:: ublue COPR Packages"
 echo "Installing ublue COPR packages..."
 
-# Package swaps with ublue COPR
-echo "Swapping fwupd with ublue-os packages version, then install others..."
 copr_install_isolated "ublue-os/packages" \
-    "fwupd" \
     "ublue-brew" \
     "ublue-polkit-rules" \
     "ublue-setup-services" \
     "uupd" \
-    "ublue-os-udev-rules" \
     "ublue-bling"
 
 echo "::endgroup::"
