@@ -1,13 +1,7 @@
 #!/usr/bin/bash
-
 set -eoux pipefail
 
-###############################################################################
-# Base Image Configuration
-###############################################################################
-# This script handles base image setup and custom file copying
-###############################################################################
-
+echo "===$(basename "$0")==="
 echo "::group:: Copy Custom Files"
 
 echo "Copying custom Brewfiles..."
