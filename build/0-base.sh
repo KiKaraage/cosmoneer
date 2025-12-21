@@ -2,11 +2,21 @@
 
 set -eoux pipefail
 
-###############################################################################
-# Base Image Configuration
-###############################################################################
-# This script handles base image setup and custom file copying
-###############################################################################
+# Base Image Setup + Custom File Copying
+
+# Enable core system services
+systemctl enable systemd-timesyncd
+systemctl enable systemd-resolved.service
+
+# Configure systemd-resolved as default
+echo "Configuring systemd-resolved..."
+tee /usr/lib/systemd/system-preset/91-resolved-default.preset <<'EOF'
+enable systemd-resolved.service
+EOF
+tee /usr/lib/tmpfiles.d/resolved-default.conf <<'EOF'
+L /etc/resolv.conf - - - - ../run/systemd/resolve/stub-resolv.conf
+EOF
+systemctl preset systemd-resolved.service
 
 echo "::group:: Copy Custom Files"
 

@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
+set -xeuo pipefail
+
+# Cosmoneer Image Identity
 
 echo "===$(basename "$0")==="
 
 echo "::group:: Add Image Identity"
 
-set -xeuo pipefail
 
 IMAGE_PRETTY_NAME="Cosmoneer"
 IMAGE_NAME="cosmoneer"
