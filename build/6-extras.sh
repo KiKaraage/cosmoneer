@@ -167,56 +167,6 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                         install -Dm0755 "$binary" "/usr/bin/${expected_binary_name}"
                         echo "Installed binary: ${expected_binary_name} (from $binary_name)"
                         ;;
-                    "wf-recorder-gui")
-                        if [ -f "wf-recorder-gui" ]; then
-                            install -Dm755 wf-recorder-gui /usr/bin/${expected_binary_name}
-                            echo "Installed binary: ${expected_binary_name}"
-                        else
-                            echo "wf-recorder-gui binary not found in artifacts"
-                        fi
-                        # Install desktop file from metadata or fallback
-                        if [ -f "wf-recorder-gui.desktop" ]; then
-                            install -Dm644 wf-recorder-gui.desktop /usr/share/applications/wf-recorder-gui.desktop
-                            echo "Installed desktop file: wf-recorder-gui.desktop"
-                        else
-                            echo "wf-recorder-gui.desktop not found in artifacts"
-                        fi
-                        ;;
-                    "cosmic-ext-alternative-startup")
-                        if [ -f "cosmic-ext-alternative-startup" ]; then
-                            install -Dm755 cosmic-ext-alternative-startup /usr/bin/${expected_binary_name}
-                            echo "Installed binary: ${expected_binary_name}"
-                        else
-                            echo "cosmic-ext-alternative-startup binary not found in artifacts"
-                        fi
-                        # Check for desktop file in common locations
-                        if [ -f "res/cosmic.ext.AlternativeStartup.desktop" ]; then
-                            install -Dm644 res/cosmic.ext.AlternativeStartup.desktop /usr/share/applications/cosmic.ext.AlternativeStartup.desktop
-                            echo "Installed desktop file: cosmic.ext.AlternativeStartup.desktop"
-                        elif [ -f "cosmic.ext.AlternativeStartup.desktop" ]; then
-                            install -Dm644 cosmic.ext.AlternativeStartup.desktop /usr/share/applications/cosmic.ext.AlternativeStartup.desktop
-                            echo "Installed desktop file: cosmic.ext.AlternativeStartup.desktop"
-                        else
-                            echo "No desktop file found for ${applet_name}"
-                        fi
-                        ;;
-                    "cosmic-ext-bg-theme")
-                         if [ -f "cosmic-ext-bg-theme" ]; then
-                             install -Dm755 cosmic-ext-bg-theme /usr/bin/${expected_binary_name}
-                             echo "Installed binary: ${expected_binary_name}"
-                         else
-                             echo "cosmic-ext-bg-theme binary not found in artifacts"
-                         fi
-                         if [ -f "res/cosmic.ext.BgTheme.desktop" ]; then
-                             install -Dm644 res/cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
-                             echo "Installed desktop file: cosmic.ext.BgTheme.desktop"
-                         elif [ -f "cosmic.ext.BgTheme.desktop" ]; then
-                             install -Dm644 cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
-                             echo "Installed desktop file: cosmic.ext.BgTheme.desktop"
-                         else
-                             echo "cosmic.ext.BgTheme.desktop not found in artifacts"
-                         fi
-                         ;;
                 esac
 
                 # Install supporting files based on metadata patterns
