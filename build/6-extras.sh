@@ -2,14 +2,7 @@
 set -euo pipefail
 
 echo "===$(basename "$0")==="
-echo "::group:: COSMIC Applets RPM"
-echo "Installing cosmic-ext-applet-yt-dlp RPM..."
-# Get the latest RPM URL from GitHub Releases
-YTDLP_URL=$(curl -s "https://api.github.com/repos/D-Brox/cosmic-ext-applet-yt-dlp/releases/latest" | grep "browser_download_url.*cosmic-ext-applet-yt-dlp.*\x86_64.rpm" | cut -d '"' -f 4)
-curl -L -o cosmic-ytdlp-applet.rpm "$YTDLP_URL"
-dnf5 install -y ./cosmic-ytdlp-applet.rpm --skip-broken
-rm -f cosmic-ytdlp-applet.rpm
-echo "::endgroup::"
+echo "::group:: COSMIC Applets Artifacts"
 
 # Validate YAML configuration
 if [ ! -f "applets.yml" ]; then
@@ -17,8 +10,6 @@ if [ ! -f "applets.yml" ]; then
     echo "This file is required for YAML-driven package configuration"
     exit 1
 fi
-
-echo "::group:: COSMIC Applets Artifacts"
 
 # Install applets from artifacts if they exist
 if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
