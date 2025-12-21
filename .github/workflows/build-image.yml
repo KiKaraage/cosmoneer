@@ -276,9 +276,8 @@ jobs:
           # Extract applet names from the YAML configuration
           if [ -f "$CONFIG_FILE" ]; then
             # Get all applet names from both applets and utilities sections
-            APPLET_NAMES=$(yq eval '(.applets | keys) + (.utilities | keys)' "$CONFIG_FILE" | jq -r '.[]')
+            APPLET_NAMES=$(yq eval '.applets | keys | .[]' "$CONFIG_FILE" 2>/dev/null; yq eval '.utilities | keys | .[]' "$CONFIG_FILE" 2>/dev/null)
             echo "Found applets in config: $APPLET_NAMES"
-
             # Create JSON array from applet names
             APPLET_JSON=$(echo "$APPLET_NAMES" | jq -R -s -c 'split("\n") | map(select(length > 0)) | map({"name": .})')
             echo "Generated APPLET_JSON: $APPLET_JSON"
