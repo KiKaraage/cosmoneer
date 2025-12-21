@@ -1,19 +1,11 @@
 #!/usr/bin/bash
-
 set -eoux pipefail
-
-###############################################################################
-# System Services & Configuration
-###############################################################################
-# This script configures essential system services for Cosmoneer
-###############################################################################
 
 echo "===$(basename "$0")==="
 echo "::group:: System Services Configuration"
 
-echo "::group:: Docker CE"
+echo "::group:: Installing Docker CE"
 
-echo "Installing Docker CE..."
 dnf5 config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
 dnf5 config-manager setopt docker-ce-stable.enabled=0
 dnf5 install -y --skip-unavailable --enablerepo='docker-ce-stable' docker-ce docker-ce-cli docker-compose-plugin
@@ -99,7 +91,6 @@ systemctl preset-all --global || true
 add_wants_niri() {
     sed -i "s|\[Unit\]|\[Unit\]\nWants=$1|" "/usr/lib/systemd/user/niri.service"
 }
-add_wants_niri cliphist.service
 add_wants_niri swayidle.service
 add_wants_niri udiskie.service
 add_wants_niri cosmic-notifications.service
@@ -107,7 +98,6 @@ add_wants_niri cosmic-notifications.service
 # Replace complex symlink logic with preset pattern
 cat > /usr/lib/systemd/user-preset/01-cosmoneer.preset <<'EOF'
 enable swayidle.service
-enable cliphist.service
 enable cosmic-niri-session.service
 enable gnome-keyring-daemon.socket
 enable cosmic-notifications.service
