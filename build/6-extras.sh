@@ -7,7 +7,7 @@ echo "Installing cosmic-ext-applet-yt-dlp RPM..."
 # Get the latest RPM URL from GitHub Releases
 YTDLP_URL=$(curl -s "https://api.github.com/repos/D-Brox/cosmic-ext-applet-yt-dlp/releases/latest" | grep "browser_download_url.*cosmic-ext-applet-yt-dlp.*\x86_64.rpm" | cut -d '"' -f 4)
 curl -L -o cosmic-ytdlp-applet.rpm "$YTDLP_URL"
-dnf5 install -y ./cosmic-ytdlp-applet.rpm
+dnf5 install -y ./cosmic-ytdlp-applet.rpm --skip-broken
 rm -f cosmic-ytdlp-applet.rpm
 echo "::endgroup::"
 
