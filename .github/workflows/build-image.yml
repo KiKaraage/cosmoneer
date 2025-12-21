@@ -377,15 +377,18 @@ jobs:
       - name: Copy Artifacts to Build Context
         run: |
           # Copy artifacts to the repository directory so they're available to the Containerfile
+          echo "Checking for artifacts in /tmp/applet-artifacts..."
+          ls -la /tmp/applet-artifacts/ || echo "No artifacts directory found"
           if [ -d "/tmp/applet-artifacts" ] && [ "$(ls -A /tmp/applet-artifacts 2>/dev/null)" ]; then
             echo "Copying artifacts to build context..."
             mkdir -p ./applets-artifacts
-            cp -r /tmp/applet-artifacts/* ./applets-artifacts/
+            cp -r /tmp/applet-artifacts/* ./applets-artifacts/ 2>/dev/null || true
             echo "Artifacts copied to build context:"
-            ls -la ./applets-artifacts/
-                else
-            echo "No artifacts to copy"
+            ls -la ./applets-artifacts/ || echo "No artifacts in target directory"
+          else
+            echo "No artifacts to copy, creating empty directory"
             mkdir -p ./applets-artifacts
+            touch ./applets-artifacts/.empty
           fi
 
       - name: Build Image
