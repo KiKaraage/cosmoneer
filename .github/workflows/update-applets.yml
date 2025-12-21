@@ -192,10 +192,10 @@ jobs:
              echo "Found cosmic binaries: $COSMIC_BINARIES"
              find "$CARGO_TARGET_DIR/release" -name "*cosmic*" -type f -executable \
                -exec cp {} "$ARTIFACT_DIR/" \;
-           else
-            # For utilities that don't have "cosmic" in name, get binary name from applets.yml
-            EXPECTED_BINARY=$(yq -r ".$SECTION.binary_names" "$CONFIG_FILE")
-            echo "Looking for expected binary: $EXPECTED_BINARY"
+            else
+             # For utilities that don't have "cosmic" in name, get binary name from applets.yml
+             EXPECTED_BINARY=$(yq -r ".$SECTION.binary_names[0]" "$CONFIG_FILE")
+             echo "Looking for expected binary: $EXPECTED_BINARY"
             if [[ -f "$CARGO_TARGET_DIR/release/$EXPECTED_BINARY" ]]; then
               echo "Copying expected binary: $EXPECTED_BINARY"
               cp "$CARGO_TARGET_DIR/release/$EXPECTED_BINARY" "$ARTIFACT_DIR/"
