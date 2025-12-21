@@ -60,51 +60,50 @@ jobs:
         id: build_list
         run: |
           set -euo pipefail
-          CONFIG_FILE="build/applets.yml"
-          echo "Event name: ${{ github.event_name }}" >&2
-          echo "SPECIFIC_APPLET before: '${{ github.event.inputs.applet_name }}'" >&2
+           echo "Event name: ${{ github.event_name }}" >&2
+           echo "SPECIFIC_APPLET before: '${{ github.event.inputs.applet_name }}'" >&2
            # For debugging: always build all applets
            echo "DEBUG: Setting FORCE_CHECK=true, SPECIFIC_APPLET=''" >&2
            FORCE_CHECK="true"
            SPECIFIC_APPLET=""
            # Temporarily disabled complex logic for debugging
 
-          BUILD_LIST=""
+           BUILD_LIST=""
 
-          if [[ "$FORCE_CHECK" == "true" ]]; then
-            if [[ -n "$SPECIFIC_APPLET" ]]; then
-              # Build specific applet
-              BUILD_LIST="{\"name\": \"$SPECIFIC_APPLET\"}"
-            else
-              # Build all applets for workflow_run or scheduled backup
-              # Hardcode the JSON for now to test
-              BUILD_LIST='[{"name": "cosmic-ext-applet-emoji-selector"},{"name": "cosmic-ext-applet-privacy-indicator"},{"name": "cosmic-ext-applet-vitals"},{"name": "cosmic-ext-applet-caffeine"},{"name": "cosmic-ext-applet-clipboard-manager"},{"name": "cosmic-ext-alternative-startup"},{"name": "wf-recorder-gui"},{"name": "cosmic-ext-bg-theme"}]'
-            fi
-          fi
+           if [[ "$FORCE_CHECK" == "true" ]]; then
+             if [[ -n "$SPECIFIC_APPLET" ]]; then
+               # Build specific applet
+               BUILD_LIST="{\"name\": \"$SPECIFIC_APPLET\"}"
+             else
+               # Build all applets for workflow_run or scheduled backup
+               # Hardcode the JSON for now to test
+               BUILD_LIST='[{"name": "cosmic-ext-applet-emoji-selector"},{"name": "cosmic-ext-applet-privacy-indicator"},{"name": "cosmic-ext-applet-vitals"},{"name": "cosmic-ext-applet-caffeine"},{"name": "cosmic-ext-applet-clipboard-manager"},{"name": "cosmic-ext-alternative-startup"},{"name": "wf-recorder-gui"},{"name": "cosmic-ext-bg-theme"}]'
+             fi
+           fi
 
-          # Final validation and output
-          echo "Final BUILD_LIST: $BUILD_LIST" >&2
-          if echo "$BUILD_LIST" | jq . >/dev/null 2>&1; then
-            echo "✅ BUILD_LIST is valid JSON" >&2
-          else
-            echo "❌ BUILD_LIST is invalid JSON, using empty array" >&2
-            BUILD_LIST="[]"
-          fi
+           # Final validation and output
+           echo "Final BUILD_LIST: $BUILD_LIST" >&2
+           if echo "$BUILD_LIST" | jq . >/dev/null 2>&1; then
+             echo "✅ BUILD_LIST is valid JSON" >&2
+           else
+             echo "❌ BUILD_LIST is invalid JSON, using empty array" >&2
+             BUILD_LIST="[]"
+           fi
 
-          # Final validation and output
-          echo "Final BUILD_LIST: '$BUILD_LIST'" >&2
-          if [[ -z "$BUILD_LIST" ]]; then
-            echo "BUILD_LIST is empty, setting to []" >&2
-            BUILD_LIST="[]"
-          elif ! echo "$BUILD_LIST" | jq . >/dev/null 2>&1; then
-            echo "❌ BUILD_LIST is invalid JSON: '$BUILD_LIST', using empty array" >&2
-            BUILD_LIST="[]"
-          else
-            echo "✅ BUILD_LIST is valid JSON" >&2
-          fi
+           # Final validation and output
+           echo "Final BUILD_LIST: '$BUILD_LIST'" >&2
+           if [[ -z "$BUILD_LIST" ]]; then
+             echo "BUILD_LIST is empty, setting to []" >&2
+             BUILD_LIST="[]"
+           elif ! echo "$BUILD_LIST" | jq . >/dev/null 2>&1; then
+             echo "❌ BUILD_LIST is invalid JSON: '$BUILD_LIST', using empty array" >&2
+             BUILD_LIST="[]"
+           else
+             echo "✅ BUILD_LIST is valid JSON" >&2
+           fi
 
-          echo "applets_to_build=$BUILD_LIST" >> $GITHUB_OUTPUT
-          echo "should_build=$([ "$BUILD_LIST" != "[]" ] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
+           echo "applets_to_build=$BUILD_LIST" >> $GITHUB_OUTPUT
+           echo "should_build=$([ "$BUILD_LIST" != "[]" ] && echo "true" || echo "false")" >> $GITHUB_OUTPUT
 
   build-applets:
     name: Build ${{ matrix.applet.name }}
@@ -138,7 +137,7 @@ jobs:
         run: |
           set -euo pipefail
           APPLET_NAME="${{ matrix.applet.name }}"
-          CONFIG_FILE="${{ github.workspace }}/build/applets.yml"
+          CONFIG_FILE="/home/runner/work/cosmoneer/cosmoneer/build/applets.yml"
 
           echo "::group:: Building $APPLET_NAME"
           echo "Working directory: $(pwd)" >&2
@@ -155,12 +154,12 @@ jobs:
 
           [[ -z "$SECTION" ]] && { echo "No config found for $APPLET_NAME"; exit 1; }
 
-           # Get configuration from YAML
-           if [[ "$SECTION" == applets.* ]]; then
-             GITHUB_REPO=$(yq -r ".applets.\"${SECTION#applets.}\".github_repo" "$CONFIG_FILE" 2>/dev/null || echo "unknown")
-           elif [[ "$SECTION" == utilities.* ]]; then
-             GITHUB_REPO=$(yq -r ".utilities.\"${SECTION#utilities.}\".github_repo" "$CONFIG_FILE" 2>/dev/null || echo "unknown")
-           fi
+          # Get configuration from YAML
+          if [[ "$SECTION" == applets.* ]]; then
+            GITHUB_REPO=$(yq -r ".applets.\"${SECTION#applets.}\".github_repo" "$CONFIG_FILE" 2>/dev/null || echo "unknown")
+          elif [[ "$SECTION" == utilities.* ]]; then
+            GITHUB_REPO=$(yq -r ".utilities.\"${SECTION#utilities.}\".github_repo" "$CONFIG_FILE" 2>/dev/null || echo "unknown")
+          fi
 
            # Clone and build
            REPO_DIR="/tmp/$APPLET_NAME"
@@ -194,34 +193,34 @@ jobs:
              find "$CARGO_TARGET_DIR/release" -name "*cosmic*" -type f -executable \
                -exec cp {} "$ARTIFACT_DIR/" \;
            else
-             # For utilities that don't have "cosmic" in name, copy the expected binary
-             EXPECTED_BINARY=$(yq -r ".$SECTION.binary_names" "$CONFIG_FILE")
-             echo "Looking for expected binary: $EXPECTED_BINARY"
-             if [[ -f "$CARGO_TARGET_DIR/release/$EXPECTED_BINARY" ]]; then
-               echo "Copying expected binary: $EXPECTED_BINARY"
-               cp "$CARGO_TARGET_DIR/release/$EXPECTED_BINARY" "$ARTIFACT_DIR/"
-             else
-               echo "Warning: Expected binary $EXPECTED_BINARY not found in $CARGO_TARGET_DIR/release/"
-               # List all executables in the release directory
-               find "$CARGO_TARGET_DIR/release" -type f -executable 2>/dev/null | head -10
-             fi
+            # For utilities that don't have "cosmic" in name, get binary name from applets.yml
+            EXPECTED_BINARY=$(yq -r ".$SECTION.binary_names" "$CONFIG_FILE")
+            echo "Looking for expected binary: $EXPECTED_BINARY"
+            if [[ -f "$CARGO_TARGET_DIR/release/$EXPECTED_BINARY" ]]; then
+              echo "Copying expected binary: $EXPECTED_BINARY"
+              cp "$CARGO_TARGET_DIR/release/$EXPECTED_BINARY" "$ARTIFACT_DIR/"
+            else
+              echo "Warning: Expected binary $EXPECTED_BINARY not found in $CARGO_TARGET_DIR/release/"
+              # List all executables in the release directory
+              find "$CARGO_TARGET_DIR/release" -type f -executable 2>/dev/null | head -10
+            fi
            fi
 
-           # Special handling for cosmic-ext-bg-theme: rename binary to use hyphens
-           if [[ "$APPLET_NAME" == "cosmic-ext-bg-theme" ]]; then
-             if [[ -f "$ARTIFACT_DIR/cosmic_ext_bg_theme" ]]; then
-               mv "$ARTIFACT_DIR/cosmic_ext_bg_theme" "$ARTIFACT_DIR/cosmic-ext-bg-theme"
-               echo "Renamed binary: cosmic_ext_bg_theme → cosmic-ext-bg-theme"
-             fi
-           fi
+          # Special handling for cosmic-ext-bg-theme: rename binary to use hyphens
+          if [[ "$APPLET_NAME" == "cosmic-ext-bg-theme" ]]; then
+            if [[ -f "$ARTIFACT_DIR/cosmic_ext_bg_theme" ]]; then
+              mv "$ARTIFACT_DIR/cosmic_ext_bg_theme" "$ARTIFACT_DIR/cosmic-ext-bg-theme"
+              echo "Renamed binary: cosmic_ext_bg_theme → cosmic-ext-bg-theme"
+            fi
+          fi
 
-           # Copy additional files (justfile, desktop, icons)
-           [[ -f "justfile" ]] && cp justfile "$ARTIFACT_DIR/"
-           find . -name "*.desktop" -o -name "*.metainfo.xml" -o -name "*.svg" \
-             -exec cp --parents {} "$ARTIFACT_DIR/" \;
+          # Copy additional files (justfile, desktop, icons)
+          [[ -f "justfile" ]] && cp justfile "$ARTIFACT_DIR/"
+          find . -name "*.desktop" -o -name "*.metainfo.xml" -o -name "*.svg" \
+            -exec cp --parents {} "$ARTIFACT_DIR/" \;
 
-           echo "✅ Build completed for $APPLET_NAME"
-           echo "::endgroup::"
+          echo "✅ Build completed for $APPLET_NAME"
+          echo "::endgroup::"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
