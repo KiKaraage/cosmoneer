@@ -59,8 +59,10 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     set -euo pipefail && \
+    cp /ctx/build/applets.yml /applets.yml && \
     /ctx/build/6-extras.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
