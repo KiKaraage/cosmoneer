@@ -95,35 +95,6 @@ dnf5 -y install --skip-unavailable "${FEDORA_PACKAGES[@]}"
 
 echo "::endgroup::"
 
-echo "::group:: Docker CE"
-
-echo "Installing Docker CE..."
-dnf5 config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
-dnf5 config-manager setopt docker-ce-stable.enabled=0
-dnf5 install -y --skip-unavailable --enablerepo='docker-ce-stable' docker-ce docker-ce-cli docker-compose-plugin
-
-echo "Configuring Docker CE..."
-# Enable SSH agent globally
-systemctl enable --global ssh-agent
-
-# Create docker-compose symlink
-ln -sf /usr/libexec/docker/cli-plugins/docker-compose /usr/bin/docker-compose
-
-# Enable IP forwarding for Docker
-mkdir -p /usr/lib/sysctl.d
-echo "net.ipv4.ip_forward = 1" > /usr/lib/sysctl.d/docker-ce.conf
-
-# Configure Docker service presets
-sed -i 's/enable docker/disable docker/' /usr/lib/systemd/system-preset/90-default.preset
-systemctl preset docker.service docker.socket
-
-# Create docker group
-cat > /usr/lib/sysusers.d/docker.conf <<'EOF'
-g docker -
-EOF
-
-echo "::endgroup::"
-
 echo "::group:: Package Exclusions"
 
 # Packages to exclude - common to all versions
