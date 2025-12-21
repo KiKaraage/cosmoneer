@@ -95,17 +95,6 @@ dnf5 -y install --skip-unavailable "${FEDORA_PACKAGES[@]}"
 
 echo "::endgroup::"
 
-echo "::group:: Install 3rd-party COPR packages"
-
-echo "Installing Morewaita icon theme..."
-copr_install_isolated "trixieua/morewaita-icon-theme" "morewaita-icon-theme"
-echo "Installing cliphist..."
-copr_install_isolated "zirconium/packages" "cliphist"
-echo "Installing slurp..."
-copr_install_isolated "thrnciar/setuptools-78.1.1" "slurp"
-
-echo "::endgroup::"
-
 echo "::group:: Docker CE"
 
 echo "Installing Docker CE..."

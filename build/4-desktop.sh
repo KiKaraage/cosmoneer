@@ -12,6 +12,9 @@ set -eoux pipefail
 # shellcheck source=/dev/null
 source /ctx/build/copr-helpers.sh
 
+copr_install_isolated "trixieua/morewaita-icon-theme" "morewaita-icon-theme"
+copr_install_isolated "thrnciar/setuptools-78.1.1" "slurp"
+
 echo "===$(basename "$0")==="
 
 echo "::group:: Install COSMIC Desktop"
