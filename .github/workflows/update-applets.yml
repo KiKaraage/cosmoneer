@@ -194,7 +194,11 @@ jobs:
                -exec cp {} "$ARTIFACT_DIR/" \;
             else
              # For utilities that don't have "cosmic" in name, get binary name from applets.yml
-             EXPECTED_BINARY=$(yq -r ".$SECTION.binary_names[0]" "$CONFIG_FILE")
+             if [[ "$SECTION" == applets.* ]]; then
+               EXPECTED_BINARY=$(yq -r ".applets.\"${SECTION#applets.}\".binary_names[0]" "$CONFIG_FILE")
+             elif [[ "$SECTION" == utilities.* ]]; then
+               EXPECTED_BINARY=$(yq -r ".utilities.\"${SECTION#utilities.}\".binary_names[0]" "$CONFIG_FILE")
+             fi
              echo "Looking for expected binary: $EXPECTED_BINARY"
             if [[ -f "$CARGO_TARGET_DIR/release/$EXPECTED_BINARY" ]]; then
               echo "Copying expected binary: $EXPECTED_BINARY"
