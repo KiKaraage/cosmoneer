@@ -45,6 +45,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=tmpfs,dst=/tmp \
+    set -euo pipefail && \
     /ctx/build/2-fedora.sh && \
     /ctx/build/3-ublue.sh && \
     dnf5 clean all
@@ -52,12 +53,14 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=tmpfs,dst=/tmp \
+    set -euo pipefail && \
     /ctx/build/4-niri.sh && \
     /ctx/build/5-cosmic.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=tmpfs,dst=/tmp \
+    set -euo pipefail && \
     /ctx/build/6-extras.sh
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
