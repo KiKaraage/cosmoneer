@@ -238,6 +238,11 @@ else
     exit 0
 fi
 
+# Install the binary
+# install -Dm755 "$CARGO_TARGET_DIR/release/cosmic-ext-bg-theme" /usr/bin/cosmic-ext-bg-theme
+# Install desktop file
+# install -Dm644 res/cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
+
 echo "::endgroup::"
 
 echo "::group:: Install OpenCode Desktop & Wave Terminal"
