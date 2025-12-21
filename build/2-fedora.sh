@@ -2,7 +2,7 @@
 set -eoux pipefail
 
 echo "===$(basename "$0")==="
-echo "::group:: RPM Installation from dnf5"
+echo "::group:: RPM Installation from DNF5"
 
 # Base packages from Fedora repos - common to all versions
 FEDORA_PACKAGES=(

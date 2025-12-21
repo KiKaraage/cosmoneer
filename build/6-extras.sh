@@ -1,13 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Validate YAML configuration
-if [ ! -f "applets.yml" ]; then
-    echo "ERROR: applets.yml not found in $(pwd)"
-    echo "This file is required for YAML-driven package configuration"
-    exit 1
-fi
-
 echo "===$(basename "$0")==="
 echo "::group:: COSMIC Applets RPM"
 echo "Installing cosmic-ext-applet-yt-dlp RPM..."
@@ -17,6 +10,13 @@ curl -L -o cosmic-ytdlp-applet.rpm "$YTDLP_URL"
 dnf5 install -y ./cosmic-ytdlp-applet.rpm
 rm -f cosmic-ytdlp-applet.rpm
 echo "::endgroup::"
+
+# Validate YAML configuration
+if [ ! -f "applets.yml" ]; then
+    echo "ERROR: applets.yml not found in $(pwd)"
+    echo "This file is required for YAML-driven package configuration"
+    exit 1
+fi
 
 echo "::group:: COSMIC Applets Artifacts"
 

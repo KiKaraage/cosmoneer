@@ -12,12 +12,9 @@ echo "::group:: ublue COPR Packages"
 echo "Installing ublue COPR packages..."
 
 # Package swaps with ublue COPR
-echo "Swapping fwupd with ublue-os packages version..."
-copr_install_isolated "ublue-os/packages" "fwupd"
-
-# Install ublue packages
-echo "Installing ublue packages..."
+echo "Swapping fwupd with ublue-os packages version, then install others..."
 copr_install_isolated "ublue-os/packages" \
+    "fwupd" \
     "ublue-brew" \
     "ublue-polkit-rules" \
     "ublue-setup-services" \
@@ -27,9 +24,7 @@ copr_install_isolated "ublue-os/packages" \
 
 echo "::endgroup::"
 
-echo "::group:: Configure ublue-brew"
-
-echo "Configuring ublue-brew integration..."
+echo "::group:: Configure ublue-brew Integration"
 
 # Make sure essential directories exist
 # Create parent directories first to avoid issues when creating specific user directories
