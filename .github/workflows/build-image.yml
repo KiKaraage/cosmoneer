@@ -286,7 +286,7 @@ jobs:
 
           # For each applet, find most recent successful workflow run by name
           success_count=0
-          applet_count=$(echo "$APPLET_JSON" | jq -r '.[] | length')
+          applet_count=$(echo "$APPLET_JSON" | jq -r 'length')
           echo "Processing $applet_count applets..."
 
           # Process each applet individually to maintain variable scope
