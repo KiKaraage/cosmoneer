@@ -285,27 +285,36 @@ jobs:
           total_count=0
 
           # For each applet, find most recent successful workflow run by name
-          applet_count=$(echo "$APPLET_JSON" | jq -r '.[] | .name' | wc -l)
-          total_count=$applet_count
-          echo "$APPLET_JSON" | jq -r '.[] | .name' | while IFS= read -r applet_name; do
-          echo "Looking for workflow run: Build $applet_name"
-            # Look for artifacts from the update-applets.yml workflow
+          success_count=0
+          applet_count=$(echo "$APPLET_JSON" | jq -r '.[] | length')
+          echo "Processing $applet_count applets..."
+
+          # Process each applet individually to maintain variable scope
+          for i in $(seq 0 $((applet_count - 1))); do
+            applet_name=$(echo "$APPLET_JSON" | jq -r ".[$i].name")
+            echo "Looking for workflow run: Build $applet_name"
+
+            # Look for artifacts from the update-applets.yml workflow - try multiple recent runs
             run_ids=$(gh run list --repo "$GH_REPO" --workflow "update-applets.yml" \
-                     --limit 10 --json databaseId,conclusion,status,name,createdAt \
+                     --limit 3 --json databaseId,conclusion,status,name,createdAt \
                      -q ".[] | select(.status == \"completed\") | .databaseId" \
                      2>/dev/null)
-            # Try to download from the most recent successful run
-            run_id=$(echo "$run_ids" | head -1)
-            if [ -n "$run_id" ]; then
-              echo "Trying to download artifacts from '$applet_name' run $run_id"
-              if gh run download --repo "$GH_REPO" "$run_id" --name "$applet_name" --dir "/tmp/applet-artifacts" 2>/dev/null; then
-                echo "✓ Successfully downloaded artifacts for $applet_name from run $run_id"
-                success_count=$((success_count + 1))
-              else
-                echo "⚠ No artifacts found for '$applet_name' in run $run_id"
+            # Try to download from each recent run until successful
+            downloaded=false
+            for run_id in $run_ids; do
+              if [ "$downloaded" = false ] && [ -n "$run_id" ]; then
+                echo "Trying to download '$applet_name' from run $run_id"
+                if gh run download --repo "$GH_REPO" "$run_id" --name "$applet_name" --dir "/tmp/applet-artifacts" 2>/dev/null; then
+                  echo "✓ Successfully downloaded artifacts for $applet_name from run $run_id"
+                  success_count=$((success_count + 1))
+                  downloaded=true
+                  break
+                fi
               fi
-            else
-              echo "⚠ No successful workflow run found for '$applet_name'"
+            done
+
+            if [ "$downloaded" = false ]; then
+              echo "⚠ No artifacts found for '$applet_name' in any recent runs"
             fi
           done
 
