@@ -280,52 +280,68 @@ jobs:
             {"name": "cosmic-ext-bg-theme"}
           ]'
 
-          echo "Searching for specific applet workflow runs in $GH_REPO"
-          success_count=0
-          total_count=0
+          # Download ALL artifacts from the latest successful update-applets.yml run
+          echo "Finding latest successful update-applets.yml run..."
+          latest_run_id=$(gh run list --repo "$GH_REPO" --workflow "update-applets.yml" \
+                         --limit 1 --json databaseId,conclusion,status \
+                         -q ".[] | select(.status == \"completed\") | .databaseId" \
+                         2>/dev/null | head -1)
 
-          # For each applet, find most recent successful workflow run by name
-          success_count=0
-          applet_count=$(echo "$APPLET_JSON" | jq -r 'length')
-          echo "Processing $applet_count applets..."
+          if [ -n "$latest_run_id" ]; then
+            echo "Found latest successful run: $latest_run_id"
+            echo "Downloading ALL artifacts from this run..."
 
-          # Process each applet individually to maintain variable scope
-          for i in $(seq 0 $((applet_count - 1))); do
-            applet_name=$(echo "$APPLET_JSON" | jq -r ".[$i].name")
-            echo "Looking for workflow run: Build $applet_name"
+            # Create temp directory for downloads
+            mkdir -p /tmp/raw-artifacts
 
-            # Look for artifacts from the update-applets.yml workflow - try multiple recent runs
-            run_ids=$(gh run list --repo "$GH_REPO" --workflow "update-applets.yml" \
-                     --limit 6 --json databaseId,conclusion,status,name,createdAt \
-                     -q ".[] | select(.status == \"completed\") | .databaseId" \
-                     2>/dev/null)
-            # Try to download from each recent run until successful
-            downloaded=false
-            for run_id in $run_ids; do
-              if [ "$downloaded" = false ] && [ -n "$run_id" ]; then
-                echo "Trying to download '$applet_name' from run $run_id"
-                if gh run download --repo "$GH_REPO" "$run_id" --name "$applet_name" --dir "/tmp/applet-artifacts" 2>/dev/null; then
-                  echo "✓ Successfully downloaded artifacts for $applet_name from run $run_id"
-                  success_count=$((success_count + 1))
-                  downloaded=true
-                  break
+            # Download ALL artifacts from the latest run
+            if gh run download --repo "$GH_REPO" "$latest_run_id" --dir "/tmp/raw-artifacts" 2>/dev/null; then
+              echo "✓ Successfully downloaded all artifacts from run $latest_run_id"
+
+              # Extract any ZIP files that were downloaded
+              echo "Extracting any ZIP artifacts..."
+              for zip_file in /tmp/raw-artifacts/*.zip; do
+                if [ -f "$zip_file" ]; then
+                  echo "Extracting: $(basename "$zip_file")"
+                  unzip -q "$zip_file" -d "/tmp/applet-artifacts" || echo "Failed to extract $zip_file"
+                  rm "$zip_file"  # Remove the ZIP after extraction
                 fi
-              fi
-            done
+              done
 
-            if [ "$downloaded" = false ]; then
-              echo "⚠ No artifacts found for '$applet_name' in any recent runs"
+              # Move any non-ZIP artifacts directly
+              for artifact in /tmp/raw-artifacts/*; do
+                if [ -f "$artifact" ] && [[ "$artifact" != *.zip ]]; then
+                  echo "Moving artifact: $(basename "$artifact")"
+                  mv "$artifact" "/tmp/applet-artifacts/" || echo "Failed to move $artifact"
+                fi
+              done
+
+              # Report what was extracted
+              echo ""
+              echo "=== Extracted Artifacts ==="
+              ls -la /tmp/applet-artifacts/ | grep -v "^total" | head -20
+              echo ""
+
+              # Count extracted applets
+              extracted_count=$(find /tmp/applet-artifacts -maxdepth 1 -type d -not -name "applet-artifacts" | wc -l)
+              echo "Extracted $extracted_count applet directories"
+
+              success_count=$extracted_count
+
+            else
+              echo "⚠ Failed to download artifacts from run $latest_run_id"
             fi
-          done
+          else
+            echo "⚠ No successful update-applets.yml runs found"
+          fi
 
           echo "=== Download Summary ==="
-          if [ "$applet_count" -gt 0 ]; then
-            echo "Successfully downloaded: $success_count/$applet_count applets"
-          else
-            echo "Successfully downloaded: $success_count/0 applets"
-          fi
+          echo "Successfully downloaded and extracted: $success_count applets"
           echo "Final downloaded artifacts:"
           ls -la /tmp/applet-artifacts/ || echo "No artifacts directory contents"
+
+          # Clean up temp directory
+          rm -rf /tmp/raw-artifacts
 
           # Create empty artifacts directory if nothing was downloaded to avoid build failures
           if [ ! -d "/tmp/applet-artifacts" ] || [ -z "$(ls -A /tmp/applet-artifacts 2>/dev/null)" ]; then

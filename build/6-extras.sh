@@ -62,9 +62,17 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
         fi
     done
 
+    # Define valid applet names to avoid processing non-applet directories
+    VALID_APPLETS="cosmic-ext-applet-emoji-selector cosmic-ext-applet-privacy-indicator cosmic-ext-applet-vitals cosmic-ext-applet-caffeine cosmic-ext-applet-clipboard-manager cosmic-ext-alternative-startup wf-recorder-gui cosmic-ext-bg-theme"
+
     for applet_dir in /applets/*/; do
         if [ -d "$applet_dir" ]; then
             applet_name=$(basename "$applet_dir")
+            # Skip directories that are not valid applets
+            if ! echo "$VALID_APPLETS" | grep -q -w "$applet_name"; then
+                echo "Skipping non-applet directory: $applet_name"
+                continue
+            fi
             echo "Installing applet: $applet_name"
             cd "$applet_dir"
 
@@ -95,15 +103,6 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 fi
             done
 
-            # Custom scripts override
-            if [ -f "install.sh" ]; then
-                echo "Running custom install.sh for $applet_name"
-                bash install.sh || {
-                    echo "ERROR: install.sh failed for $applet_name"
-                    continue
-                }
-                continue
-            fi
 
             # Simple binary detection with YAML integration
             binary_found=false
