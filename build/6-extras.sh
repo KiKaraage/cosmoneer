@@ -269,10 +269,19 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                         size="scalable"
                     fi
                     mkdir -p "/usr/share/icons/hicolor/$size/apps" 2>/dev/null || true
-                    cp "$icon_file" "/usr/share/icons/hicolor/$size/apps/" 2>/dev/null || {
+
+                    # Handle special case for app_icon.svg - rename to match desktop entry expectation
+                    icon_dest_name="$(basename "$icon_file")"
+                    if [[ "$icon_file" == *"app_icon.svg" ]] && [[ "$applet_name" == "cosmic-ext-applet-clipboard-manager" ]]; then
+                        # Desktop entry expects: io.github.cosmic_utils.cosmic-ext-applet-clipboard-manager-symbolic
+                        icon_dest_name="io.github.cosmic_utils.cosmic-ext-applet-clipboard-manager-symbolic.svg"
+                        echo "  Special case: Renaming app_icon.svg to match desktop entry expectation"
+                    fi
+
+                    cp "$icon_file" "/usr/share/icons/hicolor/$size/apps/$icon_dest_name" 2>/dev/null || {
                         echo "ERROR: Failed to copy $icon_file"
                     }
-                    echo "  Installed icon: $(basename "$icon_file")"
+                    echo "  Installed icon: $icon_dest_name"
                     icon_installed=true
                 done
             fi
