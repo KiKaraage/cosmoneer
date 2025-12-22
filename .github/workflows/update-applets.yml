@@ -226,35 +226,32 @@ jobs:
           # Copy additional files (justfile, desktop, icons)
           [[ -f "justfile" ]] && cp justfile "$ARTIFACT_DIR/" || true
 
-          # Copy desktop files and supporting files with directory structure
-          find . -name "*.desktop" -type f -exec bash -c '
-              for desktop_file; do
-                  echo "Copying desktop file: $desktop_file"
-                  relative_dir=$(dirname "$desktop_file")
-                  mkdir -p "$ARTIFACT_DIR/$relative_dir" 2>/dev/null || true
-                  cp "$desktop_file" "$ARTIFACT_DIR/$relative_dir/" 2>/dev/null || true
-              done
-          ' bash {} +
+          # Copy desktop files from root directory (for apps like wf-recorder-gui)
+          find . -maxdepth 1 -name "*.desktop" -type f | while read -r desktop_file; do
+              echo "Copying desktop file: $desktop_file"
+              cp "$desktop_file" "$ARTIFACT_DIR/" 2>/dev/null || {
+                  echo "ERROR: Failed to copy $desktop_file"
+                  exit 1
+              }
+          done
 
-          # Copy metainfo files with directory structure
-          find . -name "*.metainfo.xml" -type f -exec bash -c '
-              for metainfo_file; do
-                  echo "Copying metainfo file: $metainfo_file"
-                  relative_dir=$(dirname "$metainfo_file")
-                  mkdir -p "$ARTIFACT_DIR/$relative_dir" 2>/dev/null || true
-                  cp "$metainfo_file" "$ARTIFACT_DIR/$relative_dir/" 2>/dev/null || true
-              done
-          ' bash {} +
+          # Copy supporting files directories (res for most applets, data for emoji selector, etc.)
+          for support_dir in "res" "data"; do
+              if [ -d "$support_dir" ]; then
+                  echo "Copying $support_dir directory with all supporting files..."
+                  cp -r "$support_dir" "$ARTIFACT_DIR/" || {
+                      echo "ERROR: Failed to copy $support_dir directory"
+                      exit 1
+                  }
+                  echo "Successfully copied $support_dir directory"
+                  break  # Only copy the first found directory
+              fi
+          done
 
-          # Copy icons with directory structure
-          find . \( -name "*.svg" -o -name "*.png" \) -type f -exec bash -c '
-              for icon_file; do
-                  echo "Copying icon file: $icon_file"
-                  relative_dir=$(dirname "$icon_file")
-                  mkdir -p "$ARTIFACT_DIR/$relative_dir" 2>/dev/null || true
-                  cp "$icon_file" "$ARTIFACT_DIR/$relative_dir/" 2>/dev/null || true
-              done
-          ' bash {} +
+          # If no supporting files found, warn but continue
+          if ! find . -maxdepth 1 -name "*.desktop" | grep -q . && [ ! -d "res" ] && [ ! -d "data" ]; then
+              echo "WARNING: No supporting files found - no desktop files or res/data directories"
+          fi
 
           # Re-enable errexit for remaining operations
           set -e

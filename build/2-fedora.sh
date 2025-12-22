@@ -71,6 +71,7 @@ FEDORA_PACKAGES=(
     fontawesome-fonts
     fontawesome-fonts-web
     wf-recorder
+    vte291-gtk4-devel
 )
 
 # Install all Fedora packages (bulk - safe from COPR injection)

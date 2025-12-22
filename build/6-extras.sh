@@ -3,6 +3,8 @@ set -euo pipefail
 
 echo "===$(basename "$0")==="
 echo "::group:: COSMIC Applets Artifacts"
+echo "Running in directory: $(pwd)"
+echo "Starting applet installation process..."
 
 # Validate YAML configuration
 if [ ! -f "applets.yml" ]; then
@@ -31,6 +33,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
     )
 
     # Create directories and move files
+    echo "Processing loose files in /applets..."
     for filename in "${!file_to_applet[@]}"; do
         applet_dir="${file_to_applet[$filename]}"
         if [ -f "/applets/$filename" ]; then
@@ -39,6 +42,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             mv "/applets/$filename" "/applets/$applet_dir/"
         fi
     done
+    echo "Loose files processed"
 
     # Also handle files with hash suffixes (Cargo artifacts)
     for file in /applets/*; do
@@ -57,26 +61,48 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
     echo "Organization complete."
 
     # Extract ZIP files if present
+    echo "Checking for ZIP files in /applets..."
+    ls -la /applets/*.zip 2>/dev/null || echo "No ZIP files found"
     for zip_file in /applets/*.zip; do
         if [ -f "$zip_file" ]; then
             applet_name=$(basename "$zip_file" .zip)
-            echo "Extracting $applet_name..."
+            echo "=== Extracting $applet_name from $(basename "$zip_file") ==="
+            echo "ZIP file information:"
+            unzip -l "$zip_file" | head -20 || true
 
             # Extract applets to temp dir
             applet_dir_name=${applet_name//_/-}
             temp_dir="/tmp/$applet_name"
             mkdir -p "$temp_dir"
+            echo "Unzipping to $temp_dir..."
             unzip -q "$zip_file" -d "$temp_dir"
+            echo "Extracted directory structure:"
+            find "$temp_dir" -type d | head -10 || true
+            echo "Extracted files:"
+            find "$temp_dir" -type f | head -10 || true
 
             # Handle nested directory structure
             nested_dir=$(find "$temp_dir" -mindepth 1 -maxdepth 1 -type d | head -1)
+            echo "Checking for nested directory structure..."
+            echo "Top-level entries in temp_dir:"
+            find "$temp_dir" -mindepth 1 -maxdepth 1 -exec ls -la {} \; || true
+            echo "Number of top-level entries: $(find "$temp_dir" -mindepth 1 -maxdepth 1 | wc -l)"
+
             if [ -n "$nested_dir" ] && [ "$(find "$temp_dir" -mindepth 1 -maxdepth 1 | wc -l)" -eq 1 ]; then
-                echo "Moving contents from nested directory..."
-                mv "$nested_dir" "/applets/$applet_dir_name"
+                echo "Found single nested directory: $nested_dir"
+                echo "Moving contents from nested directory to /applets/$applet_dir_name/..."
+                mkdir -p "/applets/$applet_dir_name"
+                cp -r "$nested_dir"/* "/applets/$applet_dir_name/" 2>/dev/null || true
+                echo "Copied directory structure from nested directory"
+                echo "Resulting contents in /applets/$applet_dir_name:"
+                find "/applets/$applet_dir_name" -type f | head -10 || true
             else
                 echo "No nested directory found, moving all contents..."
                 mkdir -p "/applets/$applet_dir_name"
-                mv "$temp_dir"/* "/applets/$applet_dir_name/"
+                cp -r "$temp_dir"/* "/applets/$applet_dir_name/" 2>/dev/null || true
+                echo "Copied all contents from temp directory"
+                echo "Resulting contents in /applets/$applet_dir_name:"
+                find "/applets/$applet_dir_name" -type f | head -10 || true
             fi
             rmdir "$temp_dir"
             rm "$zip_file"
@@ -84,6 +110,11 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             # Log extracted contents
             echo "Extracted files for $applet_name:"
             if [ -d "/applets/$applet_dir_name" ]; then
+                echo "  Full directory structure:"
+                find "/applets/$applet_dir_name" -type f | head -20 || true
+                echo "  Directory listing:"
+                ls -la "/applets/$applet_dir_name" || true
+
                 # List binaries
                 find "/applets/$applet_dir_name" -maxdepth 2 -name "cosmic*" -type f -executable | while read -r binary; do
                 echo "  Binary: $(basename "$binary")"
@@ -98,6 +129,11 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             done
                 find "/applets/$applet_dir_name" -maxdepth 1 -type d ! -path "/applets/$applet_dir_name" | while read -r dir; do
                 echo "  Supporting Directory: $(basename "$dir")"
+                # List contents of subdirectories
+                if [ -d "/applets/$applet_dir_name/$(basename "$dir")" ]; then
+                    echo "    Contents of $(basename "$dir"):"
+                    find "/applets/$applet_dir_name/$(basename "$dir")" -type f | head -10 || true
+                fi
             done
             fi
         fi
@@ -106,6 +142,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
     # Define valid applet names to avoid processing non-applet directories
     VALID_APPLETS="cosmic-ext-applet-emoji-selector cosmic-ext-applet-privacy-indicator cosmic-ext-applet-vitals cosmic-ext-applet-caffeine cosmic-ext-applet-clipboard-manager cosmic-ext-alternative-startup wf-recorder-gui cosmic-ext-bg-theme"
 
+    echo "Processing applet directories in /applets/..."
     for applet_dir in /applets/*/; do
         if [ -d "$applet_dir" ]; then
             applet_name=$(basename "$applet_dir")
@@ -115,10 +152,20 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 continue
             fi
             echo "Installing applet: $applet_name"
-            cd "$applet_dir"
+            cd "$applet_dir" || { echo "ERROR: Failed to change to directory $applet_dir"; continue; }
 
             echo "Current directory contents:"
-            find . -maxdepth 2 -type f | head -20 || true
+            echo "Full directory listing:"
+            find . -type f | head -20 || true
+            echo "Top-level directory structure:"
+            ls -la || true
+            echo "Subdirectory contents:"
+            for d in */; do
+                if [ -d "$d" ]; then
+                    echo "Directory: $d"
+                    find "$d" -type f | head -10 || true
+                fi
+            done
 
             # Custom installation scripts override
             if [ -f "install.sh" ]; then
@@ -207,60 +254,54 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             # Install supporting files (simple approach)
             echo "Installing supporting files for $applet_name..."
 
-            # Desktop files
+            # Desktop files (recursive search in all directories)
             desktop_count=0
-            # Check root directory
-            for desktop_file in *.desktop; do
-                if [ -f "$desktop_file" ]; then
-                    install -Dm0644 "$desktop_file" "/usr/share/applications/$desktop_file" || {
+            # Find all .desktop files recursively
+            echo "  Searching for desktop files..."
+            find . -name "*.desktop" -type f | while read -r desktop_file; do
+                echo "  Found desktop file: $desktop_file"
+                filename=$(basename "$desktop_file")
+
+                # Special case for clipboard manager desktop file - rename to match applet name
+                if [[ "$applet_name" == "cosmic-ext-applet-clipboard-manager" ]] && [[ "$filename" == "desktop_entry.desktop" ]]; then
+                    install -Dm0644 "$desktop_file" "/usr/share/applications/io.github.cosmic_utils.cosmic-ext-applet-clipboard-manager.desktop" || {
                         echo "ERROR: Failed to install desktop file: $desktop_file"
                     }
-                    echo "  Installed desktop file: $desktop_file"
-                    desktop_count=$((desktop_count + 1))
+                    echo "  Installed desktop file: io.github.cosmic_utils.cosmic-ext-applet-clipboard-manager.desktop (renamed from $filename)"
+                else
+                    install -Dm0644 "$desktop_file" "/usr/share/applications/$filename" || {
+                        echo "ERROR: Failed to install desktop file: $desktop_file"
+                    }
+                    echo "  Installed desktop file: $filename"
                 fi
+                desktop_count=$((desktop_count + 1))
             done
-            # Check res directory
-            if [ -d "res" ]; then
-                for desktop_file in res/*.desktop; do
-                    if [ -f "$desktop_file" ]; then
-                        filename=$(basename "$desktop_file")
-                        install -Dm0644 "$desktop_file" "/usr/share/applications/$filename" || {
-                            echo "ERROR: Failed to install desktop file: $filename"
-                        }
-                        echo "  Installed desktop file: $filename"
-                        desktop_count=$((desktop_count + 1))
-                    fi
-                done
-            fi
             if [ $desktop_count -eq 0 ]; then
                 echo "  No desktop files found"
             fi
 
-            # Metainfo files
+            # Metainfo files (recursive search in all directories)
             metainfo_count=0
-            # Check root directory
-            for metainfo_file in *.metainfo.xml; do
-                if [ -f "$metainfo_file" ]; then
-                    install -Dm0644 "$metainfo_file" "/usr/share/metainfo/$metainfo_file" || {
+            # Find all .metainfo.xml files recursively
+            echo "  Searching for metainfo files..."
+            find . -name "*.metainfo.xml" -type f | while read -r metainfo_file; do
+                echo "  Found metainfo file: $metainfo_file"
+                filename=$(basename "$metainfo_file")
+
+                # Special case for clipboard manager metainfo file - rename to match applet name
+                if [[ "$applet_name" == "cosmic-ext-applet-clipboard-manager" ]] && [[ "$filename" == "metainfo.xml" ]]; then
+                    install -Dm0644 "$metainfo_file" "/usr/share/metainfo/io.github.cosmic_utils.cosmic-ext-applet-clipboard-manager.metainfo.xml" || {
                         echo "ERROR: Failed to install metainfo file: $metainfo_file"
                     }
-                    echo "  Installed metainfo file: $metainfo_file"
-                    metainfo_count=$((metainfo_count + 1))
+                    echo "  Installed metainfo file: io.github.cosmic_utils.cosmic-ext-applet-clipboard-manager.metainfo.xml (renamed from $filename)"
+                else
+                    install -Dm0644 "$metainfo_file" "/usr/share/metainfo/$filename" || {
+                        echo "ERROR: Failed to install metainfo file: $metainfo_file"
+                    }
+                    echo "  Installed metainfo file: $filename"
                 fi
+                metainfo_count=$((metainfo_count + 1))
             done
-            # Check res directory
-            if [ -d "res" ]; then
-                for metainfo_file in res/*.metainfo.xml; do
-                    if [ -f "$metainfo_file" ]; then
-                        filename=$(basename "$metainfo_file")
-                        install -Dm0644 "$metainfo_file" "/usr/share/metainfo/$filename" || {
-                            echo "ERROR: Failed to install metainfo file: $filename"
-                        }
-                        echo "  Installed metainfo file: $filename"
-                        metainfo_count=$((metainfo_count + 1))
-                    fi
-                done
-            fi
             if [ $metainfo_count -eq 0 ]; then
                 echo "  No metainfo files found"
             fi
@@ -283,10 +324,11 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
 
             # Check for res directory (alternative location)
             if [ -d "res" ]; then
+                echo "  Found res directory, processing icons..."
                 mkdir -p "/usr/share/icons/hicolor" || {
                     echo "ERROR: Failed to create icons directory"
                 }
-                # Copy SVG and PNG files from res directory
+                # Copy SVG and PNG files from res directory recursively
                 find res -name "*.svg" -o -name "*.png" | while read -r icon_file; do
                     # Determine icon size from filename or use scalable
                     if [[ "$icon_file" =~ ([0-9]+)x[0-9]+ ]]; then
@@ -295,17 +337,30 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                         size="scalable"
                     fi
                     mkdir -p "/usr/share/icons/hicolor/$size/apps" 2>/dev/null || true
-                    cp "$icon_file" "/usr/share/icons/hicolor/$size/apps/" 2>/dev/null || {
+
+                    # Handle special case for app_icon.svg - rename to match desktop entry expectation
+                    icon_dest_name="$(basename "$icon_file")"
+                    if [[ "$icon_file" == *"app_icon.svg" ]] && [[ "$applet_name" == "cosmic-ext-applet-clipboard-manager" ]]; then
+                        # Desktop entry expects: io.github.cosmic_utils.cosmic-ext-applet-clipboard-manager-symbolic
+                        icon_dest_name="io.github.cosmic_utils.cosmic-ext-applet-clipboard-manager-symbolic.svg"
+                        echo "  Special case: Renaming app_icon.svg to match desktop entry expectation"
+                    fi
+
+                    cp "$icon_file" "/usr/share/icons/hicolor/$size/apps/$icon_dest_name" 2>/dev/null || {
                         echo "ERROR: Failed to copy $icon_file"
                     }
-                    echo "  Installed icon: $(basename "$icon_file")"
+                    echo "  Installed icon: $icon_dest_name"
                     icon_installed=true
                 done
+            else
+                echo "  No res directory found"
             fi
 
             # Check for individual icon files in root directory
+            echo "  Checking for individual icon files in root directory..."
             for icon_file in *.svg *.png; do
                 if [ -f "$icon_file" ]; then
+                    echo "  Found icon file in root: $icon_file"
                     mkdir -p "/usr/share/icons/hicolor/scalable/apps" 2>/dev/null || true
                     cp "$icon_file" "/usr/share/icons/hicolor/scalable/apps/" 2>/dev/null || {
                         echo "ERROR: Failed to copy $icon_file"
@@ -316,7 +371,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             done
 
             if [ "$icon_installed" = false ]; then
-                echo "  No icons found"
+                echo "  No icons found anywhere"
             fi
 
             # Schema files if present
@@ -344,7 +399,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             fi
 
             echo "Applet $applet_name installation completed"
-            cd - > /dev/null
+            cd - > /dev/null || echo "WARNING: Failed to return to previous directory"
         fi
     done
 
@@ -353,11 +408,6 @@ else
     echo "No applet artifacts found, skipping applet installation"
     exit 0
 fi
-
-# Install the binary
-# install -Dm755 "$CARGO_TARGET_DIR/release/cosmic-ext-bg-theme" /usr/bin/cosmic-ext-bg-theme
-# Install desktop file
-# install -Dm644 res/cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
 
 echo "::endgroup::"
 
