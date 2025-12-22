@@ -220,8 +220,31 @@ jobs:
 
           # Copy additional files (justfile, desktop, icons)
           [[ -f "justfile" ]] && cp justfile "$ARTIFACT_DIR/"
-          find . -name "*.desktop" -o -name "*.metainfo.xml" -o -name "*.svg" \
-            -exec cp --parents {} "$ARTIFACT_DIR/" \;
+
+          # Copy desktop files and supporting files with directory structure
+          find . -name "*.desktop" -type f | while read -r desktop_file; do
+              echo "Copying desktop file: $desktop_file"
+              # Create directory structure in target
+              relative_dir=$(dirname "$desktop_file")
+              mkdir -p "$ARTIFACT_DIR/$relative_dir"
+              cp "$desktop_file" "$ARTIFACT_DIR/$relative_dir/"
+          done
+
+          # Copy metainfo files with directory structure
+          find . -name "*.metainfo.xml" -type f | while read -r metainfo_file; do
+              echo "Copying metainfo file: $metainfo_file"
+              relative_dir=$(dirname "$metainfo_file")
+              mkdir -p "$ARTIFACT_DIR/$relative_dir"
+              cp "$metainfo_file" "$ARTIFACT_DIR/$relative_dir/"
+          done
+
+          # Copy icons with directory structure
+          find . -name "*.svg" -o -name "*.png" | grep -E '\.(svg|png)$' | while read -r icon_file; do
+              echo "Copying icon file: $icon_file"
+              relative_dir=$(dirname "$icon_file")
+              mkdir -p "$ARTIFACT_DIR/$relative_dir"
+              cp "$icon_file" "$ARTIFACT_DIR/$relative_dir/"
+          done
 
           echo "✅ Build completed for $APPLET_NAME"
           echo "::endgroup::"
