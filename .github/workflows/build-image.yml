@@ -298,47 +298,29 @@ jobs:
             if gh run download --repo "$GH_REPO" "$latest_run_id" --dir "/tmp/raw-artifacts" 2>/dev/null; then
               echo "✓ Successfully downloaded all artifacts from run $latest_run_id"
 
-              # Process downloaded artifacts
-              echo "Processing downloaded artifacts..."
-
-              # Create directories for each valid applet and move corresponding files
-              for applet_name in cosmic-ext-applet-emoji-selector cosmic-ext-applet-privacy-indicator cosmic-ext-applet-vitals cosmic-ext-applet-caffeine cosmic-ext-applet-clipboard-manager cosmic-ext-alternative-startup wf-recorder-gui cosmic-ext-bg-theme; do
-                # Check if we have any files for this applet
-                found_files=false
-                for file in /tmp/raw-artifacts/*; do
-                  if [ -f "$file" ] && [[ "$(basename "$file")" == *"$applet_name"* ]]; then
-                    mkdir -p "/tmp/applet-artifacts/$applet_name"
-                    echo "Moving $(basename "$file") to $applet_name/"
-                    mv "$file" "/tmp/applet-artifacts/$applet_name/" || echo "Failed to move $file"
-                    found_files=true
-                  fi
-                done
-
-                if [ "$found_files" = true ]; then
-                  echo "✓ Organized files for $applet_name"
-                fi
-              done
-
-              # Handle any remaining files (supporting files like justfile, data, etc.)
-              for file in /tmp/raw-artifacts/*; do
-                if [ -f "$file" ]; then
-                  filename=$(basename "$file")
-                  echo "Moving supporting file: $filename"
-                  mv "$file" "/tmp/applet-artifacts/" || echo "Failed to move $file"
-                fi
-              done
-
-              # Report what was organized
-              echo ""
-              echo "=== Organized Artifacts ==="
-              find /tmp/applet-artifacts -type f | head -20
+              # Debug: show what was downloaded
+              echo "Downloaded files:"
+              ls -la /tmp/raw-artifacts/
               echo ""
 
-              # Count organized applets
-              extracted_count=$(find /tmp/applet-artifacts -maxdepth 1 -type d -not -name "applet-artifacts" | wc -l)
-              echo "Organized $extracted_count applet directories"
+              # Process downloaded artifacts - move everything to applet-artifacts
+              echo "Moving all downloaded artifacts to processing directory..."
 
-              success_count=$extracted_count
+              # Move all downloaded files to the processing directory
+              mv /tmp/raw-artifacts/* /tmp/applet-artifacts/ 2>/dev/null || true
+
+              # Report what was moved
+              echo ""
+              echo "=== Available Artifacts ==="
+              ls -la /tmp/applet-artifacts/ | grep -v "^total"
+              echo ""
+
+              # The 6-extras.sh script will handle the organization into directories
+              # For now, just count all files as "artifacts available"
+              file_count=$(find /tmp/applet-artifacts -type f | wc -l)
+              echo "Available $file_count artifact files"
+
+              success_count=$file_count
 
             else
               echo "⚠ Failed to download artifacts from run $latest_run_id"

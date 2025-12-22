@@ -15,6 +15,47 @@ fi
 if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
     echo "Installing applets from artifacts..."
 
+    # First, organize loose files into directories by applet name
+    echo "Organizing artifacts into directories..."
+
+    # Define mapping of files to applets
+    declare -A file_to_applet=(
+        ["cosmic-applet-emoji-selector"]="cosmic-ext-applet-emoji-selector"
+        ["cosmic-ext-alternative-startup"]="cosmic-ext-alternative-startup"
+        ["cosmic-ext-applet-caffeine"]="cosmic-ext-applet-caffeine"
+        ["cosmic-ext-applet-clipboard-manager"]="cosmic-ext-applet-clipboard-manager"
+        ["cosmic-ext-applet-privacy-indicator"]="cosmic-ext-applet-privacy-indicator"
+        ["cosmic-ext-applet-vitals"]="cosmic-ext-applet-vitals"
+        ["cosmic-ext-bg-theme"]="cosmic-ext-bg-theme"
+        ["wf-recorder-gui"]="wf-recorder-gui"
+    )
+
+    # Create directories and move files
+    for filename in "${!file_to_applet[@]}"; do
+        applet_dir="${file_to_applet[$filename]}"
+        if [ -f "/applets/$filename" ]; then
+            mkdir -p "/applets/$applet_dir"
+            echo "Moving $filename to $applet_dir/"
+            mv "/applets/$filename" "/applets/$applet_dir/"
+        fi
+    done
+
+    # Also handle files with hash suffixes (Cargo artifacts)
+    for file in /applets/*; do
+        if [ -f "$file" ] && [[ "$(basename "$file")" =~ ^(cosmic.*|wf-recorder-gui)-[a-f0-9]+$ ]]; then
+            # Extract base name without hash
+            base_name=$(basename "$file" | sed 's/-[a-f0-9]*$//')
+            if [ -n "${file_to_applet[$base_name]}" ]; then
+                applet_dir="${file_to_applet[$base_name]}"
+                mkdir -p "/applets/$applet_dir"
+                echo "Moving $(basename "$file") to $applet_dir/"
+                mv "$file" "/applets/$applet_dir/"
+            fi
+        fi
+    done
+
+    echo "Organization complete."
+
     # Extract ZIP files if present
     for zip_file in /applets/*.zip; do
         if [ -f "$zip_file" ]; then
