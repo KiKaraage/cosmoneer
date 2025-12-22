@@ -76,10 +76,6 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 echo "Running custom install.sh for $applet_name"
                 bash install.sh
                 continue  # Skip to next applet
-            elif [ -f "justfile" ] && command -v just >/dev/null 2>&1 && just --list 2>/dev/null | grep -q "install"; then
-                echo "Running just install for $applet_name"
-                just install
-                continue  # Skip to next applet
             fi
 
             # Install binary if present (in target/release/ or root)
@@ -104,13 +100,6 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 echo "Running custom install.sh for $applet_name"
                 bash install.sh || {
                     echo "ERROR: install.sh failed for $applet_name"
-                    continue
-                }
-                continue
-            elif [ -f "justfile" ] && command -v just >/dev/null 2>&1 && just --list 2>/dev/null | grep -q "install"; then
-                echo "Running just install for $applet_name"
-                just install || {
-                    echo "ERROR: just install failed for $applet_name"
                     continue
                 }
                 continue
