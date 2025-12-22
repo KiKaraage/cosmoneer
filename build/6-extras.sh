@@ -3,6 +3,8 @@ set -euo pipefail
 
 echo "===$(basename "$0")==="
 echo "::group:: COSMIC Applets Artifacts"
+echo "Running in directory: $(pwd)"
+echo "Starting applet installation process..."
 
 # Validate YAML configuration
 if [ ! -f "applets.yml" ]; then
@@ -31,6 +33,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
     )
 
     # Create directories and move files
+    echo "Processing loose files in /applets..."
     for filename in "${!file_to_applet[@]}"; do
         applet_dir="${file_to_applet[$filename]}"
         if [ -f "/applets/$filename" ]; then
@@ -39,6 +42,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             mv "/applets/$filename" "/applets/$applet_dir/"
         fi
     done
+    echo "Loose files processed"
 
     # Also handle files with hash suffixes (Cargo artifacts)
     for file in /applets/*; do
@@ -128,7 +132,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 # List contents of subdirectories
                 if [ -d "/applets/$applet_dir_name/$(basename "$dir")" ]; then
                     echo "    Contents of $(basename "$dir"):"
-                    ls -la "/applets/$applet_dir_name/$(basename "$dir")" | head -10 || true
+                    find "/applets/$applet_dir_name/$(basename "$dir")" -type f | head -10 || true
                 fi
             done
             fi
@@ -138,6 +142,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
     # Define valid applet names to avoid processing non-applet directories
     VALID_APPLETS="cosmic-ext-applet-emoji-selector cosmic-ext-applet-privacy-indicator cosmic-ext-applet-vitals cosmic-ext-applet-caffeine cosmic-ext-applet-clipboard-manager cosmic-ext-alternative-startup wf-recorder-gui cosmic-ext-bg-theme"
 
+    echo "Processing applet directories in /applets/..."
     for applet_dir in /applets/*/; do
         if [ -d "$applet_dir" ]; then
             applet_name=$(basename "$applet_dir")
@@ -147,7 +152,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 continue
             fi
             echo "Installing applet: $applet_name"
-            cd "$applet_dir"
+            cd "$applet_dir" || { echo "ERROR: Failed to change to directory $applet_dir"; continue; }
 
             echo "Current directory contents:"
             echo "Full directory listing:"
@@ -158,7 +163,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             for d in */; do
                 if [ -d "$d" ]; then
                     echo "Directory: $d"
-                    ls -la "$d" | head -10 || true
+                    find "$d" -type f | head -10 || true
                 fi
             done
 
@@ -394,7 +399,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             fi
 
             echo "Applet $applet_name installation completed"
-            cd - > /dev/null
+            cd - > /dev/null || echo "WARNING: Failed to return to previous directory"
         fi
     done
 
@@ -403,11 +408,6 @@ else
     echo "No applet artifacts found, skipping applet installation"
     exit 0
 fi
-
-# Install the binary
-# install -Dm755 "$CARGO_TARGET_DIR/release/cosmic-ext-bg-theme" /usr/bin/cosmic-ext-bg-theme
-# Install desktop file
-# install -Dm644 res/cosmic.ext.BgTheme.desktop /usr/share/applications/cosmic.ext.BgTheme.desktop
 
 echo "::endgroup::"
 
