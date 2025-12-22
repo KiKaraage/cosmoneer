@@ -136,38 +136,66 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                 echo "Using special case: looking for cosmic-applet-emoji-selector"
             fi
 
-            for binary in *cosmic*; do
-                if [ -f "$binary" ] && [ -x "$binary" ]; then
-                    install -Dm0755 "$binary" "/usr/bin/${expected_binary_name:-$binary}"
-                    echo "Installed binary: ${expected_binary_name:-$binary} (from $binary)"
+            # Look for the expected binary name (or with hash suffix for Cargo artifacts)
+            found_binary=""
+            for file in *; do
+                if [ -f "$file" ] && [ -x "$file" ] && [[ "$file" == "$expected_binary_name" || "$file" == "$expected_binary_name"-* ]]; then
+                    found_binary="$file"
                     break
                 fi
             done
 
+            if [ -n "$found_binary" ]; then
+                install -Dm0755 "$found_binary" "/usr/bin/${expected_binary_name}"
+                echo "Installed binary: ${expected_binary_name} (from $found_binary)"
+            else
+                echo "WARNING: Expected binary $expected_binary_name not found"
+            fi
+
 
             # Simple binary detection with YAML integration
             binary_found=false
-            for binary in *cosmic*; do
-                if [ -f "$binary" ] && [ -x "$binary" ]; then
-                    binary_found=true
-                    # Extract expected binary name from applets.yml
-                    expected_binary_name=$(yq eval ".applets[\"$applet_name\"].binary_names[0]" applets.yml 2>/dev/null || echo "")
+            # Determine if this is an applet or utility and get expected binary names
+            SECTION=""
+            if [[ "$applet_name" == *"applet"* ]]; then
+                SECTION="applets"
+            else
+                SECTION="utilities"
+            fi
 
-                    # Install with expected name if available, otherwise use binary name
-                    if [ -n "$expected_binary_name" ]; then
-                        install -Dm0755 "$binary" "/usr/bin/${expected_binary_name}" || {
-                            echo "ERROR: Failed to install $expected_binary_name"
-                            # TODOs: continue 2
-                        }
-                        echo "Installed binary: ${expected_binary_name} (from $binary)"
-                    else
-                        install -Dm0755 "$binary" "/usr/bin/$binary" || {
-                            echo "ERROR: Failed to install $binary"
-                            # TODOs: continue 2
-                        }
-                        echo "Installed binary: $binary"
+            # Get expected binary names from YAML
+            expected_binaries=$(yq eval ".$SECTION[\"$applet_name\"].binary_names[]" applets.yml 2>/dev/null || echo "")
+
+            # If no binaries found in YAML, look for any executable files
+            if [ -z "$expected_binaries" ]; then
+                echo "No binary names found in YAML, looking for any executable files..."
+                for binary in *; do
+                    if [ -f "$binary" ] && [ -x "$binary" ] && [[ "$binary" != *.so ]] && [[ "$binary" != justfile ]]; then
+                        expected_binaries="$binary"
+                        break
                     fi
-                    break
+                done
+            fi
+
+            # Install binaries
+            for expected_binary in $expected_binaries; do
+                # Look for the binary (could be exact name or with hash suffix)
+                found_binary=""
+                for file in *; do
+                    if [ -f "$file" ] && [ -x "$file" ] && [[ "$file" == "$expected_binary" || "$file" == "$expected_binary"-* ]]; then
+                        found_binary="$file"
+                        break
+                    fi
+                done
+
+                if [ -n "$found_binary" ]; then
+                    binary_found=true
+                    install -Dm0755 "$found_binary" "/usr/bin/${expected_binary}" || {
+                        echo "ERROR: Failed to install $expected_binary"
+                    }
+                    echo "Installed binary: ${expected_binary} (from $found_binary)"
+                else
+                    echo "WARNING: Expected binary $expected_binary not found"
                 fi
             done
 
