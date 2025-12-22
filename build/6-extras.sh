@@ -209,6 +209,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
 
             # Desktop files
             desktop_count=0
+            # Check root directory
             for desktop_file in *.desktop; do
                 if [ -f "$desktop_file" ]; then
                     install -Dm0644 "$desktop_file" "/usr/share/applications/$desktop_file" || {
@@ -218,12 +219,26 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     desktop_count=$((desktop_count + 1))
                 fi
             done
+            # Check res directory
+            if [ -d "res" ]; then
+                for desktop_file in res/*.desktop; do
+                    if [ -f "$desktop_file" ]; then
+                        filename=$(basename "$desktop_file")
+                        install -Dm0644 "$desktop_file" "/usr/share/applications/$filename" || {
+                            echo "ERROR: Failed to install desktop file: $filename"
+                        }
+                        echo "  Installed desktop file: $filename"
+                        desktop_count=$((desktop_count + 1))
+                    fi
+                done
+            fi
             if [ $desktop_count -eq 0 ]; then
                 echo "  No desktop files found"
             fi
 
             # Metainfo files
             metainfo_count=0
+            # Check root directory
             for metainfo_file in *.metainfo.xml; do
                 if [ -f "$metainfo_file" ]; then
                     install -Dm0644 "$metainfo_file" "/usr/share/metainfo/$metainfo_file" || {
@@ -233,22 +248,75 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
                     metainfo_count=$((metainfo_count + 1))
                 fi
             done
+            # Check res directory
+            if [ -d "res" ]; then
+                for metainfo_file in res/*.metainfo.xml; do
+                    if [ -f "$metainfo_file" ]; then
+                        filename=$(basename "$metainfo_file")
+                        install -Dm0644 "$metainfo_file" "/usr/share/metainfo/$filename" || {
+                            echo "ERROR: Failed to install metainfo file: $filename"
+                        }
+                        echo "  Installed metainfo file: $filename"
+                        metainfo_count=$((metainfo_count + 1))
+                    fi
+                done
+            fi
             if [ $metainfo_count -eq 0 ]; then
                 echo "  No metainfo files found"
             fi
 
             # Icons (recursive)
+            icon_installed=false
+
+            # Check for icons directory (standard location)
             if [ -d "icons" ]; then
                 mkdir -p "/usr/share/icons/hicolor" || {
                     echo "ERROR: Failed to create icons directory"
                 }
                 cp -r icons/* "/usr/share/icons/hicolor/" 2>/dev/null || {
-                    echo "ERROR: Failed to copy icons"
+                    echo "ERROR: Failed to copy icons from icons/"
                 }
                 icon_count=$(find icons -type f | wc -l)
                 echo "  Installed $icon_count icons from icons/ directory"
-            else
-                echo "  No icons directory found"
+                icon_installed=true
+            fi
+
+            # Check for res directory (alternative location)
+            if [ -d "res" ]; then
+                mkdir -p "/usr/share/icons/hicolor" || {
+                    echo "ERROR: Failed to create icons directory"
+                }
+                # Copy SVG and PNG files from res directory
+                find res -name "*.svg" -o -name "*.png" | while read -r icon_file; do
+                    # Determine icon size from filename or use scalable
+                    if [[ "$icon_file" =~ ([0-9]+)x[0-9]+ ]]; then
+                        size="${BASH_REMATCH[1]}x${BASH_REMATCH[1]}"
+                    else
+                        size="scalable"
+                    fi
+                    mkdir -p "/usr/share/icons/hicolor/$size/apps" 2>/dev/null || true
+                    cp "$icon_file" "/usr/share/icons/hicolor/$size/apps/" 2>/dev/null || {
+                        echo "ERROR: Failed to copy $icon_file"
+                    }
+                    echo "  Installed icon: $(basename "$icon_file")"
+                    icon_installed=true
+                done
+            fi
+
+            # Check for individual icon files in root directory
+            for icon_file in *.svg *.png; do
+                if [ -f "$icon_file" ]; then
+                    mkdir -p "/usr/share/icons/hicolor/scalable/apps" 2>/dev/null || true
+                    cp "$icon_file" "/usr/share/icons/hicolor/scalable/apps/" 2>/dev/null || {
+                        echo "ERROR: Failed to copy $icon_file"
+                    }
+                    echo "  Installed icon: $icon_file"
+                    icon_installed=true
+                fi
+            done
+
+            if [ "$icon_installed" = false ]; then
+                echo "  No icons found"
             fi
 
             # Schema files if present
