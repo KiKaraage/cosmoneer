@@ -298,33 +298,45 @@ jobs:
             if gh run download --repo "$GH_REPO" "$latest_run_id" --dir "/tmp/raw-artifacts" 2>/dev/null; then
               echo "✓ Successfully downloaded all artifacts from run $latest_run_id"
 
-              # Extract any ZIP files that were downloaded
-              echo "Extracting any ZIP artifacts..."
-              for zip_file in /tmp/raw-artifacts/*.zip; do
-                if [ -f "$zip_file" ]; then
-                  echo "Extracting: $(basename "$zip_file")"
-                  unzip -q "$zip_file" -d "/tmp/applet-artifacts" || echo "Failed to extract $zip_file"
-                  rm "$zip_file"  # Remove the ZIP after extraction
+              # Process downloaded artifacts
+              echo "Processing downloaded artifacts..."
+
+              # Create directories for each valid applet and move corresponding files
+              for applet_name in cosmic-ext-applet-emoji-selector cosmic-ext-applet-privacy-indicator cosmic-ext-applet-vitals cosmic-ext-applet-caffeine cosmic-ext-applet-clipboard-manager cosmic-ext-alternative-startup wf-recorder-gui cosmic-ext-bg-theme; do
+                # Check if we have any files for this applet
+                found_files=false
+                for file in /tmp/raw-artifacts/*; do
+                  if [ -f "$file" ] && [[ "$(basename "$file")" == *"$applet_name"* ]]; then
+                    mkdir -p "/tmp/applet-artifacts/$applet_name"
+                    echo "Moving $(basename "$file") to $applet_name/"
+                    mv "$file" "/tmp/applet-artifacts/$applet_name/" || echo "Failed to move $file"
+                    found_files=true
+                  fi
+                done
+
+                if [ "$found_files" = true ]; then
+                  echo "✓ Organized files for $applet_name"
                 fi
               done
 
-              # Move any non-ZIP artifacts directly
-              for artifact in /tmp/raw-artifacts/*; do
-                if [ -f "$artifact" ] && [[ "$artifact" != *.zip ]]; then
-                  echo "Moving artifact: $(basename "$artifact")"
-                  mv "$artifact" "/tmp/applet-artifacts/" || echo "Failed to move $artifact"
+              # Handle any remaining files (supporting files like justfile, data, etc.)
+              for file in /tmp/raw-artifacts/*; do
+                if [ -f "$file" ]; then
+                  filename=$(basename "$file")
+                  echo "Moving supporting file: $filename"
+                  mv "$file" "/tmp/applet-artifacts/" || echo "Failed to move $file"
                 fi
               done
 
-              # Report what was extracted
+              # Report what was organized
               echo ""
-              echo "=== Extracted Artifacts ==="
-              ls -la /tmp/applet-artifacts/ | grep -v "^total" | head -20
+              echo "=== Organized Artifacts ==="
+              find /tmp/applet-artifacts -type f | head -20
               echo ""
 
-              # Count extracted applets
+              # Count organized applets
               extracted_count=$(find /tmp/applet-artifacts -maxdepth 1 -type d -not -name "applet-artifacts" | wc -l)
-              echo "Extracted $extracted_count applet directories"
+              echo "Organized $extracted_count applet directories"
 
               success_count=$extracted_count
 
