@@ -76,21 +76,4 @@ echo "::group:: Hardware Module Installation"
 
 echo "::endgroup::"
 
-echo "::group:: Install Firmware Packages"
-
-echo "Wireless firmware already installed, skipping..."
-
-echo "Audio firmware already installed, skipping..."
-
-echo "Installing camera firmware..."
-dnf5 install -y --skip-unavailable \
-    libcamera-v4l2
-
-echo "Installing network and storage packages..."
-dnf5 install -y --skip-unavailable \
-    gvfs-smb \
-    fuse-devel
-
-echo "::endgroup::"
-
 echo "Kernel and hardware support configuration complete!"

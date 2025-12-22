@@ -268,90 +268,74 @@ jobs:
           set +e  # Don't exit on error to allow partial downloads
           mkdir -p /tmp/applet-artifacts
 
-          # Get list of applets from check-applet-updates workflow
+          # Use the same hardcoded list as update-applets.yml for consistency
           APPLET_JSON='[
-            {"name": "cosmic-ext-applet-emoji-selector", "url": "https://github.com/leb-kuchen/cosmic-ext-applet-emoji-selector"},
-            {"name": "cosmic-ext-applet-vitals", "url": "https://github.com/Coinio/cosmic-ext-applet-vitals.git"},
-            {"name": "cosmic-applet-music-player", "url": "https://github.com/Ebbo/cosmic-applet-music-player.git"},
-            {"name": "cosmic-ext-applet-caffeine", "url": "https://github.com/tropicbliss/cosmic-ext-applet-caffeine"},
-            {"name": "cosmic-ext-applet-ollama", "url": "https://github.com/cosmic-utils/cosmic-ext-applet-ollama"},
-            {"name": "cosmic-ext-applet-clipboard-manager", "url": "https://github.com/cosmic-utils/clipboard-manager"},
-            {"name": "cosmic-ext-alternative-startup", "url": "https://github.com/Drakulix/cosmic-ext-alternative-startup.git"},
-            {"name": "cosmic-ext-bg-theme", "url": "https://github.com/wash2/cosmic_ext_bg_theme"},
-            {"name": "wf-recorder-gui", "url": "https://github.com/ali205412/wf-recorder-gui.git"},
-            {"name": "prtsc-wayland", "url": "https://github.com/Amchik/prtsc-wayland"},
-            {"name": "niri_window_buttons", "url": "https://github.com/adelmonte/niri_window_buttons"}
+            {"name": "cosmic-ext-applet-emoji-selector"},
+            {"name": "cosmic-ext-applet-privacy-indicator"},
+            {"name": "cosmic-ext-applet-vitals"},
+            {"name": "cosmic-ext-applet-caffeine"},
+            {"name": "cosmic-ext-applet-clipboard-manager"},
+            {"name": "cosmic-ext-alternative-startup"},
+            {"name": "wf-recorder-gui"},
+            {"name": "cosmic-ext-bg-theme"}
           ]'
 
-          echo "Searching for specific applet workflow runs in $GH_REPO"
-          success_count=0
-          total_count=0
-
-          # For each applet, find most recent successful workflow run by name
-          applet_count=$(echo "$APPLET_JSON" | jq -r '.[] | .name' | wc -l)
-          total_count=$applet_count
-          echo "$APPLET_JSON" | jq -r '.[] | .name' | while IFS= read -r applet_name; do
-            echo "Looking for workflow run: Build $applet_name"
-
-            # Special handling for niri_window_buttons - check niri-window-buttons.yml first
-            if [ "$applet_name" = "niri_window_buttons" ]; then
-              echo "Checking niri-window-buttons.yml workflow for niri_window_buttons..."
-              run_id=$(gh run list --repo "$GH_REPO" --workflow ".github/workflows/niri-window-buttons.yml" \
-                        --limit 100 --json databaseId,conclusion,status,name,createdAt \
-                        -q ".[] | select(.status == \"completed\" and (.name | contains(\"niri_window_buttons Update\"))) | .databaseId" \
-                        2>/dev/null | head -1)
-            else
-              # Try applet-management.yml first with more lenient matching, get latest run
-              run_id=$(gh run list --repo "$GH_REPO" --workflow "applet-management.yml" \
-                       --limit 100 --json databaseId,conclusion,status,name,createdAt \
-                       -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" \
-                       2>/dev/null | head -1)
-
-              # If not found in applet-management.yml, try build-applets.yml,
-              # get latest run
-              if [ -z "$run_id" ]; then
-                echo "No successful run found in applet-management.yml, checking build-applets.yml..."
-                run_id=$(gh run list --repo "$GH_REPO" --workflow "build-applets.yml" \
-                         --limit 100 --json databaseId,conclusion,status,name,createdAt \
-                         -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" \
+          # Download ALL artifacts from the latest successful update-applets.yml run
+          echo "Finding latest successful update-applets.yml run..."
+          latest_run_id=$(gh run list --repo "$GH_REPO" --workflow "update-applets.yml" \
+                         --limit 1 --json databaseId,conclusion,status \
+                         -q ".[] | select(.status == \"completed\") | .databaseId" \
                          2>/dev/null | head -1)
-              fi
 
-              # If still not found, try any workflow that might contain the
-              # applet name
-              if [ -z "$run_id" ]; then
-                echo "No specific run found, checking any workflow with $applet_name..."
-                run_id=$(gh run list --repo "$GH_REPO" --limit 100 --json databaseId,conclusion,status,name,createdAt \
-                         -q ".[] | select(.status == \"completed\" and (.name | contains(\"$applet_name\"))) | .databaseId" \
-                         2>/dev/null | head -1)
-              fi
-            fi
+          if [ -n "$latest_run_id" ]; then
+            echo "Found latest successful run: $latest_run_id"
+            echo "Downloading ALL artifacts from this run..."
 
-            if [ -n "$run_id" ]; then
-              echo "Found successful run $run_id for '$applet_name'"
+            # Create temp directory for downloads
+            mkdir -p /tmp/raw-artifacts
 
-              # Download all artifacts from this specific applet's workflow run
-              echo "Downloading artifacts from '$applet_name' run $run_id"
-              if gh run download --repo "$GH_REPO" "$run_id" --dir "/tmp/applet-artifacts" 2>/dev/null; then
-                echo "✓ Successfully downloaded artifacts for $applet_name"
-                success_count=$((success_count + 1))
-              else
-                echo "⚠ No artifacts found for $applet_name in run $run_id"
-              fi
+            # Download ALL artifacts from the latest run
+            if gh run download --repo "$GH_REPO" "$latest_run_id" --dir "/tmp/raw-artifacts" 2>/dev/null; then
+              echo "✓ Successfully downloaded all artifacts from run $latest_run_id"
+
+              # Debug: show what was downloaded
+              echo "Downloaded files:"
+              ls -la /tmp/raw-artifacts/
+              echo ""
+
+              # Process downloaded artifacts - move everything to applet-artifacts
+              echo "Moving all downloaded artifacts to processing directory..."
+
+              # Move all downloaded files to the processing directory
+              mv /tmp/raw-artifacts/* /tmp/applet-artifacts/ 2>/dev/null || true
+
+              # Report what was moved
+              echo ""
+              echo "=== Available Artifacts ==="
+              ls -la /tmp/applet-artifacts/ | grep -v "^total"
+              echo ""
+
+              # The 6-extras.sh script will handle the organization into directories
+              # For now, just count all files as "artifacts available"
+              file_count=$(find /tmp/applet-artifacts -type f | wc -l)
+              echo "Available $file_count artifact files"
+
+              success_count=$file_count
+
             else
-              echo "⚠ No successful workflow run found for '$applet_name'"
+              echo "⚠ Failed to download artifacts from run $latest_run_id"
             fi
-          done
-
-          echo ""
-          echo "=== Download Summary ==="
-          if [ "$applet_count" -gt 0 ]; then
-            echo "Successfully downloaded: $success_count/$applet_count applets"
           else
-            echo "Successfully downloaded: $success_count/0 applets"
+            echo "⚠ No successful update-applets.yml runs found"
           fi
+
+          echo "=== Download Summary ==="
+          echo "Successfully downloaded and extracted: $success_count applets"
           echo "Final downloaded artifacts:"
           ls -la /tmp/applet-artifacts/ || echo "No artifacts directory contents"
+
+          # Clean up temp directory
+          rm -rf /tmp/raw-artifacts
 
           # Create empty artifacts directory if nothing was downloaded to avoid build failures
           if [ ! -d "/tmp/applet-artifacts" ] || [ -z "$(ls -A /tmp/applet-artifacts 2>/dev/null)" ]; then
@@ -364,15 +348,18 @@ jobs:
       - name: Copy Artifacts to Build Context
         run: |
           # Copy artifacts to the repository directory so they're available to the Containerfile
+          echo "Checking for artifacts in /tmp/applet-artifacts..."
+          ls -la /tmp/applet-artifacts/ || echo "No artifacts directory found"
           if [ -d "/tmp/applet-artifacts" ] && [ "$(ls -A /tmp/applet-artifacts 2>/dev/null)" ]; then
             echo "Copying artifacts to build context..."
             mkdir -p ./applets-artifacts
-            cp -r /tmp/applet-artifacts/* ./applets-artifacts/
+            cp -r /tmp/applet-artifacts/* ./applets-artifacts/ 2>/dev/null || true
             echo "Artifacts copied to build context:"
-            ls -la ./applets-artifacts/
-                else
-            echo "No artifacts to copy"
+            ls -la ./applets-artifacts/ || echo "No artifacts in target directory"
+          else
+            echo "No artifacts to copy, creating empty directory"
             mkdir -p ./applets-artifacts
+            touch ./applets-artifacts/.empty
           fi
 
       - name: Build Image

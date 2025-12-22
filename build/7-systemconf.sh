@@ -1,15 +1,36 @@
 #!/usr/bin/bash
-
 set -eoux pipefail
-
-###############################################################################
-# System Services & Configuration
-###############################################################################
-# This script configures essential system services for Cosmoneer
-###############################################################################
 
 echo "===$(basename "$0")==="
 echo "::group:: System Services Configuration"
+
+echo "::group:: Installing Docker CE"
+
+dnf5 config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
+dnf5 config-manager setopt docker-ce-stable.enabled=0
+dnf5 install -y --skip-unavailable --enablerepo='docker-ce-stable' docker-ce docker-ce-cli docker-compose-plugin
+
+echo "Configuring Docker CE..."
+# Enable SSH agent globally
+systemctl enable --global ssh-agent
+
+# Create docker-compose symlink
+ln -sf /usr/libexec/docker/cli-plugins/docker-compose /usr/bin/docker-compose
+
+# Enable IP forwarding for Docker
+mkdir -p /usr/lib/sysctl.d
+echo "net.ipv4.ip_forward = 1" > /usr/lib/sysctl.d/docker-ce.conf
+
+# Configure Docker service presets
+sed -i 's/enable docker/disable docker/' /usr/lib/systemd/system-preset/90-default.preset
+systemctl preset docker.service docker.socket
+
+# Create docker group
+cat > /usr/lib/sysusers.d/docker.conf <<'EOF'
+g docker -
+EOF
+
+echo "::endgroup::"
 
 echo "Configuring essential system services..."
 # Enable core system services
@@ -70,7 +91,6 @@ systemctl preset-all --global || true
 add_wants_niri() {
     sed -i "s|\[Unit\]|\[Unit\]\nWants=$1|" "/usr/lib/systemd/user/niri.service"
 }
-add_wants_niri cliphist.service
 add_wants_niri swayidle.service
 add_wants_niri udiskie.service
 add_wants_niri cosmic-notifications.service
@@ -78,7 +98,6 @@ add_wants_niri cosmic-notifications.service
 # Replace complex symlink logic with preset pattern
 cat > /usr/lib/systemd/user-preset/01-cosmoneer.preset <<'EOF'
 enable swayidle.service
-enable cliphist.service
 enable cosmic-niri-session.service
 enable gnome-keyring-daemon.socket
 enable cosmic-notifications.service
