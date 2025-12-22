@@ -164,7 +164,7 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             fi
 
             # Get expected binary names from YAML
-            expected_binaries=$(yq eval ".$SECTION[\"$applet_name\"].binary_names[]" applets.yml 2>/dev/null || echo "")
+            expected_binaries=$(yq eval ".{$SECTION}[\"$applet_name\"].binary_names[]" applets.yml 2>/dev/null || echo "")
 
             # If no binaries found in YAML, look for any executable files
             if [ -z "$expected_binaries" ]; then
