@@ -207,60 +207,34 @@ if [ -d "/applets" ] && [ "$(ls -A /applets)" ]; then
             # Install supporting files (simple approach)
             echo "Installing supporting files for $applet_name..."
 
-            # Desktop files
+            # Desktop files (recursive search in all directories)
             desktop_count=0
-            # Check root directory
-            for desktop_file in *.desktop; do
-                if [ -f "$desktop_file" ]; then
-                    install -Dm0644 "$desktop_file" "/usr/share/applications/$desktop_file" || {
-                        echo "ERROR: Failed to install desktop file: $desktop_file"
-                    }
-                    echo "  Installed desktop file: $desktop_file"
-                    desktop_count=$((desktop_count + 1))
-                fi
+            # Find all .desktop files recursively
+            find . -name "*.desktop" -type f | while read -r desktop_file; do
+                echo "  Found desktop file: $desktop_file"
+                filename=$(basename "$desktop_file")
+                install -Dm0644 "$desktop_file" "/usr/share/applications/$filename" || {
+                    echo "ERROR: Failed to install desktop file: $desktop_file"
+                }
+                echo "  Installed desktop file: $filename"
+                desktop_count=$((desktop_count + 1))
             done
-            # Check res directory
-            if [ -d "res" ]; then
-                for desktop_file in res/*.desktop; do
-                    if [ -f "$desktop_file" ]; then
-                        filename=$(basename "$desktop_file")
-                        install -Dm0644 "$desktop_file" "/usr/share/applications/$filename" || {
-                            echo "ERROR: Failed to install desktop file: $filename"
-                        }
-                        echo "  Installed desktop file: $filename"
-                        desktop_count=$((desktop_count + 1))
-                    fi
-                done
-            fi
             if [ $desktop_count -eq 0 ]; then
                 echo "  No desktop files found"
             fi
 
-            # Metainfo files
+            # Metainfo files (recursive search in all directories)
             metainfo_count=0
-            # Check root directory
-            for metainfo_file in *.metainfo.xml; do
-                if [ -f "$metainfo_file" ]; then
-                    install -Dm0644 "$metainfo_file" "/usr/share/metainfo/$metainfo_file" || {
-                        echo "ERROR: Failed to install metainfo file: $metainfo_file"
-                    }
-                    echo "  Installed metainfo file: $metainfo_file"
-                    metainfo_count=$((metainfo_count + 1))
-                fi
+            # Find all .metainfo.xml files recursively
+            find . -name "*.metainfo.xml" -type f | while read -r metainfo_file; do
+                echo "  Found metainfo file: $metainfo_file"
+                filename=$(basename "$metainfo_file")
+                install -Dm0644 "$metainfo_file" "/usr/share/metainfo/$filename" || {
+                    echo "ERROR: Failed to install metainfo file: $metainfo_file"
+                }
+                echo "  Installed metainfo file: $filename"
+                metainfo_count=$((metainfo_count + 1))
             done
-            # Check res directory
-            if [ -d "res" ]; then
-                for metainfo_file in res/*.metainfo.xml; do
-                    if [ -f "$metainfo_file" ]; then
-                        filename=$(basename "$metainfo_file")
-                        install -Dm0644 "$metainfo_file" "/usr/share/metainfo/$filename" || {
-                            echo "ERROR: Failed to install metainfo file: $filename"
-                        }
-                        echo "  Installed metainfo file: $filename"
-                        metainfo_count=$((metainfo_count + 1))
-                    fi
-                done
-            fi
             if [ $metainfo_count -eq 0 ]; then
                 echo "  No metainfo files found"
             fi
