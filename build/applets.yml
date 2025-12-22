@@ -10,7 +10,7 @@ github_api:
 
 applets:
   cosmic-ext-applet-emoji-selector:
-    github_repo: "leb-kuchen/cosmic-ext-applet-emoji-selector"
+    github_repo: "bGVia3VjaGVu/cosmic-ext-applet-emoji-selector"
     git_sha: "4530c2d1f2690efc87a666645e534328eb55fafe"
     binary_names: ["cosmic-applet-emoji-selector"]
     desktop_pattern: "*.desktop"
