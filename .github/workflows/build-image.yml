@@ -292,7 +292,7 @@ jobs:
             # Look for artifacts from the update-applets.yml workflow
             run_ids=$(gh run list --repo "$GH_REPO" --workflow "update-applets.yml" \
                      --limit 10 --json databaseId,conclusion,status,name,createdAt \
-                     -q ".[] | select(.status == \"completed\" and (.name | contains(\"Build $applet_name\"))) | .databaseId" \
+                     -q ".[] | select(.status == \"completed\") | .databaseId" \
                      2>/dev/null)
             # Try to download from the most recent successful run
             run_id=$(echo "$run_ids" | head -1)
@@ -309,7 +309,6 @@ jobs:
             fi
           done
 
-          echo ""
           echo "=== Download Summary ==="
           if [ "$applet_count" -gt 0 ]; then
             echo "Successfully downloaded: $success_count/$applet_count applets"
