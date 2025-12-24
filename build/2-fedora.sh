@@ -58,6 +58,7 @@ FEDORA_PACKAGES=(
     brightnessctl
     nautilus
     swayidle
+    cutecosmic
 
     # Additional Packages
     ibus-mozc
