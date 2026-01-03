@@ -8,83 +8,61 @@ echo "::group:: Universal Blue Services Setup"
 # shellcheck source=/dev/null
 source /ctx/build/copr-helpers.sh
 
-echo "::group:: ublue COPR Packages"
-echo "Installing ublue COPR packages..."
-
+echo "COPR packages skipped - using OCI images for brew"
 copr_install_isolated "ublue-os/packages" \
-    "ublue-brew" \
-    "ublue-polkit-rules" \
-    "ublue-setup-services" \
-    "uupd" \
-    "ublue-bling"
-
-echo "::endgroup::"
+    "ublue-os-udev-rules" \
+    "uupd"
 
 echo "::group:: Configure ublue-brew Integration"
 
+echo "NOTE: Using OCI images - directory setup handled automatically"
+
 # Make sure essential directories exist
 # Create parent directories first to avoid issues when creating specific user directories
-mkdir -p /var/home
-mkdir -p /home
-mkdir -p /var/home/linuxbrew
-mkdir -p /home/linuxbrew
-chown 1000:1000 /var/home/linuxbrew
+# NOTE: These directories are now created by OCI images
+# mkdir -p /var/home
+# mkdir -p /home
+# mkdir -p /var/home/linuxbrew
+# mkdir -p /home/linuxbrew
+# chown 1000:1000 /var/home/linuxbrew
 
-# Ensure the homebrew tarball exists (this should be part of the package)
+# Ensure the homebrew tarball exists (should come from OCI image)
 if [ ! -f "/usr/share/homebrew.tar.zst" ]; then
-    echo "Error: /usr/share/homebrew.tar.zst not found"
-    exit 1
+    echo "Warning: /usr/share/homebrew.tar.zst not found - should be provided by OCI image"
+    echo "This might indicate the brew OCI image is not properly copied"
 fi
 
 # Ensure the marker file does not exist so the service will run (this is part of service conditions)
-rm -f /etc/.linuxbrew
+# NOTE: This should be handled by the OCI image
+# rm -f /etc/.linuxbrew
 
-# Enable services
-echo "Enabling brew-setup and uupd services..."
-systemctl enable brew-setup.service || echo "brew-setup.service already enabled"
-systemctl enable uupd.timer || echo "uupd.timer already enabled or not found"
-
-# Configure uupd to disable distrobox module (following Zirconium pattern)
+# Configure uupd to disable distrobox module
 if [ -f "/usr/lib/systemd/system/uupd.service" ]; then
-    echo "Configuring uupd service..."
     sed -i 's|uupd|& --disable-module-distrobox|' /usr/lib/systemd/system/uupd.service
     echo "uupd configured to disable distrobox module"
 fi
 
-# Create environment file to add brew to PATH (still needed since service doesn't do this)
-cat > /etc/profile.d/brew.sh <<'EOF'
-# Homebrew environment setup
-if [ -d "/home/linuxbrew/.linuxbrew" ]; then
-    export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
-    export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
-    export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
-fi
-EOF
+# Enable services
+systemctl enable brew-setup.service || echo "brew-setup.service already enabled"
+systemctl enable brew-upgrade.timer || echo "brew-upgrade.timer already enabled"
+systemctl enable brew-update.timer || echo " brew-update.timer already enabled"
+systemctl enable uupd.timer || echo "uupd.timer already enabled or not found"
 
-# Add brew path to sudoers for system-wide access (still needed)
-sed -Ei "s/secure_path = (.*)/secure_path = \1:\/home\/linuxbrew\/.linuxbrew\/bin/" /etc/sudoers
+# Create environment file to add brew to PATH (should come from OCI)
+# NOTE: This should be provided by the brew OCI image
+# cat > /etc/profile.d/brew.sh <<'EOF'
+# # Homebrew environment setup
+# if [ -d "/home/linuxbrew/.linuxbrew" ]; then
+#     export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+#     export MANPATH="/home/linuxbrew/.linuxbrew/share/man:$MANPATH"
+#     export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:$INFOPATH"
+# fi
+# EOF
 
-echo "ublue-brew configured successfully"
-echo "::endgroup::"
+# Add brew path to sudoers for system-wide access (should come from OCI)
+# NOTE: This should be handled by the OCI image
+# sed -Ei "s/secure_path = (.*)/secure_path = \\1:\\/home\\/linuxbrew\\/.linuxbrew\\/bin/" /etc/sudoers
 
-echo "::group:: Verify Brew Installation Post-Configuration"
-
-# Check that brew-setup service is enabled
-if systemctl is-enabled brew-setup.service 2>/dev/null; then
-    echo "✓ brew-setup.service is enabled"
-else
-    echo "⚠ brew-setup.service is not enabled"
-fi
-
-# Check if homebrew tarball exists
-if [ -f "/usr/share/homebrew.tar.zst" ]; then
-    echo "✓ homebrew.tar.zst exists"
-else
-    echo "⚠ homebrew.tar.zst does not exist"
-fi
-
-# The actual symlink will be created when the system boots for the first time
-echo "Note: Symlink /home/linuxbrew/.linuxbrew will be created by brew-setup.service at first boot"
 echo "::endgroup::"
 
 echo "::endgroup::"

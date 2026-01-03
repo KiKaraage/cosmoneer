@@ -3,6 +3,10 @@ COPY build /build
 COPY custom /custom
 COPY system_files /system_files
 
+# Add Brew from OCI containers
+COPY --from=ghcr.io/ublue-os/brew:latest /system_files /oci/brew
+COPY --from=ghcr.io/projectbluefin/common:latest /system_files/shared /oci/shared
+
 ARG APPLET_ARTIFACTS_DIR=./applets-artifacts
 COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts
 
