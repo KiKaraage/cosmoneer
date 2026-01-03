@@ -52,19 +52,29 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     set -euo pipefail && \
     /ctx/build/2-fedora.sh && \
     echo "Installing brew OCI artifacts..." && \
-    ls -la /oci/brew/ && \
-    ls -la /oci/brew/usr/ 2>/dev/null || echo "No /oci/brew/usr/" && \
-    ls -la /oci/brew/system_files/ 2>/dev/null || echo "No /oci/brew/system_files/" && \
-    if [ -d "/oci/brew/system_files" ]; then \
-        cp -r /oci/brew/system_files/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
-        cp -r /oci/brew/system_files/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst; \
+    echo "DEBUG: Checking OCI paths..." && \
+    ls -la /ctx/oci/ 2>/dev/null || echo "No /ctx/oci/" && \
+    ls -la /ctx/oci/brew/ 2>/dev/null || echo "No /ctx/oci/brew/" && \
+    ls -la /ctx/oci/brew/system_files/ 2>/dev/null || echo "No /ctx/oci/brew/system_files/" && \
+    ls -la /ctx/oci/shared/ 2>/dev/null || echo "No /ctx/oci/shared/" && \
+    if [ -d "/ctx/oci/brew/system_files" ]; then \
+        cp -r /ctx/oci/brew/system_files/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
+        cp -r /ctx/oci/brew/system_files/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst; \
     else \
-        cp -r /oci/brew/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
-        cp -r /oci/brew/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst; \
+        echo "Brew OCI artifacts not found - skipping brew setup"; \
     fi && \
-    systemctl enable brew-setup.service && \
-    systemctl enable brew-upgrade.timer && \
-    systemctl enable brew-update.timer && \
+    echo "Installing projectbluefin/common OCI artifacts..." && \
+    if [ -d "/ctx/oci/shared/usr" ]; then \
+        cp -r /ctx/oci/shared/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
+        cp -r /ctx/oci/shared/etc/* /etc/; \
+    else \
+        echo "projectbluefin/common OCI artifacts not found - skipping"; \
+    fi && \
+    systemctl enable brew-setup.service 2>/dev/null || true && \
+    systemctl enable brew-upgrade.timer 2>/dev/null || true && \
+    systemctl enable brew-update.timer 2>/dev/null || true && \
+    systemctl enable flatpak-preinstall.service 2>/dev/null || true && \
+    systemctl enable ublue-system-setup.service 2>/dev/null || true && \
     dnf5 clean all
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
