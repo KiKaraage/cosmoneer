@@ -1,11 +1,13 @@
 [Unit]
 Description=Waybar
 PartOf=graphical-session.target
-After=graphical-session.target
+After=graphical-session.target xdg-desktop-portal.service
+Wants=xdg-desktop-portal.service
 ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
 
 [Service]
 Environment=XDG_SESSION_TYPE=wayland
+Environment=XDG_CURRENT_DESKTOP=niri:gnome
 ExecStart=/usr/bin/waybar
 Restart=on-failure
 RestartSec=1

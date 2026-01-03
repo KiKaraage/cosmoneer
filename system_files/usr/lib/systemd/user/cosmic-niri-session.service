@@ -2,7 +2,6 @@
 Description=COSMIC Session Manager
 Documentation=man:cosmic-session(1)
 After=graphical-session.target
-ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
 
 [Service]
 Type=simple
