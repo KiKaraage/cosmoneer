@@ -55,11 +55,10 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     echo "DEBUG: Checking OCI paths..." && \
     ls -la /ctx/oci/ 2>/dev/null || echo "No /ctx/oci/" && \
     ls -la /ctx/oci/brew/ 2>/dev/null || echo "No /ctx/oci/brew/" && \
-    ls -la /ctx/oci/brew/system_files/ 2>/dev/null || echo "No /ctx/oci/brew/system_files/" && \
     ls -la /ctx/oci/shared/ 2>/dev/null || echo "No /ctx/oci/shared/" && \
-    if [ -d "/ctx/oci/brew/system_files" ]; then \
-        cp -r /ctx/oci/brew/system_files/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
-        cp -r /ctx/oci/brew/system_files/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst; \
+    if [ -d "/ctx/oci/brew" ]; then \
+        cp -r /ctx/oci/brew/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
+        cp -r /ctx/oci/brew/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst; \
     else \
         echo "Brew OCI artifacts not found - skipping brew setup"; \
     fi && \
