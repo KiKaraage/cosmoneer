@@ -3,3 +3,5 @@ _build_*
 output
 _build-*/**
 build/*.md
+*.txt
+*/*.txt

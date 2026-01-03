@@ -8,44 +8,19 @@ echo "::group:: Install COSMIC Desktop"
 # shellcheck source=/dev/null
 source /ctx/build/copr-helpers.sh
 
-# Install COSMIC desktop from System76's COPR
-# Using isolated pattern to prevent COPR from persisting
-copr_install_isolated "ryanabx/cosmic-epoch" \
-    cosmic-app-library \
-    cosmic-applets \
-    cosmic-bg \
-    cosmic-comp \
-    cosmic-edit \
-    cosmic-files \
-    cosmic-greeter \
-    cosmic-icon-theme \
-    cosmic-idle \
-    cosmic-initial-setup \
-    cosmic-launcher \
-    cosmic-notifications \
-    cosmic-osd \
-    cosmic-panel \
-    cosmic-player \
-    cosmic-randr \
-    cosmic-screenshot \
-    cosmic-session \
-    cosmic-settings \
-    cosmic-settings-daemon \
-    cosmic-store \
-    cosmic-term \
-    cosmic-wallpapers \
-    cosmic-workspaces \
-    pop-launcher \
-    xdg-desktop-portal-cosmic
+# Install COSMIC desktop packages
+copr_install_isolated "ryanabx/cosmic-epoch" cosmic-desktop
+echo "COSMIC desktop installed successfully"
 
+# Add COSMIC Flatpak repo for applet downloads
 flatpak remote-add --if-not-exists --system cosmic https://apt.pop-os.org/cosmic/cosmic.flatpakrepo
 echo "COSMIC Flatpak remote configured"
 
-echo "COSMIC desktop installed successfully"
 echo "::endgroup::"
 
 echo "::group:: Configure Display Manager"
 
+# Enable cosmic-greeter
 systemctl enable cosmic-greeter
 
 # Set COSMIC as default session
