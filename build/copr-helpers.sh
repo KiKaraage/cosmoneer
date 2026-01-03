@@ -30,7 +30,11 @@ copr_install_isolated() {
     dnf5 -y copr enable "$copr_name"
     dnf5 -y copr disable "$copr_name"
     
-    
+    # Set priority if "priority" argument was provided
+    if [[ "${packages[*]}" == *"priority"* ]]; then
+        local repo_file="/etc/yum.repos.d/_copr:copr.fedorainfracloud.org:${copr_name//\//:}.repo"
+        echo "priority=1" | tee -a "$repo_file"
+    fi
     
     dnf5 -y install --enablerepo="$repo_id" "${packages[@]}" --skip-unavailable
 
