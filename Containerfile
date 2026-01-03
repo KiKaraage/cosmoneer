@@ -52,6 +52,12 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     set -euo pipefail && \
     /ctx/build/2-fedora.sh && \
     /ctx/build/3-ublue.sh && \
+    echo "Installing brew OCI artifacts..." && \
+    cp -r /oci/brew/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
+    cp -r /oci/brew/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst && \
+    systemctl enable brew-setup.service && \
+    systemctl enable brew-upgrade.timer && \
+    systemctl enable brew-update.timer && \
     dnf5 clean all
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \

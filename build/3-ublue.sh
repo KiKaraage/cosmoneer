@@ -42,10 +42,10 @@ if [ -f "/usr/lib/systemd/system/uupd.service" ]; then
     echo "uupd configured to disable distrobox module"
 fi
 
-# Enable services
-systemctl enable brew-setup.service || echo "brew-setup.service already enabled"
-systemctl enable brew-upgrade.timer || echo "brew-upgrade.timer already enabled"
-systemctl enable brew-update.timer || echo " brew-update.timer already enabled"
+# Enable services (done after OCI files are copied in Containerfile)
+# systemctl enable brew-setup.service || echo "brew-setup.service already enabled"
+# systemctl enable brew-upgrade.timer || echo "brew-upgrade.timer already enabled"
+# systemctl enable brew-update.timer || echo " brew-update.timer already enabled"
 systemctl enable uupd.timer || echo "uupd.timer already enabled or not found"
 
 # Create environment file to add brew to PATH (should come from OCI)
