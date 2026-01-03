@@ -3,6 +3,10 @@ COPY build /build
 COPY custom /custom
 COPY system_files /system_files
 
+# Add Brew from OCI containers
+COPY --from=ghcr.io/ublue-os/brew:latest /system_files /oci/brew
+COPY --from=ghcr.io/projectbluefin/common:latest /system_files/shared /oci/shared
+
 ARG APPLET_ARTIFACTS_DIR=./applets-artifacts
 COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts
 
@@ -47,13 +51,36 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     set -euo pipefail && \
     /ctx/build/2-fedora.sh && \
-    /ctx/build/3-ublue.sh && \
+    echo "Installing brew OCI artifacts..." && \
+    echo "DEBUG: Checking OCI paths..." && \
+    ls -la /ctx/oci/ 2>/dev/null || echo "No /ctx/oci/" && \
+    ls -la /ctx/oci/brew/ 2>/dev/null || echo "No /ctx/oci/brew/" && \
+    ls -la /ctx/oci/shared/ 2>/dev/null || echo "No /ctx/oci/shared/" && \
+    if [ -d "/ctx/oci/brew" ]; then \
+        cp -r /ctx/oci/brew/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
+        cp -r /ctx/oci/brew/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst; \
+    else \
+        echo "Brew OCI artifacts not found - skipping brew setup"; \
+    fi && \
+    echo "Installing projectbluefin/common OCI artifacts..." && \
+    if [ -d "/ctx/oci/shared/usr" ]; then \
+        cp -r /ctx/oci/shared/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
+        cp -r /ctx/oci/shared/etc/* /etc/; \
+    else \
+        echo "projectbluefin/common OCI artifacts not found - skipping"; \
+    fi && \
+    systemctl enable brew-setup.service 2>/dev/null || true && \
+    systemctl enable brew-upgrade.timer 2>/dev/null || true && \
+    systemctl enable brew-update.timer 2>/dev/null || true && \
+    systemctl enable flatpak-preinstall.service 2>/dev/null || true && \
+    systemctl enable ublue-system-setup.service 2>/dev/null || true && \
     dnf5 clean all
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=tmpfs,dst=/tmp \
     set -euo pipefail && \
+    /ctx/build/3-ublue.sh && \
     /ctx/build/4-niri.sh && \
     /ctx/build/5-cosmic.sh
 
