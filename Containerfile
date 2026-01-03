@@ -51,10 +51,17 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     set -euo pipefail && \
     /ctx/build/2-fedora.sh && \
-    /ctx/build/3-ublue.sh && \
     echo "Installing brew OCI artifacts..." && \
-    cp -r /oci/brew/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
-    cp -r /oci/brew/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst && \
+    ls -la /oci/brew/ && \
+    ls -la /oci/brew/usr/ 2>/dev/null || echo "No /oci/brew/usr/" && \
+    ls -la /oci/brew/system_files/ 2>/dev/null || echo "No /oci/brew/system_files/" && \
+    if [ -d "/oci/brew/system_files" ]; then \
+        cp -r /oci/brew/system_files/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
+        cp -r /oci/brew/system_files/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst; \
+    else \
+        cp -r /oci/brew/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
+        cp -r /oci/brew/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst; \
+    fi && \
     systemctl enable brew-setup.service && \
     systemctl enable brew-upgrade.timer && \
     systemctl enable brew-update.timer && \
@@ -64,6 +71,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=tmpfs,dst=/tmp \
     set -euo pipefail && \
+    /ctx/build/3-ublue.sh && \
     /ctx/build/4-niri.sh && \
     /ctx/build/5-cosmic.sh
 
