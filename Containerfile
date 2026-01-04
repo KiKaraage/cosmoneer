@@ -55,20 +55,15 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
-    echo "Presetting brew-setup.service..." && \
-    (systemctl preset brew-setup.service && echo "SUCCESS") || (echo "FAILED" && exit 1) && \
-    echo "Presetting brew-upgrade.timer..." && \
-    (systemctl preset brew-upgrade.timer && echo "SUCCESS") || (echo "FAILED" && exit 1) && \
-    echo "Presetting brew-update.timer..." && \
-    (systemctl preset brew-update.timer && echo "SUCCESS") || (echo "FAILED" && exit 1) && \
-    echo "Presetting flatpak-preinstall.service..." && \
-    (systemctl preset flatpak-preinstall.service && echo "SUCCESS") || (echo "FAILED" && exit 1) && \
-    echo "Presetting ublue-system-setup.service..." && \
-    (systemctl preset ublue-system-setup.service && echo "SUCCESS") || (echo "FAILED" && exit 1)
     cp -r /ctx/oci/brew/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
     cp -r /ctx/oci/brew/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst && \
     cp -r /ctx/oci/shared/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
     cp -r /ctx/oci/shared/etc/* /etc/ && \
+    systemctl preset brew-setup.service 2>/dev/null || exit 1 && \
+    systemctl preset brew-upgrade.timer 2>/dev/null || exit 1 && \
+    systemctl preset brew-update.timer 2>/dev/null || exit 1 && \
+    systemctl preset flatpak-preinstall.service 2>/dev/null || exit 1 && \
+    systemctl preset ublue-system-setup.service 2>/dev/null || exit 1
     
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
