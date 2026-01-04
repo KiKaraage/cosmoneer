@@ -74,19 +74,21 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     else \
         echo "projectbluefin/common OCI artifacts not found - skipping"; \
     fi && \
+    echo "DEBUG: Checking copied services..." && \
+    ls -la /usr/lib/systemd/system/brew* /usr/lib/systemd/system/flatpak-preinstall.service /usr/lib/systemd/system/ublue-system-setup.service 2>/dev/null || echo "Copied services not found" && \
     echo "DEBUG: Presetting services..." && \
     echo "Available services:" && \
     ls /usr/lib/systemd/system/*service /usr/lib/systemd/system/*timer 2>/dev/null | head -20 || true && \
     echo "Presetting brew-setup.service..." && \
-    systemctl preset brew-setup.service 2>&1 || echo "Warning: brew-setup.service preset failed" && \
+    (systemctl preset brew-setup.service && echo "SUCCESS") || (echo "FAILED" && exit 1) && \
     echo "Presetting brew-upgrade.timer..." && \
-    systemctl preset brew-upgrade.timer 2>&1 || echo "Warning: brew-upgrade.timer preset failed" && \
+    (systemctl preset brew-upgrade.timer && echo "SUCCESS") || (echo "FAILED" && exit 1) && \
     echo "Presetting brew-update.timer..." && \
-    systemctl preset brew-update.timer 2>&1 || echo "Warning: brew-update.timer preset failed" && \
+    (systemctl preset brew-update.timer && echo "SUCCESS") || (echo "FAILED" && exit 1) && \
     echo "Presetting flatpak-preinstall.service..." && \
-    systemctl preset flatpak-preinstall.service 2>&1 || echo "Warning: flatpak-preinstall.service preset failed" && \
+    (systemctl preset flatpak-preinstall.service && echo "SUCCESS") || (echo "FAILED" && exit 1) && \
     echo "Presetting ublue-system-setup.service..." && \
-    systemctl preset ublue-system-setup.service 2>&1 || echo "Warning: ublue-system-setup.service preset failed"
+    (systemctl preset ublue-system-setup.service && echo "SUCCESS") || (echo "FAILED" && exit 1)
     
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
