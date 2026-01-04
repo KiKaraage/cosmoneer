@@ -55,30 +55,14 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
-    echo "DEBUG: Checking /ctx/oci/ contents:" && \
-    ls -la /ctx/oci/ 2>/dev/null || echo "No /ctx/oci/ directory found" && \
     if [ -d "/ctx/oci/brew" ]; then \
         cp -r /ctx/oci/brew/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
         cp -r /ctx/oci/brew/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst; \
-    else \
-        echo "Brew OCI artifacts not found - skipping brew setup"; \
     fi && \
-    echo "DEBUG: Checking /ctx/oci/brew/ contents:" && \
-    ls -la /ctx/oci/brew/ 2>/dev/null || echo "No /ctx/oci/brew/ directory" && \
-    echo "Installing projectbluefin/common OCI artifacts..." && \
-    echo "DEBUG: Checking /ctx/oci/shared/ contents:" && \
-    ls -la /ctx/oci/shared/ 2>/dev/null || echo "No /ctx/oci/shared/ directory" && \
     if [ -d "/ctx/oci/shared/usr" ]; then \
         cp -r /ctx/oci/shared/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
         cp -r /ctx/oci/shared/etc/* /etc/; \
-    else \
-        echo "projectbluefin/common OCI artifacts not found - skipping"; \
     fi && \
-    echo "DEBUG: Checking copied services..." && \
-    ls -la /usr/lib/systemd/system/brew* /usr/lib/systemd/system/flatpak-preinstall.service /usr/lib/systemd/system/ublue-system-setup.service 2>/dev/null || echo "Copied services not found" && \
-    echo "DEBUG: Presetting services..." && \
-    echo "Available services:" && \
-    ls /usr/lib/systemd/system/*service /usr/lib/systemd/system/*timer 2>/dev/null | head -20 || true && \
     echo "Presetting brew-setup.service..." && \
     (systemctl preset brew-setup.service && echo "SUCCESS") || (echo "FAILED" && exit 1) && \
     echo "Presetting brew-upgrade.timer..." && \
