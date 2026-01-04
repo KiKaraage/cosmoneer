@@ -39,7 +39,6 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     set -euo pipefail && \
     dnf5 clean all && \
     rm -rf /var/cache/dnf/* /var/log/* /tmp/* && \
-
     echo "Running build scripts..." && \
     echo "BUILD_IMAGE_TAG=${BUILD_IMAGE_TAG}" && \
     echo "BUILD_VERSION=${BUILD_VERSION}" && \
@@ -51,11 +50,11 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     set -euo pipefail && \
     /ctx/build/2-fedora.sh && \
-    echo "Installing brew OCI artifacts..." && \
-    echo "DEBUG: Checking OCI paths..." && \
-    ls -la /ctx/oci/ 2>/dev/null || echo "No /ctx/oci/" && \
-    ls -la /ctx/oci/brew/ 2>/dev/null || echo "No /ctx/oci/brew/" && \
-    ls -la /ctx/oci/shared/ 2>/dev/null || echo "No /ctx/oci/shared/" && \
+    dnf5 clean all
+
+RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
+    --mount=type=cache,dst=/var/cache \
+    --mount=type=cache,dst=/var/log \
     if [ -d "/ctx/oci/brew" ]; then \
         cp -r /ctx/oci/brew/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
         cp -r /ctx/oci/brew/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst; \
@@ -69,13 +68,20 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     else \
         echo "projectbluefin/common OCI artifacts not found - skipping"; \
     fi && \
-    systemctl enable brew-setup.service 2>/dev/null || true && \
-    systemctl enable brew-upgrade.timer 2>/dev/null || true && \
-    systemctl enable brew-update.timer 2>/dev/null || true && \
-    systemctl enable flatpak-preinstall.service 2>/dev/null || true && \
-    systemctl enable ublue-system-setup.service 2>/dev/null || true && \
-    dnf5 clean all
-
+    echo "DEBUG: Presetting services..." && \
+    echo "Available services:" && \
+    ls /usr/lib/systemd/system/*service /usr/lib/systemd/system/*timer 2>/dev/null | head -20 || true && \
+    echo "Presetting brew-setup.service..." && \
+    systemctl preset brew-setup.service 2>&1 || echo "Warning: brew-setup.service preset failed" && \
+    echo "Presetting brew-upgrade.timer..." && \
+    systemctl preset brew-upgrade.timer 2>&1 || echo "Warning: brew-upgrade.timer preset failed" && \
+    echo "Presetting brew-update.timer..." && \
+    systemctl preset brew-update.timer 2>&1 || echo "Warning: brew-update.timer preset failed" && \
+    echo "Presetting flatpak-preinstall.service..." && \
+    systemctl preset flatpak-preinstall.service 2>&1 || echo "Warning: flatpak-preinstall.service preset failed" && \
+    echo "Presetting ublue-system-setup.service..." && \
+    systemctl preset ublue-system-setup.service 2>&1 || echo "Warning: ublue-system-setup.service preset failed"
+    
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=tmpfs,dst=/tmp \
