@@ -3,10 +3,6 @@ COPY build /build
 COPY custom /custom
 COPY system_files /system_files
 
-# Add Brew from OCI containers
-COPY --from=ghcr.io/ublue-os/brew:latest /system_files /oci/brew
-COPY --from=ghcr.io/projectbluefin/common:latest /system_files/shared /oci/shared
-
 ARG APPLET_ARTIFACTS_DIR=./applets-artifacts
 COPY ${APPLET_ARTIFACTS_DIR} /applets-artifacts
 
@@ -52,19 +48,14 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build/2-fedora.sh && \
     dnf5 clean all
 
-RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
-    --mount=type=cache,dst=/var/cache \
+COPY --from=ghcr.io/ublue-os/brew:latest /system_files /
+RUN --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
-    cp -r /ctx/oci/brew/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
-    cp -r /ctx/oci/brew/usr/share/homebrew.tar.zst /usr/share/homebrew.tar.zst && \
-    cp -r /ctx/oci/shared/usr/lib/systemd/system/* /usr/lib/systemd/system/ && \
-    cp -r /ctx/oci/shared/etc/* /etc/ && \
-    systemctl preset brew-setup.service 2>/dev/null || exit 1 && \
-    systemctl preset brew-upgrade.timer 2>/dev/null || exit 1 && \
-    systemctl preset brew-update.timer 2>/dev/null || exit 1 && \
-    systemctl preset flatpak-preinstall.service 2>/dev/null || exit 1 && \
-    systemctl preset ublue-system-setup.service 2>/dev/null || exit 1
-    
+    --mount=type=tmpfs,dst=/tmp \
+    /usr/bin/systemctl preset brew-setup.service && \
+    /usr/bin/systemctl preset brew-update.timer && \
+    /usr/bin/systemctl preset brew-upgrade.timer
+
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=tmpfs,dst=/tmp \
