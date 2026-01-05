@@ -87,22 +87,6 @@ echo "::group:: Configure User Services"
 systemctl unmask --global cosmic-niri-session.service 2>/dev/null || true
 systemctl preset-all --global || true
 
-# Configure Niri session services using dynamic wants configs
-add_wants_niri() {
-    sed -i "s|\[Unit\]|\[Unit\]\nWants=$1|" "/usr/lib/systemd/user/niri.service"
-}
-add_wants_niri swayidle.service
-add_wants_niri udiskie.service
-add_wants_niri cosmic-notifications.service
-
-# Replace complex symlink logic with preset pattern
-cat > /usr/lib/systemd/user-preset/01-cosmoneer.preset <<'EOF'
-enable swayidle.service
-enable cosmic-niri-session.service
-enable gnome-keyring-daemon.socket
-enable cosmic-notifications.service
-EOF
-
 echo "::endgroup::"
 
 
