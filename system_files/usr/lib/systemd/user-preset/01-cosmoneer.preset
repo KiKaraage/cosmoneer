@@ -5,3 +5,4 @@ enable waybar.service
 enable display-environment.service
 enable gnome-keyring-daemon.socket
 enable cosmic-notifications.service
+enable cosmic-ext-alternative-startup.service
