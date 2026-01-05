@@ -3,12 +3,11 @@ Description=COSMIC Session Manager
 Documentation=man:cosmic-session(1)
 After=graphical-session.target
 ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
-Wants=swayidle.service
-Wants=cosmic-notifications.service
+Wants=swayidle.service cosmic-notifications.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/cosmic-session cosmic-ext-alternative-startup niri
+ExecStart=/usr/bin/cosmic-session niri
 Restart=on-failure
 RestartSec=5
 
