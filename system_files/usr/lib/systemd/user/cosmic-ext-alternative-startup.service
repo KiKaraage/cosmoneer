@@ -1,0 +1,14 @@
+[Unit]
+Description=COSMIC Alternative Startup for Niri
+BindsTo=niri.service
+After=niri.service
+ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/cosmic-ext-alternative-startup
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=niri.service
