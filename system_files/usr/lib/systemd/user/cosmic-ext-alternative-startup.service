@@ -1,7 +1,7 @@
 [Unit]
 Description=COSMIC Alternative Startup for Niri
-BindsTo=niri.service
-After=niri.service
+BindsTo=cosmic-niri-session.service
+After=cosmic-niri-session.service
 ConditionEnvironment=XDG_CURRENT_DESKTOP=niri
 
 [Service]
@@ -11,4 +11,4 @@ Restart=on-failure
 RestartSec=5
 
 [Install]
-WantedBy=niri.service
+WantedBy=cosmic-niri-session.service
