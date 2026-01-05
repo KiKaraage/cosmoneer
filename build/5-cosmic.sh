@@ -10,6 +10,7 @@ source /ctx/build/copr-helpers.sh
 
 # Install COSMIC desktop packages
 copr_install_isolated "ryanabx/cosmic-epoch" cosmic-desktop
+dnf5 -y install cutecosmic-qt6
 echo "COSMIC desktop installed successfully"
 
 # Add COSMIC Flatpak repo for applet downloads
