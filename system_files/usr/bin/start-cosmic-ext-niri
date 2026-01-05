@@ -46,19 +46,13 @@ if command -v systemctl >/dev/null; then
     systemctl --user import-environment XDG_SESSION_TYPE XDG_CURRENT_DESKTOP
 fi
 
-# Start gnome keyring components if the daemon is active
-# -> check if /run/user/$UID/keyring exists
-if [ -d "/run/user/$(id -u)/keyring" ]; then
-
-    # Use PATH lookup instead of hardcoding /usr/bin
+# Start gnome keyring components if daemon is active
+if [ -d "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/keyring" ]; then
     if command -v gnome-keyring-daemon >/dev/null 2>&1; then
-        eval "$(gnome-keyring-daemon --start --components=pkcs11,secrets,ssh > /dev/null 2>&1)"
+        eval "$(gnome-keyring-daemon --start --components=pkcs11,secrets,ssh)"
     else
         echo "gnome-keyring-daemon not found in PATH" >&2
     fi
-
-    # Set SSH_AUTH_SOCK to the standard gnome-keyring socket
-    export SSH_AUTH_SOCK="/run/user/$(id -u)/keyring/ssh"
 fi
 
 # Run cosmic-session
